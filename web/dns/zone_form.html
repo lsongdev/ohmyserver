@@ -1,0 +1,35 @@
+{{define "page"}}
+
+<nav>
+  <a href="/dns">overview</a>
+  <a href="/dns/zones">zones</a>
+  <a href="/dns/providers">providers</a>
+  <a href="/dns/filters">filters</a>
+  <a href="/dns/settings">settings</a>
+</nav>
+
+<h2>{{if .zone}}Edit DNS Zone{{else}}New DNS Zone{{end}}</h2>
+{{if .error}}<p class="error">{{.error}}</p>{{end}}
+
+<form class="form" method="POST" action="{{if .zone}}/dns/zones/{{.zone.ID}}/edit{{else}}/dns/zones/new{{end}}">
+  <div class="form-group">
+    <label for="name">Zone name</label>
+    <input class="input" type="text" id="name" name="name" required value="{{if .zone}}{{.zone.Name}}{{else if .name}}{{.name}}{{end}}" placeholder="example.com">
+  </div>
+  <div class="form-group">
+    <label for="description">Description</label>
+    <input class="input" type="text" id="description" name="description" value="{{if .zone}}{{.zone.Description}}{{else if .description}}{{.description}}{{end}}" placeholder="Internal services">
+  </div>
+  <div class="form-group">
+    <label>
+<input type="checkbox" name="enabled" value="1" {{if .zone}}{{if .zone.Enabled}}checked{{end}}{{else}}checked{{end}}>
+      Enabled
+    </label>
+  </div>
+  <div class="form-actions">
+    <button class="button button-primary" type="submit">Save zone</button>
+    <a class="button" href="/dns/zones">Cancel</a>
+  </div>
+</form>
+
+{{end}}

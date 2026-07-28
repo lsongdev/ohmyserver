@@ -1,0 +1,130 @@
+{{define "page"}}
+<div class="page-header">
+    <h2>Create Instance</h2>
+    <a href="/pve/{{.server.ID}}" class="button button-secondary">← Back</a>
+</div>
+
+<form action="/pve/{{.server.ID}}/instances/new" method="POST" class="form">
+    <div class="form-group">
+        <label for="node">Node</label>
+        <select id="node" name="node" required>
+            <option value="">Select a node...</option>
+            {{range .nodes}}
+            <option value="{{.Node}}">{{.Node}} ({{.Status}})</option>
+            {{end}}
+        </select>
+    </div>
+
+    <h3>OS Image</h3>
+    {{if .templates}}
+    <div class="template-grid">
+        {{range .templates}}
+        <label class="template-card">
+            <input type="radio" name="template" value="{{.VMID}}" required>
+            <div class="template-info">
+                <strong>{{.Name}}</strong>
+                <small>VM ID: {{.VMID}}</small>
+            </div>
+        </label>
+        {{end}}
+    </div>
+    {{else}}
+    <p class="empty-message">No templates found on this PVE server. Create a VM template first.</p>
+    {{end}}
+
+    <h3>Configuration</h3>
+
+    <div class="form-group">
+        <label for="name">Instance Name</label>
+        <input type="text" id="name" name="name" required placeholder="e.g., my-instance">
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="cores">CPU Cores: <span id="cores-value">2</span></label>
+            <input type="range" id="cores" name="cores" min="1" max="16" value="2"
+                oninput="document.getElementById('cores-value').textContent = this.value">
+            <div class="range-labels">
+                <span>1</span><span>16</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="sockets">CPU Sockets</label>
+            <input type="number" id="sockets" name="sockets" value="1" min="1" max="4">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="memory">Memory: <span id="memory-value">2048</span> MB</label>
+        <input type="range" id="memory" name="memory" min="512" max="65536" step="512" value="2048"
+            oninput="document.getElementById('memory-value').textContent = this.value">
+        <div class="range-labels">
+            <span>512 MB</span><span>64 GB</span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="disk">Disk Size: <span id="disk-value">32</span> GB</label>
+        <input type="range" id="disk" name="disk" min="8" max="500" value="32"
+            oninput="document.getElementById('disk-value').textContent = this.value">
+        <div class="range-labels">
+            <span>8 GB</span><span>500 GB</span>
+        </div>
+    </div>
+
+    <div class="form-group form-check">
+        <input type="checkbox" id="start" name="start" checked>
+        <label for="start">Start instance after creation</label>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="button button-primary">Create Instance</button>
+        <a href="/pve/{{.server.ID}}" class="button button-secondary">Cancel</a>
+    </div>
+</form>
+
+<style>
+.template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+    margin-bottom: 24px;
+}
+.template-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 2px solid #e1e4e8;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+.template-card:has(input:checked) {
+    border-color: #0969da;
+    background: #ddf4ff;
+}
+.template-card input {
+    margin: 0;
+}
+.template-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.template-info small {
+    color: #656d76;
+    font-size: 11px;
+}
+input[type="range"] {
+    width: 100%;
+    margin: 8px 0;
+}
+.range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #656d76;
+}
+</style>
+{{end}}

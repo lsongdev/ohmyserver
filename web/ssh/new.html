@@ -1,0 +1,116 @@
+{{define "page"}}
+
+<div class="page-header">
+  <h2>{{if .connectOnly}}Connect to{{else if .server}}Edit{{else}}New{{end}} SSH Server</h2>
+</div>
+
+<form action="/ssh/servers{{if .server}}{{if .connectOnly}}/{{.server.ID}}{{else}}/{{.server.ID}}/edit{{end}}{{end}}" method="POST">
+  {{if .server}}
+  <input class="input" type="hidden" name="id" value="{{.server.ID}}">
+  {{end}}
+
+  <div class="form-group">
+    <label for="name">Server Name *</label>
+    <input class="input" type="text" id="name" name="name" value="{{if .server}}{{.server.Name}}{{end}}" placeholder="My Server"
+      required>
+    <small>A friendly name to identify this server</small>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label for="host">Host *</label>
+      <input class="input" type="text" id="host" name="host" value="{{if .server}}{{.server.Host}}{{end}}" placeholder="192.168.1.100"
+        required>
+      <small>IP address or hostname</small>
+    </div>
+    <div class="form-group">
+      <label for="port">Port</label>
+      <input class="input" type="number" id="port" name="port" value="{{if .server}}{{.server.Port}}{{else}}22{{end}}"
+        placeholder="22">
+      <small>SSH port (default: 22)</small>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="username">Username *</label>
+    <input class="input" type="text" id="username" name="username" value="{{if .server}}{{.server.Username}}{{end}}"
+      placeholder="root" required>
+    <small>SSH username</small>
+  </div>
+
+  <div class="form-group">
+    <label>Authentication Type</label>
+    <div class="auth-type-selector flex">
+      <label class="radio-label">
+        <input type="radio" name="auth_type" value="password" {{if or (not .server) (eq .server.AuthType "password"
+          )}}checked{{end}} onchange="toggleAuth('password')">
+        <span>Password</span>
+      </label>
+      <label class="radio-label">
+        <input type="radio" name="auth_type" value="key" {{if and .server (eq .server.AuthType "key" )}}checked{{end}}
+          onchange="toggleAuth('key')">
+        <span>Private Key</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="form-group" id="password-group">
+    <label for="password">Password</label>
+    <input class="input" type="password" id="password" name="password" placeholder="••••••••" {{if and .server (eq
+      .server.AuthType "password" )}}required{{end}}>
+    {{if .server}}<small>Leave blank to keep existing password</small>{{end}}
+  </div>
+
+  <div class="form-group" id="key-group" style="display:none;">
+    <label for="private_key">Private Key</label>
+    <textarea id="private_key" name="private_key" rows="8"
+      placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;...&#10;-----END RSA PRIVATE KEY-----">{{if and .server (eq .server.AuthType "key")}}{{.server.PrivateKey}}{{end}}</textarea>
+    {{if .server}}<small>Leave blank to keep existing key</small>{{end}}
+  </div>
+
+  {{if not .connectOnly}}
+  <div class="form-group">
+    <label for="description">Description</label>
+    <textarea id="description" name="description" rows="3"
+      placeholder="Optional description...">{{if .server}}{{.server.Description}}{{end}}</textarea>
+    <small>Optional notes about this server</small>
+  </div>
+  {{end}}
+
+  <div class="form-actions">
+    {{if .connectOnly}}
+    <button type="submit" class="button button-primary">Save & Connect</button>
+    <a href="/ssh/servers/{{.server.ID}}" class="button button-secondary">Cancel</a>
+    {{else}}
+    <button type="submit" class="button button-primary">
+      {{if .server}}Save Changes{{else}}Create Server{{end}}
+    </button>
+    <a href="/ssh/servers" class="button button-secondary">Cancel</a>
+    {{if .server}}
+    <button type="button" class="button" onclick="testConnection()">Test Connection</button>
+    {{end}}
+    {{end}}
+  </div>
+</form>
+
+<script>
+  function toggleAuth(type) {
+    var passwordGroup = document.getElementById('password-group');
+    var keyGroup = document.getElementById('key-group');
+    var passwordInput = document.getElementById('password');
+    var keyInput = document.getElementById('private_key');
+
+    if (type === 'password') {
+      passwordGroup.style.display = 'block';
+      keyGroup.style.display = 'none';
+      passwordInput.required = true;
+      keyInput.required = false;
+    } else {
+      passwordGroup.style.display = 'none';
+      keyGroup.style.display = 'block';
+      passwordInput.required = false;
+      keyInput.required = true;
+    }
+  }
+</script>
+{{end}}

@@ -1,0 +1,57 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>{{.host.Name}}</h2>
+    <div>
+        <a class="button button-primary" href="/web/hosts/{{.host.ID}}/routes/new">New Route</a>
+        <a class="button" href="/web/hosts/{{.host.ID}}/edit">Edit Host</a>
+    </div>
+</div>
+
+<div class="section">
+    <h3>Host</h3>
+    <div class="table-wrap">
+        <table class="table">
+            <tbody>
+                <tr><th>Status</th><td>{{if .host.Enabled}}<span class="badge badge-success">enabled</span>{{else}}<span class="badge">disabled</span>{{end}}</td></tr>
+                <tr><th>Hostnames</th><td><code>{{.host.Hostnames}}</code></td></tr>
+                <tr><th>Listeners</th><td>{{range $i, $name := .host.ListenerNames}}{{if $i}}, {{end}}<code>{{$name}}</code>{{else}}-{{end}}</td></tr>
+                <tr><th>Certificate</th><td>{{if .host.CertificateName}}{{.host.CertificateName}}{{else}}Listener default / HTTP only{{end}}</td></tr>
+                <tr><th>Force HTTPS</th><td>{{if .host.ForceHTTPS}}yes{{else}}no{{end}}</td></tr>
+                <tr><th>Routes</th><td><a href="/web/hosts/{{.host.ID}}/routes">{{len .host.Routes}}</a></td></tr>
+                <tr><th>Created</th><td>{{formatDate .host.CreatedAt}}</td></tr>
+                <tr><th>Updated</th><td>{{formatDate .host.UpdatedAt}}</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="section">
+    {{if .host.Routes}}
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Name</th><th>Match</th><th>Handler</th><th>Target</th><th>Status</th></tr></thead>
+            <tbody>
+                {{range .host.Routes}}
+                <tr>
+                    <td><a href="/web/routes/{{.ID}}">{{.Name}}</a></td>
+                    <td><code>{{if .Method}}{{.Method}} {{end}}{{.Path}}</code></td>
+                    <td>{{.HandlerType}}</td>
+                    <td><code>{{if .UpstreamURL}}{{.UpstreamURL}}{{else if .Root}}{{.Root}}{{else if .RedirectLocation}}{{.RedirectLocation}}{{else if eq .HandlerType "worker"}}Inline Worker{{else}}-{{end}}</code></td>
+                    <td>{{if .Enabled}}<span class="badge badge-success">enabled</span>{{else}}<span class="badge">disabled</span>{{end}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <p class="empty-message">No routes configured. <a href="/web/hosts/{{.host.ID}}/routes/new">Create one</a>.</p>
+    {{end}}
+</div>
+
+<div class="section">
+    <h3>Requests</h3>
+    <p class="empty-message">Request metrics and charts will appear here.</p>
+</div>
+
+{{end}}

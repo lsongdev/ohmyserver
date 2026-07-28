@@ -1,0 +1,129 @@
+{{define "page"}}
+<style>
+  .monitor-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .monitor-status {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .monitor-status.up {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  }
+
+  .monitor-status.down {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+  }
+
+  .monitor-status.unknown {
+    background: #9ca3af;
+  }
+
+  .monitor-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .monitor-name {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  .monitor-meta {
+    font-size: 13px;
+    color: #666;
+  }
+
+  .monitor-stats {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .monitor-uptime {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .monitor-response {
+    font-size: 13px;
+    color: #666;
+  }
+
+  .monitor-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .badge-type {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: #e5e7eb;
+    color: #374151;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+  }
+</style>
+
+<div class="page-header">
+  <h2>Uptime Monitors</h2>
+  <a href="/monitor/uptime/new" class="button button-primary">New Monitor</a>
+</div>
+
+{{if .monitors}}
+<div class="monitors-list">
+  {{range .monitors}}
+  <div class="monitor-card">
+    <div class="monitor-status {{if .LastCheck}}{{if eq .LastCheck.Status "up"}}up{{else}}down{{end}}{{else}}unknown{{end}}"></div>
+    <div class="monitor-info">
+      <div class="monitor-name">
+        {{.Name}}
+        <span class="badge-type">{{.Type}}</span>
+        {{if not .Enabled}}<span class="badge-type" style="background:#fef3c7;color:#92400e">paused</span>{{end}}
+      </div>
+      <div class="monitor-meta">
+        {{.Target}}{{if .Port}}:{{.Port}}{{end}}
+        {{if .LastCheck}} &middot; {{.LastCheck.Message}}{{end}}
+      </div>
+    </div>
+    <div class="monitor-stats">
+      <div class="monitor-uptime">{{printf "%.1f" .UptimePct}}%</div>
+      <div class="monitor-response">24h uptime</div>
+    </div>
+    <div class="monitor-actions">
+      <a href="/monitor/uptime/{{.ID}}" class="button button-sm">detail</a>
+      <a method="delete" href="/monitor/uptime/{{.ID}}/delete" class="button button-sm button-danger" onclick="return confirm('Delete this monitor?')">delete</a>
+    </div>
+  </div>
+  {{end}}
+</div>
+{{else}}
+<div class="empty-state">
+  <p>No monitors configured yet.</p>
+  <p><a href="/monitor/uptime/new" class="button button-primary">Create First Monitor</a></p>
+</div>
+{{end}}
+{{end}}

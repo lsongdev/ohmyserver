@@ -1,0 +1,141 @@
+{{define "page"}}
+
+<div class="yeelight-detail">
+    <div class="page-header">
+        <h2>{{if .device.Name}}{{.device.Name}}{{else}}Yeelight Device{{end}}</h2>
+        <div class="yeelight-actions">
+            <a href="/yeelight/{{.device.ID}}/edit" class="button">Edit</a>
+        </div>
+    </div>
+
+    {{if .error}}
+    <div class="alert alert-error">{{.error}}</div>
+    {{end}}
+
+    {{if .connectionError}}
+    <div class="alert alert-warning">
+        <strong>Connection Warning:</strong> {{.connectionError}}
+    </div>
+    {{end}}
+
+    <div class="yeelight-grid">
+        <!-- Device Info Card -->
+        <div class="yeelight-card card">
+            <h3>Device Information</h3>
+            <table class="table">
+                <tr>
+                    <th>Name</th>
+                    <td>{{if .device.Name}}{{.device.Name}}{{else}}Unnamed{{end}}</td>
+                </tr>
+                <tr>
+                    <th>Host</th>
+                    <td><code>{{.device.Host}}</code></td>
+                </tr>
+                <tr>
+                    <th>Port</th>
+                    <td>{{.device.Port}}</td>
+                </tr>
+                <tr>
+                    <th>Status</th>
+                    <td>
+                        <span class="badge {{if eq .device.Status "online"}}badge-online{{else}}badge-offline{{end}}">
+                            {{.device.Status}}
+                        </span>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Device State Card -->
+        {{if .state}}
+        <div class="yeelight-card card">
+            <h3>Current State</h3>
+            <table class="table">
+                <tr>
+                    <th>Power</th>
+                    <td>
+                        <span class="power-state {{if eq .state.Power "on"}}power-on{{else}}power-off{{end}}">
+                            {{.state.Power}}
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Brightness</th>
+                    <td>{{.state.Bright}}%</td>
+                </tr>
+                <tr>
+                    <th>Color Temperature</th>
+                    <td>{{.state.CT}}K</td>
+                </tr>
+                <tr>
+                    <th>Color Mode</th>
+                    <td>
+                        {{if eq .state.ColorMode 1}}RGB
+                        {{else if eq .state.ColorMode 2}}Color Temperature
+                        {{else if eq .state.ColorMode 3}}HSV
+                        {{else}}Unknown ({{.state.ColorMode}}){{end}}
+                    </td>
+                </tr>
+                {{if .state.Name}}
+                <tr>
+                    <th>Device Name</th>
+                    <td>{{.state.Name}}</td>
+                </tr>
+                {{end}}
+            </table>
+        </div>
+        {{end}}
+    </div>
+
+    <!-- Control Panel -->
+    <div class="yeelight-card control-panel">
+        <h3>Control Panel</h3>
+        
+
+        <!-- Power Control -->
+        <div class="control-section">
+            <h4>Power Control</h4>
+            <div class="control-buttons">
+                <button type="button" class="button button-success" onclick="controlPower('on')">Power On</button>
+                <button type="button" class="button button-danger" onclick="controlPower('off')">Power Off</button>
+                <button type="button" class="button button-secondary" onclick="controlPower('toggle')">Toggle</button>
+            </div>
+        </div>
+
+        <!-- Brightness Control -->
+        <div class="control-section">
+            <h4>Brightness</h4>
+            <div class="control-slider">
+                <input type="range" id="brightness-slider" min="1" max="100" value="{{if .state}}{{.state.Bright}}{{else}}50{{end}}" class="slider">
+                <span id="brightness-value">{{if .state}}{{.state.Bright}}{{else}}50{{end}}%</span>
+            </div>
+        </div>
+
+        <!-- Color Temperature Control -->
+        <div class="control-section">
+            <h4>Color Temperature</h4>
+            <div class="control-slider">
+                <input type="range" id="ct-slider" min="1700" max="6500" value="{{if .state}}{{.state.CT}}{{else}}4000{{end}}" class="slider">
+                <span id="ct-value">{{if .state}}{{.state.CT}}{{else}}4000{{end}}K</span>
+            </div>
+        </div>
+
+        <!-- Color Control -->
+        <div class="control-section">
+            <h4>Color (RGB)</h4>
+            <div class="color-picker-container">
+                <input type="color" id="color-picker" value="{{if .state}}{{printf "%06x" .state.RGB}}{{else}}ff0000{{end}}" class="color-picker">
+                <span id="color-value">{{if .state}}{{printf "%06x" .state.RGB}}{{else}}ff0000{{end}}</span>
+            </div>
+        </div>
+ 
+    </div>
+
+    <!-- Delete Section -->
+    <div class="yeelight-card danger-zone">
+        <h3>Danger Zone</h3>
+        <p>Once deleted, this action cannot be undone.</p>
+        <a method="delete" href="/yeelight/{{.device.ID}}" class="button button-danger" onclick="return confirm('Are you sure you want to delete this device?')">Delete Device</a>
+    </div>
+</div>
+{{end}}

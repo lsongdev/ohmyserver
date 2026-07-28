@@ -1,0 +1,30 @@
+{{define "page"}}
+<h2>Run Speedtest</h2>
+
+<div id="setup-form" class="form-container">
+  <form id="speedtest-form" method="post" action="/speedtest" >
+    <div class="form-group">
+      <label class="form-label">Speedtest Provider</label>
+      <select name="type" id="test-type" class="form-input">
+        <option value="librespeed">LibreSpeed</option>
+        <option value="speedtest">Speedtest (Ookla)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Server</label>
+      <select name="server" id="test-server" class="form-input">
+        {{range .librespeedServers}}
+        <option value="{{.Host}}">{{.Name}}</option>
+        {{end}}
+      </select>
+      <div class="server-info" id="server-info"></div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="button button-primary" id="run-btn">Run Test</button>
+      <a href="/speedtest" class="button button-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{{end}}

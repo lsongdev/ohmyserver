@@ -1,0 +1,26 @@
+{{define "page"}}
+
+<nav>
+    <a href="/ssh/servers">servers</a>
+    <a href="/ssh/keys">keys</a>
+</nav>
+
+<div class="page-header">
+    <h2>SSH Keys</h2>
+    <a href="/ssh/keys/new" >New Key</a>
+</div>
+
+<div class="ssh-keys">
+    {{range .keys}}
+    <div class="ssh-key-card">
+        <h3>{{.Name}}</h3>
+        <p>{{.Description}}</p>
+        <div class="key-actions">
+            <a href="/ssh/keys/{{.ID}}/edit" class="button button-secondary">Edit</a>
+            <a method="delete" href="/ssh/keys/{{.ID}}/delete" class="button button-danger" onclick="return confirm('Are you sure?')">Delete</a>
+        </div>
+    </div>
+    {{end}}
+</div>
+
+{{end}}

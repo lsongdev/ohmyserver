@@ -1,0 +1,51 @@
+{{define "page"}}
+<nav>
+    <a href="/acme/certificates">certificates</a>
+    
+    <a href="/acme/providers">authorities</a>
+    <a href="/acme/accounts">accounts</a>
+    <a href="/acme/orders">orders</a>
+</nav>
+
+<div class="page-header">
+    <h2>Certificates</h2>
+    <div>
+        <a href="/acme/create-csr" class="button">Create CSR</a>
+        <a href="/acme/certificates/new" class="button button-primary">New certificate</a>
+    </div>
+</div>
+
+{{if .certificates}}
+<div class="table-container">
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Domains</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .certificates}}
+        <tr>
+            <td>
+                <a href="/acme/certificates/{{.ID}}">
+                    {{range $i, $domain := (split .Domains ",")}}
+                    {{if $i}}, {{end}}<b>{{$domain}}</b>
+                    {{end}}
+                </a>
+            </td>
+            <td><span class="badge badge-{{.Status}}">{{if .CertPem}}{{if .IsExpired}}Expired{{else}}{{.DaysUntilExpiry}} days{{end}}{{else}}{{.Status}}{{end}}</span></td>
+            <td class="actions">
+                <a method="delete" href="/acme/certificates/{{.ID}}">delete</a>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+</div>
+{{else}}
+<p class="empty-message">No certificates found. <a href="/acme/certificates/new">Create your first certificate</a>.</p>
+{{end}}
+
+{{end}}

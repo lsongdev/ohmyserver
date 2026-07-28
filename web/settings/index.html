@@ -1,0 +1,58 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>Settings</h2>
+    <a href="/settings/new" class="button button-primary">New Setting</a>
+</div>
+
+{{if .settings}}
+<div class="flex-y gap-10">
+    {{range .settings}}
+    <form method="post" action="/settings/{{.ID}}" class="card">
+        <div class="setting-row">
+            <div class="setting-info">
+            <div class="flex flex-jc-between gap-10">
+                <b>{{.Name}}</b>
+            </div>
+        </div>
+        <input type="text" name="value" value="{{.Value}}" class="input">
+        <button type="submit" class="button button-secondary">Save</button>
+        <a method="delete" href="/settings/{{.ID}}" class="button button-danger">Delete</a>
+        </div>
+        <!-- <p class="description">{{if .Description}}{{.Description}}{{else}}<em>No description</em>{{end}}</p> -->
+        <p class="description">{{.Description}}</p>
+    </form>
+    {{end}}
+</div>
+{{else}}
+<p class="empty-message">No settings configured. <a href="/settings/new">Create one</a></p>
+{{end}}
+
+<style>
+    .setting-info {
+        min-width: 80px;
+        white-space: nowrap;
+    }
+
+    .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        overflow: hidden;
+        gap: 5px;
+
+    }
+
+    .description {
+        margin: 0;
+        color: #586069;
+        font-size: 14px;
+    }
+
+    input {
+        min-width: 50px;
+        flex: 1;
+    }
+</style>
+
+{{end}}

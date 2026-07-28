@@ -1,0 +1,48 @@
+{{define "page"}}
+<nav class="sub-nav">
+  <a href="/llm/chat">Chat</a>
+  <a href="/llm/providers">Providers</a>
+  <a href="/llm/models">Models</a>
+  <a href="/llm/keys">API Keys</a>
+</nav>
+
+<div class="page-header">
+  <h2>Add LLM Provider</h2>
+</div>
+
+{{if .error}}
+<div class="alert alert-error">{{.error}}</div>
+{{end}}
+
+<form method="post">
+  <div class="form-group">
+    <label>Name</label>
+    <input type="text" name="name" value="{{if .name}}{{.name}}{{end}}" required placeholder="openai">
+  </div>
+
+  <div class="form-group">
+    <label>Type</label>
+    <select name="type">
+      {{range .ProviderTypes}}
+      <option value="{{.}}" {{if eq $.type .}}selected{{end}}>{{.}}</option>
+      {{end}}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>API URL</label>
+    <input type="text" name="api_url" value="{{if .api_url}}{{.api_url}}{{else}}https://api.openai.com/v1{{end}}" >
+    <small>Default: https://api.openai.com/v1</small>
+  </div>
+
+  <div class="form-group">
+    <label>API Key</label>
+    <input type="password" name="api_key" value="{{if .api_key}}{{.api_key}}{{end}}" required placeholder="sk-">
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="button button-primary">Create</button>
+    <a href="/llm/providers" class="button button-secondary">Cancel</a>
+  </div>
+</form>
+{{end}}

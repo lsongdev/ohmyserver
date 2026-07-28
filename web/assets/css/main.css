@@ -1,0 +1,70 @@
+body {
+  /* overflow: hidden; */
+}
+
+main>nav {
+  top: 0;
+  position: sticky;
+  padding: 10px 0;
+  backdrop-filter: blur(3px);
+  border-radius: 10px;
+  display: inline-block;
+}
+
+aside>nav {
+  text-transform: uppercase;
+}
+
+.page-header {
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+  margin-bottom: 20px;
+  white-space: nowrap;
+  justify-content: space-between;
+}
+
+.page-header h2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.layout-content {
+  padding: 1em;
+}
+
+@media screen and (max-width: 768px) {
+  body {
+    overflow: initial;
+  }
+}
+
+
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.info-item {
+  padding: 12px 16px;
+  background: #f6f8fa;
+  border-radius: 8px;
+  border-left: 3px solid #0366d6;
+}
+
+.info-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.info-value {
+  color: #333;
+  font-weight: 600;
+  font-size: 15px;
+}

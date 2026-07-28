@@ -1,0 +1,65 @@
+{{define "page"}}
+
+<nav>
+  <a href="/docker/containers">containers</a>
+  <a href="/docker/images">images</a>
+  <a href="/docker/volumes">volumes</a>
+  <a href="/docker/networks">networks</a>
+  <a href="/docker/compose" class="active">compose</a>
+  <a href="/apps">apps</a>
+</nav>
+
+<div class="page-header">
+  <h2>Compose</h2>
+  <a href="/docker/compose/new" class="button" >+ New ComposeUp</a>
+</div>
+
+{{if .projects}}
+<div class="table-container">
+<table class="table table-striped table-bordered table-nowrap">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Status</th>
+      <!-- <th>ConfigFiles</th> -->
+      <th>Updated</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .projects}}
+    <tr>
+      <td>
+        <a href="/docker/compose/{{.Name}}"><strong>{{.Name}}</strong></a>
+      </td>
+      <td>
+        <span class="badge badge-{{.Status}}">{{.Status}}</span>
+      </td>
+      <!-- <td><code class="truncate">{{.ConfigFiles}}</code></td> -->
+      <td>{{formatDate .UpdatedAt}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+</div>
+{{else}}
+<p class="empty-message">No compose projects configured. <a href="/docker/compose/new">Create one</a></p>
+{{end}}
+
+<style> 
+.inline-form {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+.actions {
+  white-space: nowrap;
+}
+
+.actions a,
+.actions button {
+  margin-left: 8px;
+}
+</style>
+
+{{end}}

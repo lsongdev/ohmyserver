@@ -1,0 +1,35 @@
+{{define "page"}}
+
+<nav>
+    <a href="/acme/certificates">certificates</a>
+    
+    <a href="/acme/providers">authorities</a>
+    <a href="/acme/accounts">accounts</a>
+    <a href="/acme/orders">orders</a>
+</nav>
+
+<h2>Register Account</h2>
+
+<form method="POST" action="" class="form">
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input class="input" type="email" id="email" name="email" required placeholder="admin@example.com">
+        <small class="text-muted">Used for expiration notices and account recovery</small>
+    </div>
+
+    <div class="form-group form-check">
+<input type="checkbox" id="terms" name="terms" required>
+        <label for="terms">
+            I agree to the
+            <a href="{{.website}}" target="_blank">{{.provider.Name}}</a>'s
+            <a href="{{.termsOfService}}" target="_blank">Terms of Service</a>
+        </label>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="button button-primary">Create Account</button>
+        <a href="/acme/accounts" class="button button-secondary">Cancel</a>
+    </div>
+</form>
+ 
+{{end}}

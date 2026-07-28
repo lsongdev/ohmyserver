@@ -1,0 +1,266 @@
+{{define "page"}}
+
+<nav class="sub-nav">
+    <a href="/clash/{{.server.ID}}">Overview</a>
+    <a href="/clash/{{.server.ID}}/proxies">Proxies</a>
+    <a href="/clash/{{.server.ID}}/rules">Rules</a>
+    <a href="/clash/{{.server.ID}}/connections">Connections</a>
+    <a href="/clash/{{.server.ID}}/settings">Settings</a>
+</nav>
+
+<h2>{{.server.Name}}</h2>
+
+<div class="stats">
+    <div class="card">
+        <div class="stat-label">Mode</div>
+        <div class="stat-value">{{.config.Mode}}</div>
+    </div>
+    <div class="card">
+        <div class="stat-label">Mixed Port</div>
+        <div class="stat-value">{{.config.MixedPort}}</div>
+    </div>
+    <!-- <div class="card">
+        <div class="stat-label">Allow LAN</div>
+        <div class="stat-value">{{if .config.AllowLan}}Yes{{else}}No{{end}}</div>
+    </div> -->
+    <!-- <div class="card">
+        <div class="stat-label">Log Level</div>
+        <div class="stat-value">{{.config.LogLevel}}</div>
+    </div> -->
+    <div class="card">
+        <div class="stat-label">Proxies</div>
+        <div class="stat-value">{{.proxyCount}}</div>
+    </div>
+    <div class="card">
+        <div class="stat-label">Rules</div>
+        <div class="stat-value">{{.ruleCount}}</div>
+    </div>
+    <div class="card">
+        <div class="stat-label">Connections</div>
+        <div class="stat-value" id="conn-count">{{.connectionCount}}</div>
+    </div>
+</div>
+
+<div class="stats mt-10">
+    <div class="card">
+        <div class="stat-label">Upload Speed</div>
+        <div class="stat-value" id="upload-speed">-</div>
+    </div>
+    <div class="card">
+        <div class="stat-label">Download Speed</div>
+        <div class="stat-value" id="download-speed">-</div>
+    </div>
+    <div class="card">
+        <div class="stat-label">Upload Total</div>
+        <div class="stat-value" id="upload-total">{{formatBytes (toUint64 .uploadTotal)}}</div>
+    </div>
+    <div class="card">
+        <div class="stat-label">Download Total</div>
+        <div class="stat-value" id="download-total">{{formatBytes (toUint64 .downloadTotal)}}</div>
+    </div>
+</div>
+
+<h3 class="mt-10">Traffic Speed History</h3>
+
+<div class="chart-container">
+    <div class="chart-wrapper">
+        <canvas id="trafficChart"></canvas>
+    </div>
+</div>
+
+<style>
+.chart-container {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-top: 16px;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 300px;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+    var serverId = '{{.server.ID}}';
+    var chart = null;
+    var maxDataPoints = 60;
+
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        var k = 1024;
+        var sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        var i = Math.floor(Math.log(bytes) / Math.log(k));
+        return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+    }
+
+    function formatSpeed(bytesPerSecond) {
+        return formatBytes(bytesPerSecond) + '/s';
+    }
+
+    function formatTime(date) {
+        return date.toLocaleTimeString();
+    }
+
+    function formatSpeedForAxis(bytesPerSecond) {
+        if (bytesPerSecond === 0) return '0 B/s';
+        var k = 1024;
+        var sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s'];
+        var i = Math.floor(Math.log(bytesPerSecond) / Math.log(k));
+        return (bytesPerSecond / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+    }
+
+    function initChart() {
+        var ctx = document.getElementById('trafficChart').getContext('2d');
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Upload',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    },
+                    {
+                        label: 'Download',
+                        data: [],
+                        borderColor: '#f5576c',
+                        backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + formatSpeedForAxis(context.parsed.y);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Speed'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return formatSpeedForAxis(value);
+                            },
+                            maxTicksLimit: 6
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        },
+                        ticks: {
+                            maxTicksLimit: 10
+                        }
+                    }
+                },
+                animation: {
+                    duration: 300
+                }
+            }
+        });
+    }
+
+    function updateChart(uploadSpeed, downloadSpeed) {
+        var now = new Date();
+        var label = formatTime(now);
+
+        chart.data.labels.push(label);
+        chart.data.datasets[0].data.push(uploadSpeed);
+        chart.data.datasets[1].data.push(downloadSpeed);
+
+        if (chart.data.labels.length > maxDataPoints) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
+            chart.data.datasets[1].data.shift();
+        }
+
+        chart.update('none');
+    }
+
+    function connectSSE() {
+        var eventSource = new EventSource('/clash/' + serverId + '/stream');
+
+        eventSource.addEventListener('traffic', function(event) {
+            try {
+                var data = JSON.parse(event.data);
+                var uploadSpeed = data.uploadSpeed || 0;
+                var downloadSpeed = data.downloadSpeed || 0;
+
+                if (uploadSpeed > 0 || downloadSpeed > 0) {
+                    document.getElementById('upload-speed').textContent = formatSpeed(uploadSpeed);
+                    document.getElementById('download-speed').textContent = formatSpeed(downloadSpeed);
+                }
+
+                if (chart && (uploadSpeed > 0 || downloadSpeed > 0)) {
+                    updateChart(uploadSpeed, downloadSpeed);
+                }
+            } catch (e) {
+                console.error('Failed to parse traffic data:', e);
+            }
+        });
+
+        eventSource.addEventListener('connections', function(event) {
+            try {
+                var data = JSON.parse(event.data);
+                document.getElementById('upload-total').textContent = formatBytes(data.uploadTotal || 0);
+                document.getElementById('download-total').textContent = formatBytes(data.downloadTotal || 0);
+                var connEl = document.getElementById('conn-count');
+                if (connEl) {
+                    connEl.textContent = data.connCount || 0;
+                }
+            } catch (e) {
+                console.error('Failed to parse connections data:', e);
+            }
+        });
+
+        eventSource.addEventListener('error', function() {
+            console.error('SSE stream error');
+            eventSource.close();
+            setTimeout(connectSSE, 5000);
+        });
+    }
+
+    if (serverId) {
+        initChart();
+        connectSSE();
+    }
+})();
+</script>
+
+{{end}}

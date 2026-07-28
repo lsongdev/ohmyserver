@@ -1,0 +1,47 @@
+{{define "page"}}
+
+<nav>
+    <a href="/acme/certificates">certificates</a>
+    
+    <a href="/acme/providers">authorities</a>
+    <a href="/acme/accounts">accounts</a>
+    <a href="/acme/orders">orders</a>
+</nav>
+
+<div class="page-header">
+    <h2>Certificate Authorities</h2>
+    <a href="/acme/providers/new" class="button" >+ Add Provider</a>
+</div>
+
+{{if .providers}}
+<div class="table-container">
+<table class="table table-striped table-bordered table-nowrap">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Created</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .providers}}
+        <tr>
+            <td>
+                <a href="/acme/providers/{{.ID}}"><strong>{{.Name}}</strong></a>
+                <div><em>{{.DirectoryURL}}</em></div>
+            </td>
+            <td>{{.CreatedAt}}</td>
+            <td class="actions">
+                <a href="/acme/providers/{{.ID}}/register">Register</a>
+                <a href="/acme/providers/{{.ID}}" method="delete">Delete</a>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+</div>
+{{else}}
+<p class="empty-message">No ACME providers configured. <a href="/acme/providers/new">Add your first provider</a></p>
+{{end}}
+ 
+{{end}}

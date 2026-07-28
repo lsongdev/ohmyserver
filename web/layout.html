@@ -1,0 +1,132 @@
+{{define "layout"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-badge-bar-style" content="default">
+  <title>OhMyServer</title>
+  <style>
+    @import url("https://lsong.org/stylesheets/base.css");
+    @import url("https://lsong.org/stylesheets/icon.css");
+    @import url("https://lsong.org/stylesheets/list.css");
+    @import url("https://lsong.org/stylesheets/grid.css");
+    @import url("https://lsong.org/stylesheets/card.css");
+    @import url("https://lsong.org/stylesheets/flex.css");
+    @import url("https://lsong.org/stylesheets/menu.css");
+    @import url("https://lsong.org/stylesheets/button.css");
+    @import url("https://lsong.org/stylesheets/input.css");
+    @import url("https://lsong.org/stylesheets/select.css");
+    @import url("https://lsong.org/stylesheets/switch.css");
+    @import url("https://lsong.org/stylesheets/form.css");
+    @import url("https://lsong.org/stylesheets/utils.css");
+    @import url("https://lsong.org/stylesheets/badge.css");
+    @import url("https://lsong.org/stylesheets/table.css");
+    @import url("https://lsong.org/stylesheets/layout.css");
+    @import url("https://lsong.org/stylesheets/section.css");
+    @import url("https://lsong.org/stylesheets/navbar.css");
+    @import url("https://lsong.org/stylesheets/sidebar.css");
+    @import url("https://lsong.org/stylesheets/progressbar.css");
+    
+    @import url("/assets/css/stats.css");
+    @import url("/assets/css/main.css");
+  </style>
+</head>
+
+<body>
+  <div class="container layout-container layout-container-window">
+    <aside class="sidebar sm:sticky">
+      <header class="sidebar-header">
+        <a class="sidebar-brand" href="/">
+          <img src="https://lsong.org/icon.svg" width="24">
+          <h1>OhMyServer</h1>
+        </a>
+        <button class="sidebar-toggle" type="button" aria-label="Toggle menu">
+          <i class="fas fa-bars"></i>
+        </button>
+      </header>
+      <nav class="menu menu-vertical">
+        <li match="/"><a href="/"><i class="fas fa-tachometer-alt"></i> <span>dashboard</span></a></li>
+        <li match="/monitor"><a href="/monitor"><i class="fas fa-heartbeat"></i> <span>Monitor</span></a></li>
+        <!-- <li match="/llm"><a href="/llm/chat"><i class="fas fa-robot"></i> <span>ai assistant</span></a></li> -->
+        <li match="/apps"><a href="/apps"><i class="fas fa-store"></i> <span>app store</span></a></li>
+        <li match="/docker"><a href="/docker/containers"><i class="fab fa-docker"></i> <span>docker</span></a></li>
+        <li match="/dns"><a href="/dns"><i class="fas fa-sitemap"></i> <span>dns server</span></a></li>
+        <li match="/acme"><a href="/acme/certificates"><i class="fas fa-certificate"></i> <span>certificates</span></a></li>
+        <li match="/forward"><a href="/forward"><i class="fas fa-exchange-alt"></i> <span>port forward</span></a></li>
+        <li match="/web"><a href="/web"><i class="fas fa-exchange-alt"></i> <span>web server</span></a></li>
+        <li match="/clash"><a href="/clash"><i class="fas fa-network-wired"></i> <span>clash</span></a></li>
+        <li match="/openwrt"><a href="/openwrt"><i class="fas fa-wifi"></i> <span>openwrt</span></a></li>
+        <li match="/speedtest"><a href="/speedtest"><i class="fas fa-tachometer-alt"></i> <span>speedtest</span></a></li>
+        <li match="/yeelight"><a href="/yeelight"><i class="fas fa-lightbulb"></i> <span>yeelight</span></a></li>
+        <li match="/terminal"><a href="/terminal"><i class="fas fa-terminal"></i> <span>terminal</span></a></li>
+        <li match="/ssh"><a href="/ssh/servers"><i class="fas fa-server"></i> <span>ssh servers</span></a></li>
+        <li match="/ipmi"><a href="/ipmi"><i class="fas fa-server"></i> <span>ipmi servers</span></a></li>
+        <li match="/idrac"><a href="/idrac"><i class="fas fa-hdd"></i> <span>idrac servers</span></a></li>
+        <li match="/esxi"><a href="/esxi"><i class="fas fa-desktop"></i> <span>vmware esxi</span></a></li>
+        <li match="/pve"><a href="/pve"><i class="fas fa-server"></i> <span>proxmox ve</span></a></li>
+        <li match="/disks"><a href="/disks"><i class="fas fa-hdd"></i> <span>storage</span></a></li>
+        <li match="/cron"><a href="/cron"><i class="fas fa-clock"></i> <span>cron jobs</span></a></li>
+        <li match="/files"><a href="/files"><i class="fas fa-folder-open"></i> <span>file manager</span></a></li>
+        <!-- <li match="/widgets"><a href="/widgets"><i class="fas fa-th"></i> <span>widgets</span></a></li> -->
+        <li match="/settings"><a href="/settings"><i class="fas fa-cog"></i> <span>settings</span></a></li>
+        <li match="/about"><a href="/about"><i class="fas fa-info-circle"></i> <span>about</span></a></li>
+        <li><a href="/logout"><i class="fas fa-sign-out-alt"></i> <span>logout</span></a></li>
+      </nav>
+    </aside>
+
+    <main class="layout-content layout-content-scroll">
+      {{template "page" .}}
+    </main>
+  </div>
+
+  <!-- Common utilities -->
+  <script src="/assets/js/utils.js"></script>
+  <script>
+    (function() {
+      var STORAGE_KEY = 'nav-scroll-pos';
+      var menu = document.querySelector('nav.menu');
+      var nav = document.querySelector('.sidebar');
+      var toggle = document.querySelector('.sidebar-toggle');
+
+      // Toggle navigation on mobile
+      if (toggle && nav) {
+        toggle.addEventListener('click', function() {
+          nav.classList.toggle('sidebar-open');
+        });
+      }
+
+      // 恢复滚动位置
+      var savedPos = localStorage.getItem(STORAGE_KEY);
+      if (savedPos !== null && menu) {
+        menu.scrollTop = parseInt(savedPos, 10);
+      }
+
+      // 高亮当前导航
+      var path = window.location.pathname;
+      var items = document.querySelectorAll('.menu-vertical li[match]');
+      items.forEach(function(li) {
+        var pattern = li.getAttribute('match');
+        if (path === pattern || (pattern !== '/' && path.startsWith(pattern + '/'))) {
+          li.classList.add('menu-active');
+        }
+      });
+
+      // 点击链接时保存滚动位置
+      document.querySelectorAll('.menu-vertical a').forEach(function(link) {
+        link.addEventListener('click', function() {
+          if (menu) {
+            localStorage.setItem(STORAGE_KEY, menu.scrollTop);
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+
+</html>
+
+{{end}}

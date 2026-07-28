@@ -1,0 +1,124 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>{{.server.Name}}</h2>
+    <div>
+        <a href="/esxi/{{.server.ID}}/edit" >Edit</a>
+        <a href="/esxi/{{.server.ID}}" method="delete" >Delete</a>
+    </div>
+</div>
+
+{{if .connectionError}}
+<div class="alert alert-error">
+    <strong>Connection Error:</strong> {{.connectionError}}
+</div>
+{{end}}
+
+<div>
+    <h3>Configuration</h3>
+    <div class="table-container">
+    <table class="table table-bordered">
+        <tr>
+            <th>Name</th>
+            <td>{{.server.Name}}</td>
+        </tr>
+        <tr>
+            <th>Host</th>
+            <td>{{.server.Host}}:{{.server.Port}}</td>
+        </tr>
+        <tr>
+            <th>Username</th>
+            <td>{{.server.Username}}</td>
+        </tr>
+        <tr>
+            <th>TLS Verification</th>
+            <td>
+                {{if .server.Insecure}}
+                <span class="text-muted">Disabled (self-signed)</span>
+                {{else}}
+                <span>Enabled</span>
+                {{end}}
+            </td>
+        </tr>
+        <tr>
+            <th>Created</th>
+            <td>{{.server.CreatedAt}}</td>
+        </tr>
+        <tr>
+            <th>Updated</th>
+            <td>{{.server.UpdatedAt}}</td>
+        </tr>
+    </table>
+    </div>
+</div>
+
+{{if .hosts}}
+<div>
+    <h3>ESXi Hosts</h3>
+    <div class="table-container">
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Version</th>
+                <th>CPU</th>
+                <th>Memory</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .hosts}}
+            <tr>
+                <td>{{.Name}}</td>
+                <td>{{.Version}}</td>
+                <td>{{.CPU}} threads</td>
+                <td>{{.Memory}} MB</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    </div>
+</div>
+{{end}}
+
+{{if .vms}}
+<h3>Virtual Machines ({{len .vms}})</h3>
+<div class="table-container">
+<table class="table table-striped table-bordered table-nowrap">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Guest OS</th>
+            <th>Power State</th>
+            <th>CPU</th>
+            <th>Memory</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .vms}}
+        <tr>
+            <td>
+                <a href="/ssh/servers/new?name={{.Name}}&host={{.IPAddress}}"><strong>{{.Name}}</strong></a>
+                <div><em><code>{{.IPAddress}}</code></em></div>
+            </td>
+            <td>{{.GuestOS}}</td>
+            <td>
+                {{if eq .PowerState "poweredOn"}}
+                <span class="badge badge-active">running</span>
+                {{else if eq .PowerState "poweredOff"}}
+                <span class="badge badge-inactive">stopped</span>
+                {{else}}
+                <span class="badge">{{.PowerState}}</span>
+                {{end}}
+            </td>
+            <td>{{.CPU}} vCPU</td>
+            <td>{{.Memory}} MB</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+</div>
+{{else}}
+<p class="empty-message">No virtual machines found on this server</p>
+{{end}}
+
+{{end}}

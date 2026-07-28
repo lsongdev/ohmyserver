@@ -1,0 +1,36 @@
+{{define "page"}}
+<nav class="sub-nav">
+  <a href="/llm/chat">Chat</a>
+  <a href="/llm/providers">Providers</a>
+  <a href="/llm/models">Models</a>
+  <a href="/llm/keys">API Keys</a>
+</nav>
+
+<div class="page-header">
+  <h2>API Keys</h2>
+  <a href="/llm/keys/new" class="button button-primary">New Key</a>
+</div>
+
+<div class="table-container">
+  <table class="table table-striped table-hover table-bordered table-nowrap">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Key</th>
+        <th>Created</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .keys}}
+      <tr>
+        <td>{{.Name}}</td>
+        <td><code>{{.Key}}</code></td>
+        <td>{{.CreatedAt.Format "2006-01-02 15:04:05"}}</td>
+        <td><a method="delete" href="/llm/keys/{{.ID}}">delete</a></td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}

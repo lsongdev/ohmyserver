@@ -1,0 +1,170 @@
+{{define "page"}}
+
+<nav class="sub-nav">
+    <a href="/openwrt/{{.server.ID}}">Overview</a>
+    <a href="/openwrt/{{.server.ID}}/network">Network</a>
+    <a href="/openwrt/{{.server.ID}}/dhcp">DHCP</a>
+    
+    <a href="/openwrt/{{.server.ID}}/packages">Packages</a>
+    <a href="/openwrt/{{.server.ID}}/firewall">Firewall</a>
+    <a href="/openwrt/{{.server.ID}}/edit">Settings</a>
+</nav>
+
+<div class="page-header">
+  <h2>Network Interfaces - {{.server.Name}}</h2>
+  <div class="actions">
+    <a href="/openwrt/{{.server.ID}}/edit" class="button">Edit</a>
+    <a href="/openwrt/{{.server.ID}}" method="delete" class="button button-danger">Delete</a>
+  </div>
+</div>
+
+{{if .interfaces}}
+<div class="interface-grid">
+  {{range .interfaces}}
+  <div class="interface-card card">
+    <div class="interface-header">
+      <span class="interface-name">{{.Interface}}</span>
+      <span class="interface-proto">{{.Proto}}</span>
+    </div>
+    <div class="interface-details">
+      {{if .IPAddr}}<div class="detail"><span class="label">IPv4:</span> {{.IPAddr}}/{{.Netmask}}</div>{{end}}
+      {{if .IP6Addr}}<div class="detail"><span class="label">IPv6:</span> {{.IP6Addr}}</div>{{end}}
+      {{if .Gateway}}<div class="detail"><span class="label">Gateway:</span> {{.Gateway}}</div>{{end}}
+      {{if .Gateway6}}<div class="detail"><span class="label">Gateway6:</span> {{.Gateway6}}</div>{{end}}
+      {{if .PTPAddress}}<div class="detail"><span class="label">PTP:</span> {{.PTPAddress}}</div>{{end}}
+      {{if .DNS}}<div class="detail"><span class="label">DNS:</span> {{range $i, $dns := .DNS}}{{if $i}},
+        {{end}}{{$dns}}{{end}}</div>{{end}}
+      {{if .Uptime}}<div class="detail"><span class="label">Uptime:</span> {{formatUptime .Uptime}}</div>{{end}}
+      <div class="detail"><span class="label">Status:</span>
+        {{if .Up}}<span class="badge" style="background: #d4edda; color: #155724;">Up</span>{{else}}<span
+          class="badge" style="background: #f8d7da; color: #721c24;">Down</span>{{end}}
+      </div>
+    </div>
+  </div>
+  {{end}}
+</div>
+{{end}}
+
+{{if .wifi}}
+<div class="">
+  <h3>WiFi Networks</h3>
+  <div class="wifi-grid">
+    {{range .wifi}}
+    <div class="wifi-card {{if .Disabled}}wifi-disabled{{end}}">
+      <div class="wifi-header">
+        <span class="wifi-ssid">{{if .SSID}}{{.SSID}}{{else}}Unnamed{{end}}</span>
+        {{if .Disabled}}<span class="wifi-badge disabled">Disabled</span>
+        {{else}}<span class="wifi-badge active">Active</span>{{end}}
+      </div>
+      <div class="wifi-details">
+        <div class="detail"><span class="label">Device:</span> {{.Device}}</div>
+        <div class="detail"><span class="label">Mode:</span> {{.Mode}}</div>
+        <div class="detail"><span class="label">Channel:</span> {{.Channel}}</div>
+        <div class="detail"><span class="label">Encryption:</span> {{.Encryption}}</div>
+      </div>
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}
+
+<style>
+  .interface-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+  .interface-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .interface-name {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .interface-proto {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+
+  .interface-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: #586069;
+  }
+
+  .interface-details .label {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .wifi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 12px;
+  }
+
+  .wifi-card {
+    padding: 16px;
+    background: white;
+    border-radius: 8px;
+    border: 2px solid #e1e4e8;
+  }
+
+  .wifi-card.wifi-disabled {
+    opacity: 0.7;
+  }
+
+  .wifi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .wifi-ssid {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .wifi-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .wifi-badge.active {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .wifi-badge.disabled {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .wifi-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: #586069;
+  }
+
+  .wifi-details .label {
+    font-weight: 600;
+    color: #333;
+  }
+</style>
+{{end}}

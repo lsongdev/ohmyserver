@@ -1,0 +1,74 @@
+{{define "page"}}
+
+<nav class="sub-nav">
+  <a href="/llm/chat">Chat</a>
+  <a href="/llm/providers">Providers</a>
+  <a href="/llm/models">Models</a>
+  <a href="/llm/keys">API Keys</a>
+</nav>
+<div class="page-header">
+  <h2>Add LLM Model</h2>
+</div>
+
+{{if .error}}
+<div class="alert alert-error">{{.error}}</div>
+{{end}}
+
+<form method="post">
+  <div class="form-group">
+    <label>Provider</label>
+    <select name="provider_id" required>
+      <!-- <option value="">Select Provider</option> -->
+      {{range .providers}}
+      <option value="{{.ID}}" {{if eq $.provider_id (printf "%d" .ID)}}selected{{end}}>{{.Name}}</option>
+      {{end}}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Model Name</label>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <input type="text" name="model_name" list="model-names" value="{{if .model_name}}{{.model_name}}{{end}}" required
+        style="flex: 1;">
+      <datalist id="model-names">
+        {{range .models}}
+        <option value="{{if .MappedName}}{{.MappedName}}{{else}}{{.Name}}{{end}}">
+          {{end}}
+          {{range .fetched}}
+        <option value="{{.}}">
+          {{end}}
+      </datalist>
+      <button type="button" class="button button-secondary" onclick="fetchModels()">Fetch Model</button>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Mapped Name</label>
+    <input type="text" name="mapped_name" value="{{if .mapped_name}}{{.mapped_name}}{{end}}"
+      placeholder="Optional: Custom name for this model">
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="button button-primary">Add</button>
+    <a href="/llm/models" class="button button-secondary">Cancel</a>
+  </div>
+</form>
+<script>
+  async function fetchModels() {
+    const providerSelect = document.querySelector('select[name="provider_id"]');
+    const providerId = providerSelect.value;
+    if (!providerId) {
+      alert('Please select a provider first');
+      return;
+    }
+    const res = await fetch(`/llm/providers/${providerId}/models`);
+    const models = await res.json();
+    var dl = document.getElementById('model-names');
+    models.forEach(function (m) {
+      var opt = document.createElement('option');
+      opt.value = m.id;
+      dl.appendChild(opt);
+    });
+  }
+</script>
+{{end}}

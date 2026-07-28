@@ -1,0 +1,171 @@
+{{define "page"}}
+<style>
+  .stat-title {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .stat-value.download { color: #10b981; }
+  .stat-value.upload { color: #3b82f6; }
+  .stat-value.ping { color: #f59e0b; }
+</style>
+
+<div class="page-header">
+  <h2>Speedtest</h2>
+  <a href="/speedtest/new" class="button button-primary">Run Test</a>
+</div>
+
+<div id="stats-cards" class="stats-grid grid grid-3" style="display: none;">
+  <div class="card">
+    <div class="stat-title">Download</div>
+    <div class="stat-value download" id="latest-download">--<small> Mbps</small></div>
+    <div class="stat-detail" id="latest-download-server">--</div>
+  </div>
+  <div class="card">
+    <div class="stat-title">Upload</div>
+    <div class="stat-value upload" id="latest-upload">--<small> Mbps</small></div>
+    <div class="stat-detail" id="latest-upload-server">--</div>
+  </div>
+  <div class="card">
+    <div class="stat-title">Ping</div>
+    <div class="stat-value ping" id="latest-ping">--<small> ms</small></div>
+    <div class="stat-detail" id="latest-jitter">Jitter: -- ms</div>
+  </div>
+</div>
+
+<div class="chart-container" id="history-chart" style="display: none;">
+  <h3>Speed History</h3>
+  <div class="chart-wrapper">
+    <canvas id="speedChart"></canvas>
+  </div>
+</div>
+
+<h3>Test Records</h3>
+<div class="table-container">
+  <table class="table table-nowrap">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Server</th>
+        <th>Download</th>
+        <th>Upload</th>
+        <th>Ping</th>
+        <th>Jitter</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="records-body">
+      <tr><td colspan="8">Loading...</td></tr>
+    </tbody>
+  </table>
+</div>
+<div id="no-records" class="no-results" style="display: none;">
+  <p>No speedtest results yet.</p>
+  <p><a href="/speedtest/new" class="button button-primary">Run Test</a></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  let chart = null;
+
+  async function loadRecords() {
+    try {
+      const response = await fetch('/speedtest/records');
+      const results = await response.json();
+
+      if (!results || results.length === 0) {
+        document.getElementById('no-records').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('stats-cards').style.display = 'grid';
+      document.getElementById('history-chart').style.display = 'block';
+
+      const latest = results[0];
+      document.getElementById('latest-download').innerHTML = latest.download.toFixed(1) + ' <small>Mbps</small>';
+      document.getElementById('latest-download-server').textContent = latest.server_name;
+      document.getElementById('latest-upload').innerHTML = latest.upload.toFixed(1) + ' <small>Mbps</small>';
+      document.getElementById('latest-upload-server').textContent = latest.server_name;
+      document.getElementById('latest-ping').innerHTML = latest.ping.toFixed(0) + ' <small>ms</small>';
+      document.getElementById('latest-jitter').textContent = 'Jitter: ' + latest.jitter.toFixed(1) + ' ms';
+
+      const tbody = document.getElementById('records-body');
+      tbody.innerHTML = results.map(r => `
+        <tr>
+          <td>${new Date(r.created_at).toLocaleString()}</td>
+          <td>${r.type}</td>
+          <td>${r.server_name}</td>
+          <td>${r.download.toFixed(1)} Mbps</td>
+          <td>${r.upload.toFixed(1)} Mbps</td>
+          <td>${r.ping.toFixed(0)} ms</td>
+          <td>${r.jitter.toFixed(1)} ms</td>
+          <td>
+            <a method="delete" href="/speedtest/${r.id}/delete">delete</a>
+          </td>
+        </tr>
+      `).join('');
+
+      createChart(results);
+    } catch (error) {
+      console.error('Failed to load records:', error);
+    }
+  }
+
+  function createChart(results) {
+    const ctx = document.getElementById('speedChart');
+    if (!ctx) return;
+
+    const labels = results.map(r => new Date(r.created_at).toLocaleDateString());
+    const downloadData = results.map(r => r.download);
+    const uploadData = results.map(r => r.upload);
+
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Download (Mbps)',
+            data: downloadData,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.3
+          },
+          {
+            label: 'Upload (Mbps)',
+            data: uploadData,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            fill: true,
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Mbps' }
+          }
+        },
+        plugins: {
+          legend: { position: 'top' }
+        }
+      }
+    });
+  }
+
+  loadRecords();
+</script>
+{{end}}

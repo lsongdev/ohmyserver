@@ -1,0 +1,38 @@
+{{define "page" }}
+
+<nav>
+  <a href="/docker/containers">containers</a>
+  <a href="/docker/images">images</a>
+  <a href="/docker/volumes">volumes</a>
+  <a href="/docker/networks">networks</a>
+  <a href="/docker/compose">compose</a>
+  <a href="/apps">apps</a>
+</nav>
+
+<h2>Create Container</h2>
+<form action="/docker/containers" method="POST" class="form">
+  <div class="form-group">
+    <label for="name">Container Name</label>
+    <input type="text" class="input" id="name" name="name" placeholder="myapp" required>
+  </div>
+  <div class="form-group">
+    <label for="image">Image Name</label>
+    <input type="text" class="input" id="image" name="image" list="images" placeholder="alpine" required>
+    <datalist id="images">
+      {{range .imageNames}}
+      <option value="{{.}}"></option>
+      {{end}}
+    </datalist>
+  </div>
+  <div class="form-group">
+    <label for="command">Command (optional)</label>
+    <input type="text" class="input" id="command" name="command" placeholder="e.g., tail -f /dev/null">
+    <small>Leave empty to use image default command</small>
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="button">Create</button>
+    <a href="/docker/containers" class="button">Cancel</a>
+  </div>
+</form>
+
+{{end}}

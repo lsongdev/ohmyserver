@@ -1,0 +1,45 @@
+{{define "page"}}
+
+<nav class="sub-nav">
+  <a href="/llm/chat">Chat</a>
+  <a href="/llm/providers">Providers</a>
+  <a href="/llm/models">Models</a>
+  <a href="/llm/keys">API Keys</a>
+</nav>
+
+<div class="page-header">
+  <h2>LLM Chat</h2>
+  <form method="post" action="/llm/chat/new" class="flex flex-x flex-center gap-5">
+    <select name="model_id" required class="input">
+      {{range .models}}
+      <option value="{{.ID}}">{{if .MappedName}}{{.MappedName}}{{else}}{{.Name}}{{end}}</option>
+      {{end}}
+    </select>
+    <button type="submit" class="button button-primary">Start New Chat</button>
+  </form>
+</div>
+
+{{if .sessions}}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Model</th>
+      <th>Created</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .sessions}}
+    <tr>
+      <td>{{.Title}}</td>
+      <td>{{.ModelName}}</td>
+      <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+      <td><a href="/llm/chat/{{.ID}}" >Open</a></td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{end}}
+
+{{end}}

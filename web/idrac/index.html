@@ -1,0 +1,39 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>Dell iDRAC Servers</h2>
+    <a href="/idrac/new" class="button">+ Add Server</a>
+</div>
+
+{{if .servers}}
+<div class="table-container">
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Last Updated</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .servers}}
+        <tr>
+            <td>
+                <a href="/idrac/{{.ID}}"><b>{{.Name}}</b></a>
+                <div><em>{{.Host}}:{{.Port}}</em></div>
+            </td>
+            <td>{{formatDate .UpdatedAt}}</td>
+            <td class="actions">
+                <a href="/idrac/{{.ID}}/edit">edit</a>
+                <a href="/idrac/{{.ID}}" method="delete">delete</a>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+</div>
+{{else}}
+<p class="empty-message">No iDRAC servers configured. <a href="/idrac/new">Add one</a></p>
+{{end}}
+
+{{end}}

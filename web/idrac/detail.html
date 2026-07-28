@@ -1,0 +1,581 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>iDRAC Server: {{.server.Name}}</h2>
+    <div class="actions">
+        <a href="/idrac/{{.server.ID}}/edit" class="button">Edit</a>
+        <a method="delete" href="/idrac/{{.server.ID}}" class="button button-danger" onclick="return confirm('Delete this iDRAC server?')">Delete</a>
+    </div>
+</div>
+
+{{if .error}}
+<div class="error-message">{{.error}}</div>
+{{end}}
+
+{{if .system}}
+<div class="section-card">
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Name</div>
+            <div class="info-value">{{.server.Name}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Host</div>
+            <div class="info-value">{{.server.Host}}:{{.server.Port}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Model</div>
+            <div class="info-value">{{if .system.Model}}{{.system.Model}}{{else}}-{{end}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Manufacturer</div>
+            <div class="info-value">{{if .system.Manufacturer}}{{.system.Manufacturer}}{{else}}-{{end}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Serial Number</div>
+            <div class="info-value">{{if .system.SerialNumber}}{{.system.SerialNumber}}{{else}}-{{end}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Asset Tag</div>
+            <div class="info-value">{{if .system.AssetTag}}{{.system.AssetTag}}{{else}}-{{end}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Hostname</div>
+            <div class="info-value">{{if .system.HostName}}{{.system.HostName}}{{else}}-{{end}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">BIOS Version</div>
+            <div class="info-value">{{if .system.BiosVersion}}{{.system.BiosVersion}}{{else}}-{{end}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">iDRAC Version</div>
+            <div class="info-value"><span class="version-badge">iDRAC {{.server.Version}}</span></div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Username</div>
+            <div class="info-value">{{.server.Username}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Memory</div>
+            <div class="info-value">{{if .system.MemoryGiB}}{{.system.MemoryGiB}} GB{{else}}-{{end}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Processors</div>
+            <div class="info-value">
+                {{if .system.ProcessorModel}}
+                {{.system.ProcessorCount}}x {{.system.ProcessorModel}}
+                {{if .system.ProcessorThreads}}({{.system.ProcessorThreads}} threads){{end}}
+                {{else}}-{{end}}
+            </div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Status</div>
+            <div class="info-value">
+                <span class="badge badge-{{.server.Status}}">{{.server.Status}}</span>
+            </div>
+        </div>
+ 
+        <div class="info-item">
+            <div class="info-label">Description</div>
+            <div class="info-value">{{if .server.Description}}{{.server.Description}}{{else}}-{{end}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Created</div>
+            <div class="info-value">{{formatDate .server.CreatedAt}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Last Updated</div>
+            <div class="info-value">{{formatDate .server.UpdatedAt}}</div>
+        </div>
+    </div>
+</div>
+{{else}}
+<div class="section-card">
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Name</div>
+            <div class="info-value">{{.server.Name}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Host</div>
+            <div class="info-value">{{.server.Host}}:{{.server.Port}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">iDRAC Version</div>
+            <div class="info-value"><span class="version-badge">iDRAC {{.server.Version}}</span></div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Username</div>
+            <div class="info-value">{{.server.Username}}</div>
+        </div>
+ 
+        <div class="info-item">
+            <div class="info-label">Description</div>
+            <div class="info-value">{{if .server.Description}}{{.server.Description}}{{else}}-{{end}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Created</div>
+            <div class="info-value">{{formatDate .server.CreatedAt}}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Last Updated</div>
+            <div class="info-value">{{formatDate .server.UpdatedAt}}</div>
+        </div>
+    </div>
+</div>
+{{end}}
+
+ 
+{{if .system}}
+<div class="section-card">
+    <h3>Power Control</h3>
+    <div class="power-actions">
+        <div class="power-state-display">
+        <span class="power-badge {{if eq .powerState "On"}}power-on{{else}}power-off{{end}}">{{.powerState}}</span>
+    </div>
+
+        <form method="POST" action="/idrac/{{.server.ID}}/power" class="power-form">
+            <input type="hidden" name="action" value="on">
+            <button type="submit" class="btn-power btn-power-on" title="Power On">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+                Power On
+            </button>
+        </form>
+        <form method="POST" action="/idrac/{{.server.ID}}/power" class="power-form">
+            <input type="hidden" name="action" value="off">
+            <button type="submit" class="btn-power btn-power-off" title="Force Off">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="6" y="6" width="12" height="12" rx="2"/>
+                </svg>
+                Force Off
+            </button>
+        </form>
+        <form method="POST" action="/idrac/{{.server.ID}}/power" class="power-form">
+            <input type="hidden" name="action" value="graceful">
+            <button type="submit" class="btn-power btn-power-graceful" title="Graceful Shutdown">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v10l3-3M5.6 5.6A10 10 0 0012 22a10 10 0 0010-10"/>
+                </svg>
+                Graceful
+            </button>
+        </form>
+        <form method="POST" action="/idrac/{{.server.ID}}/power" class="power-form">
+            <input type="hidden" name="action" value="restart">
+            <button type="submit" class="btn-power btn-power-restart" title="Force Restart">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23,4 23,10 17,10"/>
+                    <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+                </svg>
+                Restart
+            </button>
+        </form>
+        <form method="POST" action="/idrac/{{.server.ID}}/power" class="power-form">
+            <input type="hidden" name="action" value="pushbutton">
+            <button type="submit" class="btn-power btn-power-pushbutton" title="Push Power Button">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Push Button
+            </button>
+        </form>
+    </div>
+</div>
+{{end}}
+
+{{if or .cpuTempSensors .otherTempSensors .fanSensors .otherSensors}}
+<div class="section-card">
+    <h3>Hardware Sensors</h3>
+
+    {{if .cpuTempSensors}}
+    <div class="sensor-group">
+        <h4>🔥 CPU Temperature</h4>
+        <div class="sensor-grid">
+            {{range .cpuTempSensors}}
+            <div class="sensor-card {{if eq .Health "OK"}}sensor-ok{{else if eq .Health "Warning"}}sensor-warning{{else if eq .Health "Critical"}}sensor-critical{{end}}">
+                <div class="sensor-header">
+                    <span class="sensor-name">{{.Name}}</span>
+                    {{if .Health}}
+                    <span class="sensor-badge health-{{.Health}}">{{.Health}}</span>
+                    {{else}}
+                    <span class="sensor-badge state-{{.State}}">{{.State}}</span>
+                    {{end}}
+                </div>
+                {{if .ReadingUnits}}
+                <div class="sensor-value">
+                    {{.Reading}}
+                    <span class="sensor-unit">{{.ReadingUnits}}</span>
+                </div>
+                {{end}}
+            </div>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+
+    {{if .otherTempSensors}}
+    <div class="sensor-group">
+        <h4>🌡️ Other Temperature</h4>
+        <div class="sensor-grid">
+            {{range .otherTempSensors}}
+            <div class="sensor-card {{if eq .Health "OK"}}sensor-ok{{else if eq .Health "Warning"}}sensor-warning{{else if eq .Health "Critical"}}sensor-critical{{end}}">
+                <div class="sensor-header">
+                    <span class="sensor-name">{{.Name}}</span>
+                    {{if .Health}}
+                    <span class="sensor-badge health-{{.Health}}">{{.Health}}</span>
+                    {{else}}
+                    <span class="sensor-badge state-{{.State}}">{{.State}}</span>
+                    {{end}}
+                </div>
+                {{if .ReadingUnits}}
+                <div class="sensor-value">
+                    {{.Reading}}
+                    <span class="sensor-unit">{{.ReadingUnits}}</span>
+                </div>
+                {{end}}
+            </div>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+
+    {{if .fanSensors}}
+    <div class="sensor-group">
+        <h4>💨 Fans</h4>
+        <div class="sensor-grid">
+            {{range .fanSensors}}
+            <div class="sensor-card {{if eq .Health "OK"}}sensor-ok{{else if eq .Health "Warning"}}sensor-warning{{else if eq .Health "Critical"}}sensor-critical{{end}}">
+                <div class="sensor-header">
+                    <span class="sensor-name">{{.Name}}</span>
+                    {{if .Health}}
+                    <span class="sensor-badge health-{{.Health}}">{{.Health}}</span>
+                    {{else}}
+                    <span class="sensor-badge state-{{.State}}">{{.State}}</span>
+                    {{end}}
+                </div>
+                {{if .ReadingUnits}}
+                <div class="sensor-value">
+                    {{.Reading}}
+                    <span class="sensor-unit">{{.ReadingUnits}}</span>
+                </div>
+                {{end}}
+            </div>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+
+    {{if .otherSensors}}
+    <div class="sensor-group">
+        <h4>📊 Other Sensors</h4>
+        <div class="sensor-grid">
+            {{range .otherSensors}}
+            <div class="sensor-card {{if eq .Health "OK"}}sensor-ok{{else if eq .Health "Warning"}}sensor-warning{{else if eq .Health "Critical"}}sensor-critical{{end}}">
+                <div class="sensor-header">
+                    <span class="sensor-name">{{.Name}}</span>
+                    {{if .Health}}
+                    <span class="sensor-badge health-{{.Health}}">{{.Health}}</span>
+                    {{else}}
+                    <span class="sensor-badge state-{{.State}}">{{.State}}</span>
+                    {{end}}
+                </div>
+                {{if .ReadingUnits}}
+                <div class="sensor-value">
+                    {{.Reading}}
+                    <span class="sensor-unit">{{.ReadingUnits}}</span>
+                </div>
+                {{end}}
+            </div>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}
+
+
+<style>
+    .version-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 700;
+        background: #e3f2fd;
+        color: #1565c0;
+    }
+ 
+
+    .power-state-display {
+        display: flex;
+        justify-content: center;
+    }
+
+    .power-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .power-badge.power-on {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .power-badge.power-off {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .preview-container {
+        border-radius: 8px;
+        overflow: hidden;
+        border: 2px solid #e1e4e8;
+        background: #f6f8fa;
+    }
+
+    .preview-image {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .sensor-group {
+        margin-bottom: 24px;
+        padding-bottom: 24px;
+        border-bottom: 2px solid #e1e4e8;
+    }
+
+    .sensor-group:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .sensor-group h4 {
+        margin-bottom: 12px;
+        color: #333;
+        font-size: 16px;
+    }
+
+    .sensor-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+    }
+
+    .sensor-card {
+        padding: 16px;
+        border-radius: 10px;
+        border: 2px solid #e1e4e8;
+        background: white;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .sensor-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .sensor-card.sensor-ok {
+        border-color: #28a745;
+    }
+
+    .sensor-card.sensor-warning {
+        border-color: #ffc107;
+        background: #fffdf5;
+    }
+
+    .sensor-card.sensor-critical {
+        border-color: #dc3545;
+        background: #fff5f5;
+    }
+
+    .sensor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        gap: 8px;
+    }
+
+    .sensor-name {
+        font-weight: 600;
+        color: #333;
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .sensor-badge {
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .sensor-badge.health-OK {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .sensor-badge.health-Warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .sensor-badge.health-Critical {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .sensor-badge.state-Enabled {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .sensor-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #0366d6;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        line-height: 1.2;
+    }
+
+    .sensor-unit {
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+        margin-left: 4px;
+    }
+
+    .power-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .power-form {
+        display: inline;
+    }
+
+    .btn-power {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: 1px solid #e1e4e8;
+        background: white;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-power:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-power-on {
+        color: #155724;
+        border-color: #28a745;
+    }
+
+    .btn-power-on:hover {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-power-off {
+        color: #721c24;
+        border-color: #dc3545;
+    }
+
+    .btn-power-off:hover {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-power-graceful {
+        color: #856404;
+        border-color: #ffc107;
+    }
+
+    .btn-power-graceful:hover {
+        background: #ffc107;
+        color: #333;
+    }
+
+    .btn-power-restart {
+        color: #004085;
+        border-color: #0366d6;
+    }
+
+    .btn-power-restart:hover {
+        background: #0366d6;
+        color: white;
+    }
+
+    .btn-power-pushbutton {
+        color: #383d41;
+        border-color: #6c757d;
+    }
+
+    .btn-power-pushbutton:hover {
+        background: #6c757d;
+        color: white;
+    }
+
+    .actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #333;
+        background: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        background: #e1e4e8;
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+        border: none;
+    }
+
+    .btn-danger:hover {
+        background: #c82333;
+    }
+
+    @media (max-width: 768px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .power-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+
+{{end}}

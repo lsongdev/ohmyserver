@@ -1,0 +1,47 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>IPMI Servers</h2>
+    <div class="ipmi-actions">
+        <a href="/ipmi/new" class="button">+ Add Server</a>
+    </div>
+</div>
+
+{{if .servers}}
+<div class="table-container">
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Last Updated</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .servers}}
+        <tr>
+            <td>
+                <a href="/ipmi/{{.ID}}"><strong>{{.Name}}</strong></a>
+                <div><em>{{.Username}}@{{.BmcIP}}</em></div>
+            </td>
+            <td>{{formatDate .UpdatedAt}}</td>
+            <td class="actions">
+                <a href="/ipmi/{{.ID}}/edit" title="edit">edit</a>
+                <a method="delete" href="/ipmi/{{.ID}}" title="delete">delete</a>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+</div>
+{{else}}
+<p class="empty-message">No IPMI servers configured. <a href="/ipmi/new">Create one</a></p>
+{{end}}
+
+<style>
+    .ipmi-actions {
+        display: flex;
+        gap: 10px;
+    }
+</style>
+{{end}}

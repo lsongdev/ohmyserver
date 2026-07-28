@@ -1,0 +1,17 @@
+{{define "page"}}
+
+<h2>Login</h2>
+
+<form method="POST">
+  <div class="form-group">
+    <label for="access_key">Access Key</label>
+    <input type="password" id="access_key" name="access_key" placeholder="Enter your access key" required autofocus>
+  </div>
+  {{if .errorMessage}}
+  <div class="error-message">{{.errorMessage}}</div>
+  {{end}}
+  <div class="form-actions">
+    <button type="submit" class="button button-primary" style="width:100%;">Login</button>
+  </div>
+</form>
+{{end}}

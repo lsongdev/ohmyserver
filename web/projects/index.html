@@ -1,0 +1,33 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>Projects</h2>
+    <a href="/projects/new" >New Project</a>
+</div>
+
+{{if .projects}}
+<div class="table-container">
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Last Updated</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .projects}}
+        <tr>
+            <td><a href="/projects/{{.ID}}">{{.Name}}</a></td>
+            <td>{{.Description}}</td>
+            <td>{{.UpdatedAt.Format "2006-01-02 15:04"}}</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+</div>
+{{else}}
+<p>No projects yet. <a href="/projects/new">Create your first project</a></p>
+{{end}}
+
+{{end}}

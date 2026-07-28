@@ -1,0 +1,180 @@
+{{define "page"}}
+
+<style>
+#apps-grid {
+  --grid-gap: 12px;
+  --col-min: 280px;
+}
+.app-card {
+  margin-bottom: 0;
+}
+.app-card a {
+  text-decoration: none;
+}
+.app-card a:hover {
+  text-decoration: underline;
+}
+.filter-bar {
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  text-transform: capitalize;
+}
+
+.app-name a {
+  color: #333;
+  font-weight: 600;
+}
+.app-icon-sm {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.app-card-content {
+  flex: 1;
+  min-width: 0;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.app-name {
+  font-size: 1.05em;
+}
+.app-desc {
+  margin: 4px 0 0;
+  color: var(--color-gray-600);
+  font-size: 0.9em;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.app-categories {
+  margin-top: 8px;
+  flex-wrap: wrap;
+  text-transform: capitalize;
+}
+.app-actions {
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.inline-form {
+  display: inline;
+}
+.hidden {
+  display: none;
+}
+</style>
+
+<nav>
+  <a href="/docker/containers">containers</a>
+  <a href="/docker/images">images</a>
+  <a href="/docker/volumes">volumes</a>
+  <a href="/docker/networks">networks</a>
+  <a href="/docker/compose">compose</a>
+  <a href="/apps">apps</a>
+</nav>
+
+<div class="page-header">
+  <h2>App Store</h2>
+  <div class="search-wrapper">
+    <!-- <span class="badge badge-secondary">{{.count}} apps</span> -->
+    <input type="text" id="app-search" placeholder="Search apps..." class="form-control search-input">
+  </div>
+</div>
+
+<div class="flex gap-5 filter-bar">
+  <a href="/apps" class="button button-small {{if eq .filter "all"}}button-primary{{end}}">All</a>
+  <a href="/apps?filter=running" class="button button-small {{if eq .filter "running"}}button-primary{{end}}">Running</a>
+  <a href="/apps?filter=installed" class="button button-small {{if eq .filter "installed"}}button-primary{{end}}">Installed</a>
+  {{range .categories}}
+  <a href="/apps?filter={{$.filter}}&category={{.}}" class="button button-small {{if eq $.category .}}button-primary{{end}}">{{.}}</a>
+  {{end}}
+</div>
+
+
+
+<div class="grid grid-auto" id="apps-grid">
+{{range .apps}}
+  {{$status := index $.statuses .ID}}
+  {{if not $status}}{{$status = "not_installed"}}{{else}}{{$status = $status.State}}{{end}}
+  <div class="card selectable app-card" data-name="{{.Name}}" data-id="{{.ID}}" data-status="{{$status}}">
+    <div class="flex gap-10 items-start">
+      <img src="/apps/{{.ID}}/icon" alt="{{.Name}}" class="app-icon-sm">
+      <div class="app-card-content">
+        <div class="flex items-center flex-wrap flex-between">
+          <b class="app-name"><a href="/apps/{{.ID}}">{{.Name}}</a></b>
+          {{if eq $status "running"}}
+          <span class="badge badge-running">running</span>
+          {{else if eq $status "installed"}}
+          <span class="badge badge-warning">stopped</span>
+          {{else if eq $status "installing"}}
+          <span class="badge badge-info">installing</span>
+          {{else}}
+          <span class="badge badge-secondary">not installed</span>
+          {{end}}
+        </div>
+        <p class="app-desc">
+          {{.ShortDesc}}
+        </p>
+        <div class="flex gap-1 app-categories">
+          {{range .Categories}}
+          <span class="badge">{{.}}</span>
+          {{end}}
+        </div>
+        <!-- <div class="flex gap-2 app-actions">
+          {{if eq $status "running"}}
+          <form method="POST" action="/apps/{{.ID}}/action" class="inline-form">
+            <input type="hidden" name="action" value="stop">
+            <input type="hidden" name="redirect" value="/apps?filter={{$.filter}}&category={{$.category}}">
+            <button type="submit" class="button button-danger button-small">Stop</button>
+          </form>
+          <form method="POST" action="/apps/{{.ID}}/action" class="inline-form">
+            <input type="hidden" name="action" value="restart">
+            <input type="hidden" name="redirect" value="/apps?filter={{$.filter}}&category={{$.category}}">
+            <button type="submit" class="button button-warning button-small">Restart</button>
+          </form>
+          {{else if eq $status "installed"}}
+          <form method="POST" action="/apps/{{.ID}}/action" class="inline-form">
+            <input type="hidden" name="action" value="start">
+            <input type="hidden" name="redirect" value="/apps?filter={{$.filter}}&category={{$.category}}">
+            <button type="submit" class="button button-primary button-small">Start</button>
+          </form>
+          <form method="POST" action="/apps/{{.ID}}/action" class="inline-form">
+            <input type="hidden" name="action" value="uninstall">
+            <input type="hidden" name="redirect" value="/apps?filter={{$.filter}}&category={{$.category}}">
+            <button type="submit" class="button button-small" onclick="return confirm('Uninstall {{.Name}}?')">Uninstall</button>
+          </form>
+          {{else}}
+          <a href="/apps/{{.ID}}/install" class="button button-primary button-small">Install</a>
+          {{end}}
+        </div> -->
+      </div>
+    </div>
+  </div>
+{{end}}
+</div>
+
+<script>
+(function() {
+  var searchInput = document.getElementById('app-search');
+  var cards = document.querySelectorAll('.app-card');
+
+  searchInput.addEventListener('input', function() {
+    var query = this.value.toLowerCase();
+    cards.forEach(function(card) {
+      var name = card.getAttribute('data-name').toLowerCase();
+      var id = card.getAttribute('data-id').toLowerCase();
+      if (name.indexOf(query) !== -1 || id.indexOf(query) !== -1) {
+        card.classList.remove('hidden');
+      } else {
+        card.classList.add('hidden');
+      }
+    });
+  });
+})();
+</script>
+
+{{end}}

@@ -1,0 +1,45 @@
+{{define "page"}}
+
+<h2>Add Port Forwarding</h2>
+
+<form class="form" method="POST" action="/forward/new">
+    <div class="form-group">
+        <label for="name">Name</label>
+        <input class="input" type="text" id="name" name="name" required placeholder="e.g., MySQL Proxy">
+        <small>A friendly name to identify this listener</small>
+    </div>
+
+    <div class="form-group">
+        <label for="protocol">Protocol</label>
+        <select class="input" id="protocol" name="protocol" required>
+            <option value="tcp">TCP</option>
+            <option value="udp">UDP</option>
+        </select>
+        <small>Select TCP for most services, UDP for DNS, etc.</small>
+    </div>
+
+    <div class="form-group">
+        <label for="listen_port">Listen Port</label>
+        <input class="input" type="number" id="listen_port" name="listen_port" required min="1" max="65535" placeholder="e.g., 3306">
+        <small>The port this listener will bind to on this server</small>
+    </div>
+
+    <div class="form-group">
+        <label for="forward_host">Forward Host</label>
+        <input class="input" type="text" id="forward_host" name="forward_host" value="127.0.0.1" placeholder="e.g., 127.0.0.1">
+        <small>The backend host to forward traffic to</small>
+    </div>
+
+    <div class="form-group">
+        <label for="forward_port">Forward Port</label>
+        <input class="input" type="number" id="forward_port" name="forward_port" required min="1" max="65535" placeholder="e.g., 3307">
+        <small>The backend port to forward traffic to</small>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="button button-primary">Add Forwarding</button>
+        <a href="/forward" class="button button-secondary">Cancel</a>
+    </div>
+</form>
+
+{{end}}

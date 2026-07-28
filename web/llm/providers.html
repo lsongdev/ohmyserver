@@ -1,0 +1,44 @@
+{{define "page"}}
+<nav class="sub-nav">
+  <a href="/llm/chat">Chat</a>
+  <a href="/llm/providers">Providers</a>
+  <a href="/llm/models">Models</a>
+  <a href="/llm/keys">API Keys</a>
+</nav>
+
+<div class="page-header">
+  <h2>LLM Providers</h2>
+  <a href="/llm/providers/new" class="button button-primary">Add Provider</a>
+</div>
+
+{{if .error}}
+<div class="alert alert-error">{{.error}}</div>
+{{end}}
+
+<div class="table-container">
+
+  <table class="table table-striped table-hover table-bordered table-nowrap">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Created</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .providers}}
+      <tr>
+        <td>
+          <b>{{.Name}}</b>
+          <div><span class="badge">{{.Type}}</span> <em>{{.APIURL}}</em></div>
+        </td>
+        <td>{{.CreatedAt.Format "2006-01-02 15:04:05"}}</td>
+        <td>
+          <a method="delete" href="/llm/providers/{{.ID}}">delete</a>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}

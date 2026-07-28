@@ -1,0 +1,32 @@
+# OhMyServer Configuration
+# Copy this file to ~/.ohmyserver/config.yaml
+
+# Access key for login authentication
+access_key: ""
+
+# OhMyServer control-plane HTTP listener
+listen: "0.0.0.0:9000"
+
+database:
+  driver: sqlite3
+  path: ~/.ohmyserver/ohmyserver.db
+
+# Collection interval in seconds
+collection_interval_seconds: 5
+
+# Docker configuration
+docker:
+  # Registry mirror for faster image pulls (optional)
+  # Leave empty to use official Docker Hub
+  # 
+  # China mirrors (may require registration or have restrictions):
+  # - Aliyun: <your-personal-id>.mirror.aliyuncs.com
+  # - Tencent: mirror.ccs.tencentyun.com
+  # - NetEase: hub-mirror.c.163.com
+  # 
+  # Note: Many public mirrors are no longer available due to policy changes.
+  # If you're in China, consider:
+  # 1. Use Docker Desktop with WSL2 (better connectivity)
+  # 2. Set up a private registry mirror
+  # 3. Pull images manually: docker pull nginx:latest
+  registry_mirror: ""

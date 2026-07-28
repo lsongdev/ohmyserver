@@ -1,0 +1,125 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>{{if .isEdit}}Edit Route{{else}}New Route{{end}}</h2>
+    {{if .isEdit}}
+    <a method="delete" href="/web/routes/{{.route.ID}}" class="button button-danger" onclick="return confirm('Delete this route?')">Delete</a>
+    {{end}}
+</div>
+
+{{if .error}}<div class="error-message">{{.error}}</div>{{end}}
+
+<form class="form" method="post" action="{{if .isEdit}}/web/routes/{{.route.ID}}{{else}}/web/hosts/{{.host.ID}}/routes/new{{end}}">
+    {{if .isEdit}}<input class="input" type="hidden" name="_method" value="PUT">{{end}}
+
+    <div class="section">
+        <h3>Match</h3>
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input class="input" type="text" id="name" name="name" required value="{{if .route}}{{.route.Name}}{{end}}">
+        </div>
+        <div class="form-group">
+            <label for="method">Method</label>
+            <select class="input" id="method" name="method">
+                <option value="">ANY</option>
+                {{range $method := split "GET,POST,PUT,PATCH,DELETE,HEAD,OPTIONS" ","}}
+                <option value="{{$method}}" {{if and $.route (eq $.route.Method $method)}}selected{{end}}>{{$method}}</option>
+                {{end}}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="path">Path</label>
+            <input class="input" type="text" id="path" name="path" value="{{if .route}}{{.route.Path}}{{else}}/{{end}}" required>
+        </div>
+        <div class="form-group">
+            <label><input type="checkbox" name="enabled" {{if or (not .route) .route.Enabled}}checked{{end}}> Enabled</label>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Handler</h3>
+        <div class="form-group">
+            <label for="handler_type">Type</label>
+            <select class="input" id="handler_type" name="handler_type">
+                <option value="reverse_proxy" {{if or (not .route) (eq .route.HandlerType "reverse_proxy")}}selected{{end}}>Reverse Proxy</option>
+                <option value="file_server" {{if and .route (eq .route.HandlerType "file_server")}}selected{{end}}>File Server</option>
+                <option value="static_response" {{if and .route (eq .route.HandlerType "static_response")}}selected{{end}}>Static Response</option>
+                <option value="redirect" {{if and .route (eq .route.HandlerType "redirect")}}selected{{end}}>Redirect</option>
+                <option value="worker" {{if and .route (eq .route.HandlerType "worker")}}selected{{end}}>Worker</option>
+            </select>
+        </div>
+
+        <div class="form-group" data-handler-fields="reverse_proxy" {{if and .route (ne .route.HandlerType "reverse_proxy")}}hidden{{end}}>
+            <label for="upstream_url">Upstream URL</label>
+            <input class="input" type="url" id="upstream_url" name="upstream_url" data-required value="{{if .route}}{{.route.UpstreamURL}}{{end}}" placeholder="http://127.0.0.1:3000">
+        </div>
+
+        <div class="form-group" data-handler-fields="file_server" {{if or (not .route) (ne .route.HandlerType "file_server")}}hidden{{end}}>
+            <label for="root">File Root</label>
+            <input class="input" type="text" id="root" name="root" data-required value="{{if .route}}{{.route.Root}}{{end}}" placeholder="/srv/www">
+        </div>
+
+        <div class="form-group" data-handler-fields="reverse_proxy file_server" {{if and .route (or (eq .route.HandlerType "static_response") (eq .route.HandlerType "redirect") (eq .route.HandlerType "worker"))}}hidden{{end}}>
+            <label for="strip_prefix">Strip Prefix</label>
+            <input class="input" type="text" id="strip_prefix" name="strip_prefix" value="{{if .route}}{{.route.StripPrefix}}{{end}}" placeholder="/api">
+        </div>
+
+        <div class="form-group" data-handler-fields="static_response" {{if or (not .route) (ne .route.HandlerType "static_response")}}hidden{{end}}>
+            <label for="response_status">Response Status</label>
+            <input class="input" type="number" id="response_status" name="response_status" value="{{if .route}}{{.route.ResponseStatus}}{{end}}" placeholder="200">
+        </div>
+        <div class="form-group" data-handler-fields="static_response" {{if or (not .route) (ne .route.HandlerType "static_response")}}hidden{{end}}>
+            <label for="response_body">Response Body</label>
+            <textarea class="input" id="response_body" name="response_body" rows="4">{{if .route}}{{.route.ResponseBody}}{{end}}</textarea>
+        </div>
+
+        <div class="form-group" data-handler-fields="redirect" {{if or (not .route) (ne .route.HandlerType "redirect")}}hidden{{end}}>
+            <label for="redirect_location">Redirect Location</label>
+            <input class="input" type="text" id="redirect_location" name="redirect_location" data-required value="{{if .route}}{{.route.RedirectLocation}}{{end}}">
+        </div>
+        <div class="form-group" data-handler-fields="redirect" {{if or (not .route) (ne .route.HandlerType "redirect")}}hidden{{end}}>
+            <label for="redirect_status">Redirect Status</label>
+            <input class="input" type="number" id="redirect_status" name="redirect_status" value="{{if .route}}{{.route.RedirectStatus}}{{end}}" placeholder="308">
+        </div>
+
+        <div class="form-group" data-handler-fields="worker" {{if or (not .route) (ne .route.HandlerType "worker")}}hidden{{end}}>
+            <label for="worker_script">Worker Script</label>
+            <textarea class="input" id="worker_script" name="worker_script" rows="18" data-required>{{if .route}}{{.route.WorkerScript}}{{else}}export default {
+  fetch(request, env) {
+    return new Response("Hello from Worker");
+  }
+}{{end}}</textarea>
+            <small>Cloudflare Workers-compatible JavaScript with an exported <code>fetch(request, env)</code> handler.</small>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button class="button button-primary" type="submit">Save</button>
+        <a class="button" href="/web/hosts/{{.host.ID}}/routes">Cancel</a>
+    </div>
+</form>
+
+<script>
+    (function () {
+        var type = document.getElementById('handler_type');
+        var groups = document.querySelectorAll('[data-handler-fields]');
+        if (!type) return;
+
+        function updateHandlerFields() {
+            Array.prototype.forEach.call(groups, function (group) {
+                var types = group.getAttribute('data-handler-fields').split(/\s+/);
+                var active = types.indexOf(type.value) !== -1;
+                group.hidden = !active;
+                Array.prototype.forEach.call(group.querySelectorAll('input, select, textarea'), function (field) {
+                    field.disabled = !active;
+                    field.required = active && field.hasAttribute('data-required');
+                });
+            });
+        }
+
+        type.addEventListener('change', updateHandlerFields);
+        updateHandlerFields();
+    })();
+</script>
+
+{{end}}

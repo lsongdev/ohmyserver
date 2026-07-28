@@ -1,0 +1,59 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>Cron Jobs</h2>
+    <a href="/cron/new" class="button">+ New Job</a>
+</div>
+
+{{if .jobs}}
+<div class="table-container">
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Schedule</th>
+            <!-- <th>Command</th> -->
+            <th>Status</th>
+            <th>Last Run</th>
+            <th>Next Run</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .jobs}}
+        <tr>
+            <td>{{.ID}}</td>
+            <td><a href="/cron/{{.ID}}">{{.Name}}</a></td>
+            <td><span class="type-badge type-{{.Type}}">{{.Type}}</span></td>
+            <td><code>{{.Schedule}}</code></td>
+            <!-- <td><code class="truncate">{{.Command}}</code></td> -->
+            <td>
+                {{if .Enabled}}
+                <span class="badge badge-active">active</span>
+                {{else}}
+                <span class="badge badge-inactive">disabled</span>
+                {{end}}
+            </td>
+            <td>{{.LastRun}}</td>
+            <td>{{.NextRun}}</td>
+            <td>
+                {{if .Enabled}}
+                <a href="/cron/{{.ID}}/toggle?action=disable" method="POST" onclick="return confirm('Disable this job?')">Disable</a>
+                {{else}}
+                <a href="/cron/{{.ID}}/toggle?action=enable" method="POST" onclick="return confirm('Enable this job?')">Enable</a>
+                {{end}}
+                <a href="/cron/{{.ID}}/run" method="POST" onclick="return confirm('Run this job now?')">Run Now</a>
+                <a href="/cron/{{.ID}}/delete" method="POST" onclick="return confirm('Delete this job?')">Delete</a>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+</div>
+{{else}}
+<p class="empty-message">No cron jobs configured. <a href="/cron/new">Create one</a></p>
+{{end}}
+
+{{end}}

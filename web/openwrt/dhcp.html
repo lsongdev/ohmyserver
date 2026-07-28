@@ -1,0 +1,52 @@
+{{define "page"}}
+
+<nav class="sub-nav">
+    <a href="/openwrt/{{.server.ID}}">Overview</a>
+    <a href="/openwrt/{{.server.ID}}/network">Network</a>
+    <a href="/openwrt/{{.server.ID}}/dhcp">DHCP</a>
+    
+    <a href="/openwrt/{{.server.ID}}/packages">Packages</a>
+    <a href="/openwrt/{{.server.ID}}/firewall">Firewall</a>
+    <a href="/openwrt/{{.server.ID}}/edit">Settings</a>
+</nav>
+
+<div class="page-header">
+    <h2>DHCP Leases ({{len .leases}}) - {{.server.Name}}</h2>
+    <div class="actions">
+        <a href="/openwrt/{{.server.ID}}/edit" class="button">Edit</a>
+        <a href="/openwrt/{{.server.ID}}" method="delete" class="button button-danger">Delete</a>
+    </div>
+</div>
+
+{{if .leases}}
+<div class="table-container">
+    <table class="table table-bordered table-nowrap">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Hostname</th>
+                <th>IP Address</th>
+                <th>MAC Address</th>
+                <th>DUID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .leases}}
+            <tr>
+                <td>{{if .IPv6}}<span class="badge"
+                        style="background: #e3f2fd; color: #1565c0;">IPv6</span>{{else}}<span class="badge"
+                        style="background: #f3e5f5; color: #6a1b9a;">IPv4</span>{{end}}</td>
+                <td>{{if .Hostname}}{{.Hostname}}{{else}}-{{end}}</td>
+                <td><a href="http://{{.IPAddress}}">{{.IPAddress}}</a></td>
+                <td><code>{{.MACAddress}}</code></td>
+                <td><code>{{.DUID}}</code></td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{else}}
+<p class="empty-message">No DHCP leases found</p>
+{{end}}
+
+{{end}}

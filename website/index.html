@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07110f">
+  <meta name="description" content="OhMyServer is a lightweight, self-hosted control panel for your servers.">
+  <meta property="og:title" content="OhMyServer">
+  <meta property="og:description" content="Your server, one calm control plane.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://lsong.org/ohmyserver/">
+  <meta property="og:image" content="https://lsong.org/ohmyserver/assets/banner.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://lsong.org/ohmyserver/assets/banner.png">
+  <title>OhMyServer — Your server, one calm control plane.</title>
+  <link rel="icon" href="./assets/icon.png">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07110f;
+      --surface: #0d1a17;
+      --surface-2: #12231f;
+      --line: #243934;
+      --text: #f7f3ea;
+      --muted: #9db0aa;
+      --mint: #2ee6a6;
+      --amber: #ffbd2e;
+      --max: 1120px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 85% 12%, rgba(46, 230, 166, .09), transparent 26rem),
+        var(--bg);
+      font: 16px/1.6 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    a { color: inherit; }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .shell {
+      width: min(calc(100% - 40px), var(--max));
+      margin: 0 auto;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 76px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 750;
+      letter-spacing: -.02em;
+      text-decoration: none;
+    }
+
+    .brand img {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+    }
+
+    .nav-links a:hover,
+    .nav-links a:focus-visible {
+      color: var(--text);
+    }
+
+    .hero {
+      padding: 72px 0 46px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 18px;
+      color: var(--mint);
+      font-size: 13px;
+      font-weight: 750;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--mint);
+      box-shadow: 0 0 18px var(--mint);
+      content: "";
+    }
+
+    h1 {
+      max-width: 880px;
+      margin: 0 auto;
+      font-size: clamp(44px, 8vw, 84px);
+      line-height: .98;
+      letter-spacing: -.065em;
+    }
+
+    .hero-copy {
+      max-width: 680px;
+      margin: 28px auto 0;
+      color: var(--muted);
+      font-size: clamp(17px, 2.4vw, 21px);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 32px;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 20px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      transform: translateY(-2px);
+      border-color: #46665e;
+    }
+
+    .button-primary {
+      border-color: var(--mint);
+      background: var(--mint);
+      color: #06100d;
+    }
+
+    .showcase {
+      overflow: hidden;
+      margin: 36px 0 96px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--surface);
+    }
+
+    .showcase img {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+    }
+
+    .section {
+      padding: 48px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-heading {
+      display: grid;
+      grid-template-columns: .75fr 1.25fr;
+      gap: 48px;
+      align-items: start;
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 48px);
+      line-height: 1.08;
+      letter-spacing: -.045em;
+    }
+
+    .section-heading p {
+      max-width: 620px;
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .feature {
+      min-height: 190px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+
+    .feature-number {
+      color: var(--mint);
+      font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .feature h3 {
+      margin: 44px 0 8px;
+      font-size: 19px;
+      letter-spacing: -.02em;
+    }
+
+    .feature p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .install {
+      margin: 64px 0;
+      padding: clamp(26px, 6vw, 56px);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--surface-2), var(--surface));
+    }
+
+    .install-top {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 26px;
+    }
+
+    .install p {
+      max-width: 560px;
+      margin: 10px 0 0;
+      color: var(--muted);
+    }
+
+    .terminal {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      overflow-x: auto;
+      padding: 17px 18px;
+      border: 1px solid #304840;
+      border-radius: 10px;
+      background: #050b09;
+    }
+
+    .terminal code {
+      flex: 1;
+      min-width: max-content;
+      color: #cbe9de;
+      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .prompt { color: var(--mint); }
+
+    .copy {
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .copy:hover,
+    .copy:focus-visible {
+      border-color: var(--mint);
+    }
+
+    .note {
+      margin-top: 13px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 28px 0 48px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    footer a {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    @media (max-width: 760px) {
+      .nav-links a:not(.button) { display: none; }
+      .hero { padding-top: 52px; }
+      .showcase { margin-bottom: 68px; }
+      .section-heading { grid-template-columns: 1fr; gap: 16px; }
+      .features { grid-template-columns: 1fr; }
+      .feature { min-height: 0; }
+      .feature h3 { margin-top: 28px; }
+      .install-top { align-items: start; flex-direction: column; }
+      footer { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .button { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="./" aria-label="OhMyServer home">
+        <img src="./assets/icon.png" alt="">
+        <span>OhMyServer</span>
+      </a>
+      <div class="nav-links">
+        <a href="#why">Why OhMyServer</a>
+        <a href="#install">Install</a>
+        <a class="button" href="https://github.com/lsongdev/ohmyserver">View on GitHub</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero shell">
+      <p class="eyebrow">Open source · Self-hosted</p>
+      <h1>Your server, one calm control plane.</h1>
+      <p class="hero-copy">OhMyServer brings the everyday work of running servers into a focused web interface—without adding another external control plane.</p>
+      <div class="actions">
+        <a class="button button-primary" href="#install">Install OhMyServer</a>
+        <a class="button" href="https://github.com/lsongdev/ohmyserver">Explore the source</a>
+      </div>
+    </section>
+
+    <div class="shell">
+      <figure class="showcase">
+        <img src="./assets/banner.png" alt="OhMyServer connects server services through one control plane." width="1672" height="941">
+      </figure>
+    </div>
+
+    <section class="section shell" id="why">
+      <div class="section-heading">
+        <h2>Built for the server you actually own.</h2>
+        <p>A compact Go application that keeps common infrastructure work close, understandable, and under your control.</p>
+      </div>
+      <div class="features">
+        <article class="feature">
+          <span class="feature-number">01</span>
+          <h3>One place to operate</h3>
+          <p>See system health and manage containers, services, deployments, networking, and remote hosts.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-number">02</span>
+          <h3>Small operational footprint</h3>
+          <p>A single Go binary, an embedded interface, and SQLite keep installation and maintenance straightforward.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-number">03</span>
+          <h3>Yours from end to end</h3>
+          <p>Self-hosted and MIT licensed, with no required hosted account or proprietary control service.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="shell" id="install">
+      <div class="install">
+        <div class="install-top">
+          <div>
+            <h2>Up and running in one command.</h2>
+            <p>For Linux servers with systemd. The installer supports AMD64 and ARM64 and downloads the latest GitHub release.</p>
+          </div>
+          <a class="button" href="https://raw.githubusercontent.com/lsongdev/ohmyserver/main/install.sh">Download install.sh</a>
+        </div>
+        <div class="terminal">
+          <code id="install-command"><span class="prompt">$</span> curl -fsSL https://raw.githubusercontent.com/lsongdev/ohmyserver/main/install.sh | sudo sh</code>
+          <button class="copy" type="button" data-copy="curl -fsSL https://raw.githubusercontent.com/lsongdev/ohmyserver/main/install.sh | sudo sh" aria-label="Copy install command">Copy</button>
+        </div>
+        <p class="note">The script runs as root. Read <a href="https://github.com/lsongdev/ohmyserver/blob/main/install.sh">the source</a> before installing.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <span>© 2026 OhMyServer. Open source under the MIT License.</span>
+    <span><a href="https://github.com/lsongdev/ohmyserver">GitHub</a> · <a href="https://github.com/lsongdev/ohmyserver/tree/main/docs">Docs</a></span>
+  </footer>
+
+  <script>
+    const copyButton = document.querySelector("[data-copy]");
+    copyButton.addEventListener("click", async () => {
+      const original = copyButton.textContent;
+      try {
+        await navigator.clipboard.writeText(copyButton.dataset.copy);
+        copyButton.textContent = "Copied";
+      } catch {
+        copyButton.textContent = "Select command";
+      }
+      window.setTimeout(() => {
+        copyButton.textContent = original;
+      }, 1800);
+    });
+  </script>
+</body>
+</html>

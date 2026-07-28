@@ -1,0 +1,56 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>{{if .server}}Edit{{else}}New{{end}} Widget</h2>
+</div>
+
+{{if .error}}
+<div class="error-message">{{.error}}</div>
+{{end}}
+
+<form method="POST" action="{{if .server}}/widgets/{{.server.ID}}{{else}}/widgets/new{{end}}">
+    {{if .server}}
+    <input type="hidden" name="_method" value="PUT">
+    {{end}}
+
+    <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" value="{{if .server}}{{.server.Name}}{{else if .name}}{{.name}}{{end}}" required placeholder="e.g., System Monitor">
+    </div>
+
+    <div class="form-group">
+        <label for="type">Type</label>
+        <select id="type" name="type" required>
+            <option value="">Select type...</option>
+            <option value="monitor" {{if eq .server.Type "monitor"}}selected{{end}}>Monitor</option>
+            <option value="stats" {{if eq .server.Type "stats"}}selected{{end}}>Stats</option>
+            <option value="info" {{if eq .server.Type "info"}}selected{{end}}>Info</option>
+            <option value="custom" {{if eq .server.Type "custom"}}selected{{end}}>Custom</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="config">Config (JSON)</label>
+        <textarea id="config" name="config" rows="4" placeholder='{"key": "value"}'>{{if .server}}{{.server.Config}}{{else if .config}}{{.config}}{{end}}</textarea>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="sort_order">Sort Order</label>
+            <input type="number" id="sort_order" name="sort_order" value="{{if .server}}{{.server.SortOrder}}{{end}}" placeholder="0">
+        </div>
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="enabled" name="enabled" {{if not .server}}checked{{else if .server.Enabled}}checked{{end}}>
+                Enabled
+            </label>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="button button-primary">{{if .server}}Save Changes{{else}}Create Widget{{end}}</button>
+        <a href="/widgets" class="button">Cancel</a>
+    </div>
+</form>
+
+{{end}}

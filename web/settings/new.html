@@ -1,0 +1,45 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>New Setting</h2>
+</div>
+
+{{if .error}}
+<div class="error-message">{{.error}}</div>
+{{end}}
+
+<form method="POST" action="/settings/new" >
+    <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" value="{{if .name}}{{.name}}{{end}}" required placeholder="e.g., app.name, database.pool.size">
+        <p class="help-text">Unique identifier for this setting (use dot notation for grouping)</p>
+    </div>
+
+    <div class="form-group">
+        <label for="type">Type</label>
+        <select id="type" name="type" required>
+            <option value="string" {{if eq .type "string"}}selected{{end}}>String</option>
+            <option value="number" {{if eq .type "number"}}selected{{end}}>Number</option>
+            <option value="boolean" {{if eq .type "boolean"}}selected{{end}}>Boolean</option>
+            <option value="json" {{if eq .type "json"}}selected{{end}}>JSON</option>
+        </select>
+        <p class="help-text">The data type for this setting's value</p>
+    </div>
+
+    <div class="form-group">
+        <label for="value">Value</label>
+        <textarea id="value" name="value" rows="4" required placeholder="Enter the setting value">{{if .value}}{{.value}}{{end}}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description</label>
+        <input type="text" id="description" name="description" value="{{if .description}}{{.description}}{{end}}" placeholder="Describe what this setting does">
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="button button-primary">Create Setting</button>
+        <a href="/settings" class="button">Cancel</a>
+    </div>
+</form>
+
+{{end}}

@@ -1,0 +1,215 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>{{if .server}}Edit Yeelight Device{{else}}Add Yeelight Device{{end}}</h2>
+</div>
+
+{{if .error}}
+<div class="alert alert-error">{{.error}}</div>
+{{end}}
+
+<div class="yeelight-new-container">
+    <!-- Tab buttons -->
+    <!-- <div class="tab-buttons">
+        <button type="button" class="tab-btn active" data-tab="discover">Discover Devices</button>
+        <button type="button" class="tab-btn" data-tab="manual">Manual Add</button>
+    </div> -->
+
+    <!-- Discover Tab -->
+    <div class="tab-content active" id="discover-tab">
+        <div class="discover-section">
+            <p>Click "Discover" to scan the network for Yeelight devices. Discovered devices will appear below.</p>
+            <button type="button" id="discover-btn" class="button button-primary">Discover Devices</button>
+            <div id="discover-status" class="discover-status"></div>
+            <div id="discovered-devices" class="discovered-devices"></div>
+        </div>
+    </div>
+
+    <!-- Manual Add Tab -->
+    <div class="section" id="manual-tab">
+        <form method="POST" class="form-group">
+            <div class="form-group">
+                <label for="name">Device Name:</label>
+                <input type="text" id="name" name="name" 
+                       value="{{if .server}}{{.server.Name}}{{else if .name}}{{.name}}{{end}}" 
+                       placeholder="Living Room Light">
+            </div>
+
+            <div class="form-group">
+                <label for="host">Host/IP:</label>
+                <input type="text" id="host" name="host" 
+                       value="{{if .server}}{{.server.Host}}{{else if .host}}{{.host}}{{end}}" 
+                       placeholder="192.168.1.100">
+            </div>
+
+            <div class="form-group">
+                <label for="port">Port:</label>
+                <input type="number" id="port" name="port" 
+                       value="{{if .server}}{{.server.Port}}{{else if .port}}{{.port}}{{else}}55443{{end}}" 
+                       placeholder="55443">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="button button-primary">
+                    {{if .server}}Update Device{{else}}Add Device{{end}}
+                </button>
+                <a href="/yeelight" class="button button-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .yeelight-new-container {
+        max-width: 100%;
+    }
+
+    .discover-section {
+        padding: 20px;
+        background: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+    }
+
+    .discover-status {
+        margin-top: 15px;
+        padding: 10px;
+        background: #fff;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        min-height: 40px;
+        display: none;
+    }
+
+    .discover-status.active {
+        display: block;
+    }
+
+    .discovered-devices {
+        margin-top: 15px;
+    }
+
+    .discovered-device-item {
+        padding: 15px;
+        background: #fff;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .discovered-device-info {
+        flex: 1;
+    }
+
+    .discovered-device-info strong {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .discovered-device-info code {
+        color: #586069;
+    }
+
+    .discovering-animation {
+        display: inline-block;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabId = this.dataset.tab;
+            
+            tabButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId + '-tab').classList.add('active');
+        });
+    });
+
+    // Device discovery
+    const discoverBtn = document.getElementById('discover-btn');
+    const discoverStatus = document.getElementById('discover-status');
+    const discoveredDevices = document.getElementById('discovered-devices');
+
+    discoverBtn.addEventListener('click', function() {
+        discoverBtn.disabled = true;
+        discoverBtn.textContent = 'Discovering...';
+        discoverStatus.classList.add('active');
+        discoverStatus.innerHTML = '<span class="discovering-animation">Discovering devices</span>...';
+        discoveredDevices.innerHTML = '';
+
+        const eventSource = new EventSource('/yeelight/discover');
+
+        eventSource.addEventListener('device', function(e) {
+            const device = JSON.parse(e.data);
+            
+            const deviceItem = document.createElement('div');
+            deviceItem.className = 'discovered-device-item';
+            deviceItem.innerHTML = `
+                <div class="discovered-device-info">
+                    <strong>${device.name || 'Unnamed Device'}</strong>
+                    <code>${device.host}:${device.port}</code>
+                </div>
+                <a href="/yeelight/new?host=${device.host}&port=${device.port}&name=${device.name}" 
+                   class="button button-primary btn-small">Add</a>
+            `;
+            discoveredDevices.appendChild(deviceItem);
+            
+            discoverStatus.innerHTML = `Found ${discoveredDevices.children.length} device(s)`;
+        });
+
+        eventSource.addEventListener('done', function(e) {
+            eventSource.close();
+            discoverBtn.disabled = false;
+            discoverBtn.textContent = 'Discover Devices';
+            
+            if (discoveredDevices.children.length === 0) {
+                discoverStatus.innerHTML = 'No devices found. Make sure your Yeelight devices are powered on and connected to the network.';
+            }
+        });
+
+        eventSource.addEventListener('error', function(e) {
+            const error = JSON.parse(e.data);
+            eventSource.close();
+            discoverBtn.disabled = false;
+            discoverBtn.textContent = 'Discover Devices';
+            discoverStatus.innerHTML = `<span style="color: red;">Error: ${error.error}</span>`;
+        });
+    });
+
+    // Handle URL parameters for pre-filling form
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('host')) {
+        document.getElementById('host').value = urlParams.get('host');
+    }
+    if (urlParams.get('port')) {
+        document.getElementById('port').value = urlParams.get('port');
+    }
+    if (urlParams.get('name')) {
+        document.getElementById('name').value = urlParams.get('name');
+        // Switch to manual tab if we have pre-filled data
+        if (urlParams.get('host')) {
+            document.querySelector('[data-tab="manual"]').click();
+        }
+    }
+});
+</script>
+{{end}}

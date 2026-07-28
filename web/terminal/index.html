@@ -1,0 +1,53 @@
+{{define "page"}}
+
+<style>
+  @import url("/assets/css/terminal.css");
+</style>
+
+<div class="page-header">
+  <div class="header-left">
+    <h2>Terminal</h2>
+  </div>
+</div>
+
+<div id="terminal-container"></div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+<script src="/assets/js/terminal.js"></script>
+<script>
+  (function () {
+    var terminalInstance = null;
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var wsPath = '{{.wsPath}}';
+
+      terminalInstance = new TerminalComponent({
+        containerId: 'terminal-container',
+        elementId: 'terminal',
+        connectingElementId: 'connecting',
+        title: '{{.title}}',
+        path: wsPath,
+        host: '{{.host}}',
+        mode: 'ws',
+        onConnect: function () {
+          console.log('Terminal connected');
+        },
+        onDisconnect: function () {
+          console.log('Terminal disconnected');
+        }
+      });
+      terminalInstance.init();
+      terminalInstance.connect();
+    });
+
+    window.addEventListener('beforeunload', function () {
+      if (terminalInstance) {
+        terminalInstance.destroy();
+      }
+    });
+  })();
+</script>
+
+{{end}}

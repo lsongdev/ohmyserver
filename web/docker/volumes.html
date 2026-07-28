@@ -1,0 +1,42 @@
+{{define "page"}}
+ 
+<nav>
+  <a href="/docker/containers">containers</a>
+  <a href="/docker/images">images</a>
+  <a href="/docker/volumes">volumes</a>
+  <a href="/docker/networks">networks</a>
+  <a href="/docker/compose">compose</a>
+  <a href="/apps">apps</a>
+</nav>
+
+<div class="page-header">
+  <h2>Volumes</h2>
+  <a href="/docker/volumes/create" class="button">+ Create Volume</a>
+</div>
+
+<div class="table-container">
+<table class="table table-striped table-bordered">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Driver</th>
+      <th>Mountpoint</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .volumes}}
+    <tr>
+      <td><a href="/docker/volumes/{{.Name}}">{{.Name}}</a></td>
+      <td>{{.Driver}}</td>
+      <td>{{.Mountpoint}}</td>
+      <td>
+        <a method="DELETE" href="/docker/volumes?id={{.Name}}">Delete</a>
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+</div>
+
+{{end}}

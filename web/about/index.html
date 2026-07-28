@@ -1,0 +1,44 @@
+{{define "page"}}
+<h2>About</h2>
+
+<div class="section">
+  <h3>Program Information</h3>
+  <table class="table">
+    <tr><td>Name</td><td>{{.info.ProgramName}}</td></tr>
+    <tr><td>Version</td><td>{{.info.ProgramVersion}}</td></tr>
+    <tr><td>Description</td><td>{{.info.ProgramDesc}}</td></tr>
+    <tr><td>Go Version</td><td>{{.info.GoVersion}}</td></tr>
+    <tr><td>Build Time</td><td>{{.info.BuildTime}}</td></tr>
+    <tr><td>OS</td><td>{{.info.OS}} ({{.info.Arch}})</td></tr>
+    <tr><td>CPU Cores</td><td>{{.numCPU}}</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>Service Information</h3>
+  <table class="table">
+    <tr><td>Listen</td><td>{{.info.Listen}}</td></tr>
+    <tr><td>Database</td><td>{{.info.Database}}</td></tr>
+    <tr><td>Docker Mirror</td><td>{{if .info.DockerMirror}}{{.info.DockerMirror}}{{else}}<span class="text-muted">Not configured</span>{{end}}</td></tr>
+    <tr><td>Access Key</td><td>{{if .maskedKey}}{{.maskedKey}}{{else}}<span class="text-muted">Not set</span>{{end}}</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>Credits</h3>
+  <table class="table">
+    <thead>
+      <tr><th>Name</th><th>URL</th><th>License</th></tr>
+    </thead>
+    <tbody>
+      {{range .info.Credits}}
+      <tr>
+        <td>{{.Name}}</td>
+        <td><a href="{{.URL}}" target="_blank">{{.URL}}</a></td>
+        <td>{{if .License}}{{.License}}{{else}}<span class="text-muted">-</span>{{end}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}

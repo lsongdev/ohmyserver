@@ -1,0 +1,33 @@
+{{define "page"}}
+
+<nav>
+    <a href="/projects/{{.project.ID}}">overview</a>
+    <a href="/projects/{{.project.ID}}/deployments">deployments</a>
+    <a href="/projects/{{.project.ID}}/settings" >settings</a>
+</nav>
+
+<h2>Project Settings</h2>
+<form action="/projects/{{.project.ID}}/settings" method="post">
+  <div class="form-group">
+    <label for="name">Name</label>
+    <input type="text" id="name" name="name" class="input" value="{{.project.Name}}" required>
+  </div>
+  <div class="form-group">
+    <label for="description">Description</label>
+    <textarea id="description" name="description" class="input">{{.project.Description}}</textarea>
+  </div>
+  <div class="form-group">
+    <label for="repo">Repository URL</label>
+    <input type="text" id="repo" name="repo" class="input" value="{{.project.Repo}}" placeholder="https://github.com/user/repo.git">
+    <small class="form-hint">Git repository URL for automatic deployment</small>
+  </div>
+
+  <button type="submit" >Update Project</button>
+  <a href="/projects/{{.project.ID}}" >Cancel</a>
+</form>
+
+<div class="form-group">
+  <a method="post" href="/projects/{{.project.ID}}/delete" >Delete Project</a>
+</div>
+
+{{end}}

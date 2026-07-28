@@ -1,0 +1,223 @@
+{{define "page"}}
+<style>
+  .monitor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+    gap: 16px;
+  }
+  .host-card {
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    padding: 16px;
+    background: #fff;
+  }
+  .host-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .host-hostname {
+    font-size: 16px;
+    font-weight: 600;
+    color: #24292e;
+  }
+  .host-time {
+    font-size: 11px;
+    color: #959da5;
+  }
+  .metric-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .metric-label {
+    min-width: 70px;
+    font-size: 13px;
+    color: #586069;
+    font-weight: 500;
+  }
+  .metric-value {
+    min-width: 80px;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    color: #24292e;
+  }
+  .metric-bar {
+    flex: 1;
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .metric-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+  .fill-cpu { background: #0366d6; }
+  .fill-mem { background: #f66a0a; }
+  .fill-disk { background: #2cbe4e; }
+  .fill-warn { background: #d73a49; }
+  .net-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .net-item {
+    font-size: 12px;
+    color: #586069;
+  }
+  .net-item span {
+    font-weight: 600;
+    color: #24292e;
+  }
+  .no-hosts {
+    text-align: center;
+    padding: 60px 20px;
+    color: #586069;
+  }
+  .no-hosts h3 {
+    margin-bottom: 8px;
+    color: #24292e;
+  }
+  @media (max-width: 600px) {
+    .monitor-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="page-header">
+  <h2>System Monitor</h2>
+  <nav>
+    <a href="/monitor/uptime">uptime checks</a>
+    <a href="" onclick="location.reload(); return false;">reload</a>
+  </nav>
+</div>
+
+<div id="hosts-container">
+  {{if .hosts}}
+  <div class="monitor-grid">
+    {{range .hosts}}
+    <div class="host-card" data-hostname="{{.Hostname}}">
+      <div class="host-header">
+        <div class="host-hostname"><a href="/monitor/hosts/{{.Hostname}}" style="color:inherit;text-decoration:none;">{{.Hostname}}</a></div>
+        <div class="host-time">{{formatDate .Stats.Timestamp}}</div>
+      </div>
+
+      <div class="metric-row">
+        <span class="metric-label">CPU</span>
+        <div class="metric-bar">
+          <div class="metric-fill {{if gt .Stats.CPUUsage 90.0}}fill-warn{{else}}fill-cpu{{end}}" style="width: {{printf "%.1f" .Stats.CPUUsage}}%"></div>
+        </div>
+        <span class="metric-value">{{printf "%.1f" .Stats.CPUUsage}}%</span>
+      </div>
+
+      <div class="metric-row">
+        <span class="metric-label">Memory</span>
+        <div class="metric-bar">
+          <div class="metric-fill {{if gt .Stats.MemoryUsage 90.0}}fill-warn{{else}}fill-mem{{end}}" style="width: {{printf "%.1f" .Stats.MemoryUsage}}%"></div>
+        </div>
+        <span class="metric-value">{{printf "%.1f" .Stats.MemoryUsage}}%</span>
+      </div>
+
+      {{if .Stats.DiskTotal}}
+      <div class="metric-row">
+        <span class="metric-label">Disk</span>
+        <div class="metric-bar">
+          <div class="metric-fill {{if gt .Stats.DiskUsage 90.0}}fill-warn{{else}}fill-disk{{end}}" style="width: {{printf "%.1f" .Stats.DiskUsage}}%"></div>
+        </div>
+        <span class="metric-value">{{printf "%.1f" .Stats.DiskUsage}}%</span>
+      </div>
+      {{end}}
+
+      <div class="net-row">
+        <span class="net-item">Load: <span>{{printf "%.2f" .Stats.Load1}} / {{printf "%.2f" .Stats.Load5}} / {{printf "%.2f" .Stats.Load15}}</span></span>
+        <span class="net-item data-sent" data-value="{{.Stats.NetBytesSent}}">Sent: <span>-</span></span>
+        <span class="net-item data-recv" data-value="{{.Stats.NetBytesRecv}}">Recv: <span>-</span></span>
+        <span class="net-item">Uptime: <span>{{formatUptime .Stats.Uptime}}</span></span>
+      </div>
+    </div>
+    {{end}}
+  </div>
+  {{else}}
+  <div class="no-hosts">
+    <h3>No monitoring data yet</h3>
+    <p>Metrics from this host will appear here automatically.</p>
+    <p style="margin-top: 16px; font-size: 13px; color: #959da5;">
+      Run the agent on remote machines: <code>./agent -server http://your-host:9000/monitor/telegraf</code>
+    </p>
+  </div>
+  {{end}}
+</div>
+
+<script>
+  const prevNet = {};
+
+  function formatRate(bytesPerSec) {
+    if (bytesPerSec <= 0) return '0 B/s';
+    const units = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+    const i = Math.floor(Math.log(bytesPerSec) / Math.log(1024));
+    const val = bytesPerSec / Math.pow(1024, i);
+    return val.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+  }
+
+  async function refreshHosts() {
+    try {
+      const resp = await fetch('/monitor/hosts/api/stats');
+      const data = await resp.json();
+      const container = document.getElementById('hosts-container');
+      if (!data.hosts || data.hosts.length === 0) {
+        return;
+      }
+
+      data.hosts.forEach(host => {
+        const card = container.querySelector(`[data-hostname="${host.hostname}"]`);
+        if (!card || !host.stats) return;
+
+        const fills = card.querySelectorAll('.metric-fill');
+        const stats = host.stats;
+
+        if (fills[0]) {
+          fills[0].style.width = stats.cpu_usage.toFixed(1) + '%';
+          fills[0].className = 'metric-fill ' + (stats.cpu_usage > 90 ? 'fill-warn' : 'fill-cpu');
+          fills[0].parentElement.nextElementSibling.textContent = stats.cpu_usage.toFixed(1) + '%';
+        }
+        if (fills[1]) {
+          fills[1].style.width = stats.memory_usage.toFixed(1) + '%';
+          fills[1].className = 'metric-fill ' + (stats.memory_usage > 90 ? 'fill-warn' : 'fill-mem');
+          fills[1].parentElement.nextElementSibling.textContent = stats.memory_usage.toFixed(1) + '%';
+        }
+        if (fills[2] && stats.disk_total) {
+          fills[2].style.width = stats.disk_usage.toFixed(1) + '%';
+          fills[2].className = 'metric-fill ' + (stats.disk_usage > 90 ? 'fill-warn' : 'fill-disk');
+          fills[2].parentElement.nextElementSibling.textContent = stats.disk_usage.toFixed(1) + '%';
+        }
+
+        const prev = prevNet[host.hostname];
+        if (prev) {
+          const dt = (new Date(stats.timestamp) - new Date(prev.ts)) / 1000;
+          if (dt > 0) {
+            const sentEl = card.querySelector('.data-sent span');
+            const recvEl = card.querySelector('.data-recv span');
+            if (sentEl) sentEl.textContent = formatRate((stats.net_bytes_sent - prev.sent) / dt);
+            if (recvEl) recvEl.textContent = formatRate((stats.net_bytes_recv - prev.recv) / dt);
+          }
+        }
+        prevNet[host.hostname] = { sent: stats.net_bytes_sent, recv: stats.net_bytes_recv, ts: stats.timestamp };
+
+        const timeEl = card.querySelector('.host-time');
+        if (timeEl) timeEl.textContent = new Date(stats.timestamp).toLocaleString();
+      });
+    } catch (e) {
+      console.error('refresh error:', e);
+    }
+  }
+
+  setInterval(refreshHosts, 10000);
+</script>
+{{end}}

@@ -1,0 +1,41 @@
+{{define "page"}}
+<nav>
+  <a href="/acme/certificates">certificates</a>
+  
+  <a href="/acme/providers">authorities</a>
+  <a href="/acme/accounts">accounts</a>
+  <a href="/acme/orders">orders</a>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h2>Certificate Issuance #{{.issuance.ID}}</h2>
+    <p>{{.issuance.Domains}}</p>
+  </div>
+  <span class="badge badge-{{.issuance.Status}}">{{.issuance.Status}}</span>
+</div>
+
+<section class="section">
+  <table class="table">
+    <tr><th>Current step</th><td><code>{{.issuance.Step}}</code></td></tr>
+    <tr><th>ACME account</th><td>{{if .account}}{{.authorityName}} — {{.account.Email}}{{else}}#{{.issuance.AccountID}}{{end}}</td></tr>
+    <tr><th>Challenge</th><td>{{.issuance.ChallengeType}}</td></tr>
+    {{if .issuance.DNSTarget}}<tr><th>DNS target</th><td><code>{{.issuance.DNSTarget}}</code></td></tr>{{end}}
+    {{if .issuance.OrderID}}<tr><th>Order</th><td><a href="/acme/orders/{{.issuance.OrderID}}">#{{.issuance.OrderID}}</a></td></tr>{{end}}
+    <tr><th>Certificate</th><td><a href="/acme/certificates/{{.issuance.CertificateID}}">#{{.issuance.CertificateID}}</a></td></tr>
+  </table>
+</section>
+
+{{if .issuance.Error}}<div class="error-message">{{.issuance.Error}}</div>{{end}}
+{{if eq .issuance.Status "succeeded"}}
+<div class="form-actions">
+  <a class="button button-primary" href="/acme/certificates/{{.issuance.CertificateID}}">View certificate</a>
+  <a class="button" href="/web">Use in Web Server</a>
+</div>
+{{else if eq .issuance.Status "failed"}}
+<div class="form-actions"><a class="button" href="/acme/certificates/new?hostname={{.issuance.Domains}}">Try again</a></div>
+{{else}}
+<p>The issuance runs in the background. This page refreshes automatically.</p>
+<script>window.setTimeout(function () { window.location.reload(); }, 3000);</script>
+{{end}}
+{{end}}

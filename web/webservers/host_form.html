@@ -1,0 +1,97 @@
+{{define "page"}}
+
+<div class="page-header">
+    <h2>{{if .isEdit}}{{.host.Name}}{{else}}New Virtual Host{{end}}</h2>
+    {{if .isEdit}}
+    <a method="delete" href="/web/hosts/{{.host.ID}}/edit">delete</a>
+    {{end}}
+</div>
+
+{{if .error}}<div class="error-message">{{.error}}</div>{{end}}
+
+<form class="form" method="post" action="{{if .isEdit}}/web/hosts/{{.host.ID}}/edit{{else}}/web/hosts/new{{end}}">
+    {{if .isEdit}}<input class="input" type="hidden" name="_method" value="PUT">{{end}}
+
+    <div class="section">
+        <h3>Host</h3>
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input class="input" type="text" id="name" name="name" required value="{{if .host}}{{.host.Name}}{{end}}" placeholder="example">
+        </div>
+        <div class="form-group">
+            <label for="hostnames">Hostnames</label>
+            <textarea class="input" id="hostnames" name="hostnames" rows="3" required placeholder="example.com&#10;www.example.com">{{if .host}}{{.host.Hostnames}}{{end}}</textarea>
+        </div>
+        <div class="form-group">
+            <label>Listeners</label>
+            {{range .listeners}}
+            <label><input type="checkbox" name="listener_ids" value="{{.ID}}" {{if and $.host (containsInt64 $.host.ListenerIDs .ID)}}checked{{end}}> {{.Name}} <code>{{.Address}}</code></label>
+            {{end}}
+        </div>
+        <div class="form-group">
+            <label for="certificate_id">Certificate</label>
+            <select class="input" id="certificate_id" name="certificate_id">
+                <option value="">Use listener default / HTTP only</option>
+                {{range .certificates}}
+                <option value="{{.ID}}" data-domains="{{.Domains}}" {{if and $.host (eq (deref $.host.CertificateID) .ID)}}selected{{end}}>{{.Domains}}</option>
+                {{end}}
+            </select>
+            <small id="certificate-help">Only certificates covering every hostname are shown. <a id="certificate-new-link" href="/acme/certificates/new">Create a certificate</a>.</small>
+        </div>
+        <div class="form-group">
+            <label><input type="checkbox" name="force_https" {{if and .host .host.ForceHTTPS}}checked{{end}}> Redirect HTTP to HTTPS</label>
+        </div>
+        <div class="form-group">
+            <label><input type="checkbox" name="enabled" {{if or (not .host) .host.Enabled}}checked{{end}}> Enabled</label>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button class="button button-primary" type="submit">Save</button>
+        <a class="button" href="{{if .isEdit}}/web/hosts/{{.host.ID}}{{else}}/web{{end}}">Cancel</a>
+    </div>
+</form>
+
+<script>
+    (function () {
+        var hostnames = document.getElementById('hostnames');
+        var certificates = document.getElementById('certificate_id');
+        var createLink = document.getElementById('certificate-new-link');
+        if (!hostnames || !certificates || !createLink) return;
+
+        function names(value) {
+            return value.toLowerCase().split(/[\s,]+/).map(function (name) {
+                return name.replace(/\.$/, '');
+            }).filter(Boolean);
+        }
+        function covered(hostname, pattern) {
+            if (hostname === pattern) return true;
+            if (pattern.indexOf('*.') === 0) {
+                var suffix = pattern.slice(1);
+                return hostname.endsWith(suffix) &&
+                    hostname.slice(0, -suffix.length).indexOf('.') === -1;
+            }
+            return false;
+        }
+        function updateCertificates() {
+            var requested = names(hostnames.value);
+            var selectedVisible = false;
+            Array.prototype.forEach.call(certificates.options, function (option, index) {
+                if (index === 0) return;
+                var available = names(option.getAttribute('data-domains') || '');
+                var matches = requested.length > 0 && requested.every(function (hostname) {
+                    return available.some(function (pattern) { return covered(hostname, pattern); });
+                });
+                option.hidden = !matches;
+                option.disabled = !matches;
+                if (option.selected && matches) selectedVisible = true;
+            });
+            if (certificates.value && !selectedVisible) certificates.value = '';
+            createLink.href = '/acme/certificates/new?hostname=' + encodeURIComponent(requested.join('\n'));
+        }
+        hostnames.addEventListener('input', updateCertificates);
+        updateCertificates();
+    })();
+</script>
+
+{{end}}

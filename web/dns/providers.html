@@ -1,0 +1,38 @@
+{{define "page"}}
+<nav>
+  <a href="/dns">overview</a>
+  <a href="/dns/zones">zones</a>
+  <a href="/dns/providers">providers</a>
+  <a href="/dns/filters">filters</a>
+  <a href="/dns/settings">settings</a>
+</nav>
+
+<div class="page-header">
+  <h2>DNS Provider Connections</h2>
+  <a class="button button-primary" href="/dns/providers/new">New connection</a>
+</div>
+
+<p>Manage records hosted by external authoritative DNS providers.</p>
+
+{{if .providers}}
+<div class="table-container">
+  <table class="table">
+    <thead><tr><th>Name</th><th>Provider</th><th>Created</th><th>Actions</th></tr></thead>
+    <tbody>
+      {{range .providers}}
+      <tr>
+        <td><a href="/dns/providers/{{.ID}}"><b>{{.Name}}</b></a></td>
+        <td>{{.Type}}</td>
+        <td>{{formatDate .CreatedAt}}</td>
+        <td>
+          <a method="delete" href="/dns/providers/{{.ID}}" class="button button-danger" onclick="return confirm('Delete this provider connection?')">Delete</a>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}
+<p class="empty-message">No DNS provider connections. <a href="/dns/providers/new">Add one</a>.</p>
+{{end}}
+{{end}}

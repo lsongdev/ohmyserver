@@ -1,0 +1,190 @@
+{{define "page"}}
+<nav class="sub-nav">
+  <a href="/llm/chat">Chat</a>
+  <a href="/llm/providers">Providers</a>
+  <a href="/llm/models">Models</a>
+  <a href="/llm/keys">API Keys</a>
+</nav>
+
+<div class="page-header">
+  <h2>{{.session.Title}}</h2>
+  <!-- <span class="badge">{{.session.ModelName}}</span> -->
+   <a href="/llm/chat/{{.session.ID}}/settings" class="button">Settings</a>
+</div>
+
+<div class="chat-container">
+  <div id="messages" class="chat-messages">
+    <!-- {{range .messages}}
+    <div class="chat-message chat-message-{{.Role}}">
+      <div class="chat-message-content">{{.Content}}</div>
+    </div>
+    {{end}} -->
+  </div>
+  <div class="chat-input-area">
+    <textarea id="message-input" rows="2" placeholder="Type a message..."></textarea>
+    <button id="send-btn" class="button button-primary">Send</button>
+  </div>
+</div>
+
+<style>
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 320px);
+  gap: 10px;
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: var(--container-background, #f5f5f5);
+  border-radius: 8px;
+}
+.chat-message {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  word-break: break-word;
+}
+.chat-message-user {
+  align-self: flex-end;
+  background: #2196f3;
+  color: white;
+}
+.chat-message-assistant {
+  align-self: flex-start;
+  background: white;
+  border: 1px solid #e0e0e0;
+}
+.chat-message-system {
+  align-self: center;
+  background: #fff3e0;
+  font-size: 0.9em;
+}
+.chat-input-area {
+  display: flex;
+  gap: 10px;
+}
+.chat-input-area textarea {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  resize: none;
+}
+</style>
+
+<script type="module">
+  import { parse } from 'https://lsong.org/scripts/marked.js';
+import { OpenAI, Configuration } from 'https://lsong.org/chatgpt-demo/openai.js';
+
+const sessionId = {{.session.ID}};
+const modelName = '{{.session.ModelName | js}}';
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('message-input');
+const sendBtn = document.getElementById('send-btn');
+
+const openai = new OpenAI(new Configuration({
+  api: '/llm/api/v1',
+  apiKey: 'dummy',
+}));
+
+let messages = [
+  {{range .messages}}
+  { role: '{{.Role | js}}', content: '{{.Content | js}}' },
+  {{end}}
+];
+
+async function saveMessage(role, content) {
+  await fetch(`/llm/chat/${sessionId}/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role, content }),
+  });
+}
+
+function appendMessage(role, content) {
+  const div = document.createElement('div');
+  div.className = `chat-message chat-message-${role}`;
+  div.innerHTML = `<div class="chat-message-content">${parse(content)}</div>`;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+async function sendMessage() {
+  const content = inputEl.value.trim();
+  if (!content) return;
+
+  inputEl.value = '';
+  inputEl.disabled = true;
+  sendBtn.disabled = true;
+
+  messages.push({ role: 'user', content });
+  appendMessage('user', content);
+  await saveMessage('user', content);
+
+  const assistantDiv = document.createElement('div');
+  assistantDiv.className = 'chat-message chat-message-assistant';
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'chat-message-content';
+  assistantDiv.appendChild(contentDiv);
+  messagesEl.appendChild(assistantDiv);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  let assistantContent = '';
+
+  try {
+    const stream = await openai.createChatCompletion({
+      model: modelName,
+      messages: messages.map(m => ({ role: m.role, content: m.content })),
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content || '';
+      assistantContent += delta;
+      contentDiv.innerHTML = parse(assistantContent);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    messages.push({ role: 'assistant', content: assistantContent });
+    await saveMessage('assistant', assistantContent);
+  } catch (err) {
+    console.error(err);
+    alert('Failed to get response: ' + (err.message || JSON.stringify(err)));
+  } finally {
+    inputEl.disabled = false;
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+async function loadMessages() {
+  const res = await fetch(`/llm/chat/${sessionId}/messages`);
+  const messages = await res.json();
+  console.log(messages);
+  messages.forEach(m => {
+    appendMessage(m.role, m.content);
+  });
+}
+
+window.addEventListener('load', loadMessages);
+</script>
+{{end}}

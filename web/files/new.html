@@ -1,0 +1,128 @@
+{{define "page"}}
+
+<div class="file-header">
+    <h2>Create New</h2>
+    <a href="/files?path={{.currentPath}}{{if .showHidden}}&show_hidden=true{{end}}" class="button">← Back to Files</a>
+</div>
+
+<div class="tabs">
+    <a href="/files/new?path={{.currentPath}}&mode=file{{if .showHidden}}&show_hidden=true{{end}}"
+       class="tab {{if eq .mode "file"}}active{{end}}">
+        📄 New File
+    </a>
+    <a href="/files/new?path={{.currentPath}}&mode=folder{{if .showHidden}}&show_hidden=true{{end}}"
+       class="tab {{if eq .mode "folder"}}active{{end}}">
+        📁 New Folder
+    </a>
+    <a href="/files/new?path={{.currentPath}}&mode=upload{{if .showHidden}}&show_hidden=true{{end}}"
+       class="tab {{if eq .mode "upload"}}active{{end}}">
+        ↑ Upload
+    </a>
+</div>
+
+{{if eq .mode "file"}}
+<div class="form-section">
+    <form action="/files" method="POST">
+        <input type="hidden" name="action" value="create_file">
+        <input type="hidden" name="path" value="{{.currentPath}}">
+        <input type="hidden" name="show_hidden" value="{{.showHidden}}">
+        <div class="form-group">
+            <label for="filename">File Name</label>
+            <input type="text" id="filename" name="filename" placeholder="filename.txt" required>
+        </div>
+        <div class="form-group">
+            <label for="content">Content</label>
+            <textarea name="content" id="content" rows="15" placeholder="File content..."></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="button button-primary">Create File</button>
+            <a href="/files?path={{.currentPath}}{{if .showHidden}}&show_hidden=true{{end}}"
+                class="button button-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{{else if eq .mode "folder"}}
+<div class="form-section">
+    <form action="/files" method="POST">
+        <input type="hidden" name="action" value="create_folder">
+        <input type="hidden" name="path" value="{{.currentPath}}">
+        <input type="hidden" name="show_hidden" value="{{.showHidden}}">
+        <div class="form-group">
+            <label for="foldername">Folder Name</label>
+            <input type="text" id="foldername" name="foldername" placeholder="folder-name" required>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="button button-primary">Create Folder</button>
+            <a href="/files?path={{.currentPath}}{{if .showHidden}}&show_hidden=true{{end}}"
+                class="button button-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{{else if eq .mode "upload"}}
+<div class="form-section">
+    <form action="/files" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="upload">
+        <input type="hidden" name="path" value="{{.currentPath}}">
+        <input type="hidden" name="show_hidden" value="{{.showHidden}}">
+        <div class="form-group">
+            <label for="uploadfile">Select File</label>
+            <input type="file" id="uploadfile" name="file" required>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="button button-primary">Upload</button>
+            <a href="/files?path={{.currentPath}}{{if .showHidden}}&show_hidden=true{{end}}"
+                class="button button-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{{end}}
+
+<style>
+    .file-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #e1e4e8;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        text-decoration: none;
+        color: #586069;
+        border: 1px solid transparent;
+        border-bottom: none;
+        margin-bottom: -2px;
+        transition: all 0.2s;
+    }
+
+    .tab:hover {
+        color: #0366d6;
+        background: #f6f8fa;
+    }
+
+    .tab.active {
+        color: #0366d6;
+        background: #fff;
+        border-color: #e1e4e8;
+        border-bottom-color: #fff;
+        font-weight: 600;
+    }
+
+    .form-section {
+        background: #fff;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        padding: 20px;
+    }
+</style>
+
+{{end}}

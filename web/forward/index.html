@@ -1,0 +1,73 @@
+{{define "page"}}
+<div class="page-header">
+    <div>
+        <h2>Port Forwarding</h2>
+        <p>Forward incoming TCP or UDP traffic to another host and port.</p>
+    </div>
+    <div>
+        <a class="button button-primary" href="/forward/new">Add Forwarding</a>
+    </div>
+</div>
+
+{{if .listeners}}
+<div class="table-container">
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Protocol</th>
+            <th>Listen Port</th>
+            <th>Forward To</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .listeners}}
+        <tr>
+            <td>{{.ID}}</td>
+            <td><a href="/forward/{{.ID}}">{{.Name}}</a></td>
+            <td><span class="protocol-badge protocol-{{.Protocol}}">{{.Protocol}}</span></td>
+            <td>{{.ListenPort}}</td>
+            <td>{{.ForwardHost}}:{{.ForwardPort}}</td>
+            <td>
+                <span class="badge badge-{{.Status}}">{{.Status}}</span>
+            </td>
+            <td>{{.CreatedAt}}</td>
+            <td>
+                <a href="/forward/{{.ID}}/edit">Edit</a>
+                <a href="/forward/{{.ID}}/delete" method="POST" onclick="return confirm('Delete this proxy?')">Delete</a>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+</div>
+{{else}}
+<p class="empty-message">No port forwarding rules configured. <a href="/forward/new">Create one</a></p>
+{{end}}
+
+<style>
+
+    .protocol-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .protocol-badge.protocol-tcp {
+        background-color: #0366d6;
+        color: white;
+    }
+
+    .protocol-badge.protocol-udp {
+        background-color: #6f42c1;
+        color: white;
+    }
+</style>
+
+{{end}}

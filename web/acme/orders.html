@@ -1,0 +1,52 @@
+{{define "page"}}
+
+<nav>
+    <a href="/acme/certificates">certificates</a>
+    
+    <a href="/acme/providers">authorities</a>
+    <a href="/acme/accounts">accounts</a>
+    <a href="/acme/orders">orders</a>
+</nav>
+
+<div class="page-header">
+    <h2>ACME Orders</h2>
+    <a href="/acme/orders/new" class="button" >+ New Order</a>
+</div>
+
+{{if .orders}}
+<div class="table-container">
+<table class="table table-striped table-bordered table-nowrap">
+    <thead>
+        <tr>
+            <th>Domains</th>
+            <th>Account</th>
+            <th>Created</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .orders}}
+        <tr>
+            <td><b><a href="/acme/orders/{{.ID}}">{{.Domains}}</a></b></td>
+            <td>
+                {{with (index $.accounts .AccountID)}}
+                <div><b>{{.Email}}</b></div>
+                <em><a href="/acme/providers/{{.ProviderID}}">{{.ProviderName}}</a></em>
+                {{else}}
+                <span class="text-muted">Unknown</span>
+                {{end}}
+            </td>
+            <td>{{.CreatedAt|formatTime}}</td>
+            <td class="actions">
+                <a method="delete" href="/acme/orders/{{.ID}}">delete</a>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+</div>
+{{else}}
+<p class="empty-message">No orders yet. <a href="/acme/orders/new">Create your first order</a></p>
+{{end}}
+
+{{end}}

@@ -1,0 +1,82 @@
+{{define "page"}}
+
+<div class="page-header">
+    <div>
+        <h2>Web Server</h2>
+        <p>{{if .running}}running{{else}}stopped{{end}}</p>
+    </div>
+    <div class="flex gap-5">
+        <a href="/web/listeners/new" class="button">New Listener</a>
+        <a href="/web/hosts/new" class="button button-primary">New Host</a>
+    </div>
+</div>
+
+<div class="section">
+    <h3>Listeners</h3>
+    {{if .listeners}}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Protocol</th>
+                    <th>Configured</th>
+                    <th>Bound</th>
+                    <th>Default Certificate</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .listeners}}
+                <tr>
+                    <td><a href="/web/listeners/{{.ID}}">{{.Name}}</a></td>
+                    <td><code>{{.Protocol}}</code></td>
+                    <td><code>{{.Address}}</code></td>
+                    <td><code>{{with index $.addresses .Name}}{{.}}{{else}}-{{end}}</code></td>
+                    <td>{{if .DefaultCertificateName}}{{.DefaultCertificateName}}{{else}}-{{end}}</td>
+                    <td>{{if .Enabled}}<span class="badge badge-success">enabled</span>{{else}}<span class="badge">disabled</span>{{end}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <p class="empty-message">No listeners configured.</p>
+    {{end}}
+</div>
+
+<div class="section">
+    <h3>Virtual Hosts</h3>
+    {{if .hosts}}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Hostnames</th>
+                    <th>Listeners</th>
+                    <th>Certificate</th>
+                    <th>Routes</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .hosts}}
+                <tr>
+                    <td><a href="/web/hosts/{{.ID}}">{{.Name}}</a></td>
+                    <td><code>{{.Hostnames}}</code></td>
+                    <td>{{range $i, $name := .ListenerNames}}{{if $i}}, {{end}}<code>{{$name}}</code>{{end}}</td>
+                    <td>{{if .CertificateName}}{{.CertificateName}}{{else}}-{{end}}</td>
+                    <td>{{len .Routes}}</td>
+                    <td>{{if .Enabled}}<span class="badge badge-success">enabled</span>{{else}}<span class="badge">disabled</span>{{end}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <p class="empty-message">No virtual hosts configured. <a href="/web/hosts/new">Create one</a></p>
+    {{end}}
+</div>
+
+{{end}}

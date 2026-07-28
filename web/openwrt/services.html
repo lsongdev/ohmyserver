@@ -1,0 +1,65 @@
+{{define "page"}}
+
+<nav class="sub-nav">
+  <a href="/openwrt/{{.server.ID}}">Overview</a>
+  <a href="/openwrt/{{.server.ID}}/network">Network</a>
+  <a href="/openwrt/{{.server.ID}}/dhcp">DHCP</a>
+  
+  <a href="/openwrt/{{.server.ID}}/packages">Packages</a>
+  <a href="/openwrt/{{.server.ID}}/firewall">Firewall</a>
+  <a href="/openwrt/{{.server.ID}}/edit">Settings</a>
+</nav>
+
+<div class="page-header">
+  <h2>Services - {{.server.Name}}</h2>
+  <div class="actions">
+    <a href="/openwrt/{{.server.ID}}/edit" class="button">Edit</a>
+    <a href="/openwrt/{{.server.ID}}" method="delete" class="button button-danger">Delete</a>
+  </div>
+</div>
+
+{{if .services}}
+<div class="table-container">
+  <table class="table table-bordered table-nowrap">
+    <thead>
+      <tr>
+        <th>Service</th>
+        <th>Status</th>
+        <th>Boot</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .services}}
+      <tr>
+        <td><strong>{{.Name}}</strong></td>
+        <td>
+          {{if .Running}}
+          <span class="badge" style="background: #d4edda; color: #155724;">Running</span>
+          {{else}}
+          <span class="badge" style="background: #f8d7da; color: #721c24;">Stopped</span>
+          {{end}}
+        </td>
+        <td>
+          {{if .Enabled}}
+          <span class="badge" style="background: #d4edda; color: #155724;">Enabled</span>
+          {{else}}
+          <span class="badge" style="background: #f8d7da; color: #721c24;">Disabled</span>
+          {{end}}
+        </td>
+        <td>
+          <form method="POST" action="/openwrt/{{$.server.ID}}/restart" style="display: inline;">
+            <input type="hidden" name="service" value="{{.Name}}">
+            <button type="submit" class="button button-small">Restart</button>
+          </form>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}
+<p class="empty-message">No service information available</p>
+{{end}}
+
+{{end}}
