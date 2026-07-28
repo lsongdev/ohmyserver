@@ -91,6 +91,8 @@ github.com/lsongdev/ssdp-go v0.0.0-20260411070512-aece6ff5803f h1:ZlN+373rFabQWy
 github.com/lsongdev/ssdp-go v0.0.0-20260411070512-aece6ff5803f/go.mod h1:fFWoxWjuae01yKqY1bVJBlwMsPBqEhOdYUkQl2OP5YA=
 github.com/lsongdev/workers-go v0.0.0-20260406114953-755eda039598 h1:s6kx8dBryZ0GLn5eDk9UeWLnplP3yEiSvTSfd+AmrF8=
 github.com/lsongdev/workers-go v0.0.0-20260406114953-755eda039598/go.mod h1:ZyAWRk8vD1HG7nTu5OhAcfvlzYDVS3GyYOxDl1PobEs=
+github.com/lsongdev/yabber v0.0.0-20260728165755-b84e9aa5f0d5 h1:ZG0kVMeiYehvF9xlrPJtndGgcc4BRreyvx77qXhz/Wc=
+github.com/lsongdev/yabber v0.0.0-20260728165755-b84e9aa5f0d5/go.mod h1:8I5PxHl0gXg8Y0zAfPaDA3g63DLuD6oq16KzcdDgtLA=
 github.com/lsongdev/yeelight-go v0.0.0-20260429060907-76de1d03edb6 h1:CIX1Kby1FRA6DMEN678WshETr9nlZcMbRkHN/hbVYNQ=
 github.com/lsongdev/yeelight-go v0.0.0-20260429060907-76de1d03edb6/go.mod h1:gfIleAf/Y+CJlKWiJkVuSnjSM3JjKORGesryLxA/t/s=
 github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 h1:6E+4a0GO5zZEnZ81pIr0yLvtUWk2if982qA3F3QD6H4=

@@ -17,7 +17,7 @@ require (
 	github.com/lsongdev/ntp-go v0.0.0-20260728080956-58638dac0cb4
 	github.com/lsongdev/openwrt-go v0.0.0-20260411153216-6c064a0962c3
 	github.com/lsongdev/speedtest-go v0.0.0-20260423054920-93af072d218e
-	github.com/lsongdev/workers-go v0.0.0-20260406114953-755eda039598
+	github.com/lsongdev/yabber v0.0.0-20260728165755-b84e9aa5f0d5
 	github.com/lsongdev/yeelight-go v0.0.0-20260429060907-76de1d03edb6
 	github.com/namedotcom/go v0.0.0-20180403034216-08470befbe04
 	github.com/nrdcg/dnspod-go v0.4.0
@@ -51,6 +51,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lsongdev/ssdp-go v0.0.0-20260411070512-aece6ff5803f // indirect
+	github.com/lsongdev/workers-go v0.0.0-20260406114953-755eda039598 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

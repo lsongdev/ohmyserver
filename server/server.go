@@ -21,7 +21,7 @@ import (
 	"github.com/lsongdev/ohmyserver/cron"
 	"github.com/lsongdev/ohmyserver/forward"
 	"github.com/lsongdev/ohmyserver/web"
-	"github.com/lsongdev/ohmyserver/yabber"
+	"github.com/lsongdev/yabber"
 )
 
 type H map[string]any

@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lsongdev/ohmyserver/yabber"
+	"github.com/lsongdev/yabber"
 )
 
 type WebListener struct {
