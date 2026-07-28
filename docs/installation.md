@@ -169,6 +169,9 @@ ExecStart=/path/to/ohmyserver/ohmyserver
 Restart=on-failure
 RestartSec=10
 Environment="PATH=/usr/bin:/usr/local/bin"
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
 
 [Install]
 WantedBy=multi-user.target

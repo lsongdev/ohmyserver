@@ -419,6 +419,65 @@ func (d *DockerClient) BuildImageFromDir(name, buildDir string) (<-chan string, 
 	return logCh, nil
 }
 
+// BuildImageFromDirContext builds an image synchronously, propagating both
+// cancellation and errors from Docker's streamed build response.
+func (d *DockerClient) BuildImageFromDirContext(ctx context.Context, name, buildDir string, onLog func(string)) error {
+	tarReader, err := createTarFromDir(buildDir)
+	if err != nil {
+		return fmt.Errorf("failed to create tar archive: %w", err)
+	}
+	defer tarReader.Close()
+
+	resp, err := d.Client.ImageBuild(ctx, tarReader, types.ImageBuildOptions{
+		Tags:       []string{name},
+		Dockerfile: "Dockerfile",
+		Remove:     true,
+		NoCache:    true,
+	})
+	if err != nil {
+		return fmt.Errorf("image build failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	decoder := json.NewDecoder(resp.Body)
+	for {
+		var msg struct {
+			Stream      string `json:"stream"`
+			Error       string `json:"error"`
+			ErrorDetail struct {
+				Message string `json:"message"`
+			} `json:"errorDetail"`
+			Status   string `json:"status"`
+			Progress string `json:"progress"`
+		}
+		if err := decoder.Decode(&msg); err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return fmt.Errorf("decode image build response: %w", err)
+		}
+		if msg.Error != "" {
+			return fmt.Errorf("docker build: %s", msg.Error)
+		}
+		if msg.ErrorDetail.Message != "" {
+			return fmt.Errorf("docker build: %s", msg.ErrorDetail.Message)
+		}
+		if onLog == nil {
+			continue
+		}
+		if line := strings.TrimSpace(msg.Stream); line != "" {
+			onLog(line)
+		}
+		if msg.Status != "" {
+			line := msg.Status
+			if msg.Progress != "" {
+				line += ": " + msg.Progress
+			}
+			onLog(line)
+		}
+	}
+}
+
 // createTarFromDir creates a tar archive reader from a directory
 func createTarFromDir(srcDir string) (io.ReadCloser, error) {
 	pr, pw := io.Pipe()

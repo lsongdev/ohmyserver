@@ -5,20 +5,34 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/websocket"
 	terminalpkg "github.com/lsongdev/ohmyserver/terminal"
 )
 
 var terminalUpgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		origin := r.Header.Get("Origin")
-		if origin == "" {
+	CheckOrigin: terminalOriginAllowed,
+}
+
+func terminalOriginAllowed(r *http.Request) bool {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		return true
+	}
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	if u.Host == r.Host {
+		return true
+	}
+	for forwardedHost := range strings.SplitSeq(r.Header.Get("X-Forwarded-Host"), ",") {
+		if u.Host == strings.TrimSpace(forwardedHost) {
 			return true
 		}
-		u, err := url.Parse(origin)
-		return err == nil && u.Host == r.Host
-	},
+	}
+	return false
 }
 
 func (s *Server) TerminalHandler(w http.ResponseWriter, r *http.Request) {

@@ -2,6 +2,8 @@ package server
 
 import (
 	"bufio"
+	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -16,6 +18,11 @@ import (
 	"time"
 
 	"github.com/lsongdev/ohmyserver/config"
+)
+
+const (
+	appsRepositoryURL = "https://github.com/lsongdev/ohmyserver-apps.git"
+	appsSyncTimeout   = 2 * time.Minute
 )
 
 // AppTemplate represents an app template from the apps directory
@@ -49,8 +56,8 @@ type AppStatus struct {
 	Container string `json:"container,omitempty"`
 }
 
-// initAppsDB creates the in-memory app catalog schema
-func (s *Server) initAppsDB() error {
+// initAppsSchema creates the persistent app catalog schema in the main database.
+func (s *Server) initAppsSchema() error {
 	schema := `
 	CREATE TABLE IF NOT EXISTS app_templates (
 		id TEXT PRIMARY KEY,
@@ -73,16 +80,85 @@ func (s *Server) initAppsDB() error {
 		force_pull INTEGER,
 		min_version TEXT,
 		icon TEXT,
-		compose_file TEXT
+		compose_file TEXT,
+		content_hash TEXT NOT NULL DEFAULT ''
 	);
 	CREATE INDEX IF NOT EXISTS idx_apps_name ON app_templates(name);
 	CREATE INDEX IF NOT EXISTS idx_apps_available ON app_templates(available);
 	`
-	_, err := s.appsDB.Exec(schema)
-	return err
+	if _, err := s.db.Exec(schema); err != nil {
+		return err
+	}
+
+	// Existing databases created by earlier development versions may not have
+	// the hash column yet.
+	_, err := s.db.Exec(`ALTER TABLE app_templates ADD COLUMN content_hash TEXT NOT NULL DEFAULT ''`)
+	if err != nil && !strings.Contains(strings.ToLower(err.Error()), "duplicate column") {
+		return err
+	}
+	return nil
 }
 
-// loadAppTemplates scans the apps directory and loads all manifests into memory
+// syncAppsRepository clones the app catalog on first use and fast-forwards an
+// existing checkout on subsequent syncs. Local changes are deliberately not
+// overwritten: git pull --ff-only fails and leaves the cached catalog intact.
+func syncAppsRepository(ctx context.Context, repositoryURL, appsDir string) error {
+	info, err := os.Stat(appsDir)
+	if os.IsNotExist(err) {
+		if err := os.MkdirAll(filepath.Dir(appsDir), 0755); err != nil {
+			return fmt.Errorf("create apps directory parent: %w", err)
+		}
+		return runGit(ctx, "clone", "--depth", "1", repositoryURL, appsDir)
+	}
+	if err != nil {
+		return fmt.Errorf("inspect apps directory: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("apps path is not a directory: %s", appsDir)
+	}
+	if _, err := os.Stat(filepath.Join(appsDir, ".git")); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("apps directory is not a git checkout: %s", appsDir)
+		}
+		return fmt.Errorf("inspect apps git checkout: %w", err)
+	}
+
+	return runGit(ctx, "-C", appsDir, "pull", "--ff-only")
+}
+
+func runGit(ctx context.Context, args ...string) error {
+	output, err := exec.CommandContext(ctx, "git", args...).CombinedOutput()
+	if err != nil {
+		message := strings.TrimSpace(string(output))
+		if message == "" {
+			return fmt.Errorf("git %s: %w", strings.Join(args, " "), err)
+		}
+		return fmt.Errorf("git %s: %s: %w", strings.Join(args, " "), message, err)
+	}
+	return nil
+}
+
+// syncAppCatalog updates the checkout and reconciles the persistent catalog.
+func (s *Server) syncAppCatalog(ctx context.Context) error {
+	s.appsSyncMu.Lock()
+	defer s.appsSyncMu.Unlock()
+
+	if err := syncAppsRepository(ctx, appsRepositoryURL, config.AppsDir); err != nil {
+		return err
+	}
+	return s.loadAppTemplates()
+}
+
+type appCatalogRecord struct {
+	app            AppTemplate
+	categoriesJSON string
+	archsJSON      string
+	formFieldsJSON string
+	contentHash    string
+}
+
+// loadAppTemplates incrementally reconciles the checked-out manifests with the
+// persistent catalog. Unchanged rows are not written.
 func (s *Server) loadAppTemplates() error {
 	appsDir := config.AppsDir
 	entries, err := os.ReadDir(appsDir)
@@ -90,24 +166,7 @@ func (s *Server) loadAppTemplates() error {
 		return fmt.Errorf("failed to read apps directory: %w", err)
 	}
 
-	tx, err := s.appsDB.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	stmt, err := tx.Prepare(`
-		INSERT OR REPLACE INTO app_templates (
-			id, name, available, exposable, dynamic_config, port, platform_version, version,
-			categories, description, short_desc, author, source, form_fields,
-			supported_architectures, created_at, updated_at, force_pull, min_version, icon, compose_file
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
+	records := make([]appCatalogRecord, 0, len(entries))
 	for _, entry := range entries {
 		if !entry.IsDir() || entry.Name() == ".git" {
 			continue
@@ -136,16 +195,107 @@ func (s *Server) loadAppTemplates() error {
 		categoriesJSON, _ := json.Marshal(app.Categories)
 		archsJSON, _ := json.Marshal(app.SupportedArchitectures)
 		formFieldsJSON, _ := json.Marshal(app.FormFields)
+		content := make([]byte, 0, len(manifestData)+len(composeData)+1)
+		content = append(content, manifestData...)
+		content = append(content, 0)
+		content = append(content, composeData...)
+		contentHash := fmt.Sprintf("%x", sha256.Sum256(content))
 
-		_, err = stmt.Exec(
+		records = append(records, appCatalogRecord{
+			app:            app,
+			categoriesJSON: string(categoriesJSON),
+			archsJSON:      string(archsJSON),
+			formFieldsJSON: string(formFieldsJSON),
+			contentHash:    contentHash,
+		})
+	}
+	if len(records) == 0 {
+		return fmt.Errorf("no valid app templates found in %s", appsDir)
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`
+		INSERT INTO app_templates (
+			id, name, available, exposable, dynamic_config, port, platform_version, version,
+			categories, description, short_desc, author, source, form_fields,
+			supported_architectures, created_at, updated_at, force_pull, min_version, icon,
+			compose_file, content_hash
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET
+			name = excluded.name,
+			available = excluded.available,
+			exposable = excluded.exposable,
+			dynamic_config = excluded.dynamic_config,
+			port = excluded.port,
+			platform_version = excluded.platform_version,
+			version = excluded.version,
+			categories = excluded.categories,
+			description = excluded.description,
+			short_desc = excluded.short_desc,
+			author = excluded.author,
+			source = excluded.source,
+			form_fields = excluded.form_fields,
+			supported_architectures = excluded.supported_architectures,
+			created_at = excluded.created_at,
+			updated_at = excluded.updated_at,
+			force_pull = excluded.force_pull,
+			min_version = excluded.min_version,
+			icon = excluded.icon,
+			compose_file = excluded.compose_file,
+			content_hash = excluded.content_hash
+		WHERE app_templates.content_hash <> excluded.content_hash
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	seen := make(map[string]struct{}, len(records))
+	for _, record := range records {
+		app := record.app
+		if _, err := stmt.Exec(
 			app.ID, app.Name, boolToInt(app.Available), boolToInt(app.Exposable),
 			boolToInt(app.DynamicConfig), app.Port, app.PlatformVersion, app.Version,
-			string(categoriesJSON), app.Description, app.ShortDesc, app.Author, app.Source,
-			string(formFieldsJSON), string(archsJSON), app.CreatedAt, app.UpdatedAt,
+			record.categoriesJSON, app.Description, app.ShortDesc, app.Author, app.Source,
+			record.formFieldsJSON, record.archsJSON, app.CreatedAt, app.UpdatedAt,
 			boolToInt(app.ForcePull), app.MinVersion, app.Icon, app.ComposeFile,
-		)
-		if err != nil {
-			continue
+			record.contentHash,
+		); err != nil {
+			return fmt.Errorf("upsert app template %s: %w", app.ID, err)
+		}
+		seen[app.ID] = struct{}{}
+	}
+
+	rows, err := tx.Query(`SELECT id FROM app_templates`)
+	if err != nil {
+		return err
+	}
+	var removedIDs []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
+		}
+		if _, ok := seen[id]; !ok {
+			removedIDs = append(removedIDs, id)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	for _, id := range removedIDs {
+		if _, err := tx.Exec(`DELETE FROM app_templates WHERE id = ?`, id); err != nil {
+			return fmt.Errorf("delete removed app template %s: %w", id, err)
 		}
 	}
 
@@ -200,7 +350,7 @@ func (s *Server) GetAppTemplate(id string) (*AppTemplate, error) {
 		categories, description, short_desc, author, source, form_fields,
 		supported_architectures, created_at, updated_at, force_pull, min_version, icon, compose_file
 		FROM app_templates WHERE id = ?`
-	return scanAppTemplate(s.appsDB.QueryRow(query, id))
+	return scanAppTemplate(s.db.QueryRow(query, id))
 }
 
 // ListAppTemplates lists all app templates optionally filtered by category
@@ -216,7 +366,7 @@ func (s *Server) ListAppTemplates(category string) ([]*AppTemplate, error) {
 	}
 	query += ` ORDER BY name COLLATE NOCASE`
 
-	rows, err := s.appsDB.Query(query, args...)
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +388,7 @@ func (s *Server) GetAllAppStatuses() (map[string]*AppStatus, error) {
 	statuses := make(map[string]*AppStatus)
 
 	// Get all app IDs first
-	rows, err := s.appsDB.Query(`SELECT id, name FROM app_templates WHERE available = 1`)
+	rows, err := s.db.Query(`SELECT id, name FROM app_templates WHERE available = 1`)
 	if err != nil {
 		return statuses, err
 	}
@@ -481,7 +631,7 @@ func (s *Server) RestartApp(appID string) error {
 
 // GetAppCategories returns all unique categories
 func (s *Server) GetAppCategories() ([]string, error) {
-	rows, err := s.appsDB.Query(`SELECT categories FROM app_templates WHERE available = 1`)
+	rows, err := s.db.Query(`SELECT categories FROM app_templates WHERE available = 1`)
 	if err != nil {
 		return nil, err
 	}
@@ -576,7 +726,25 @@ func (s *Server) AppsView(w http.ResponseWriter, r *http.Request) {
 		"filter":     filter,
 		"category":   category,
 		"count":      len(filteredApps),
+		"synced":     r.URL.Query().Get("synced") == "1",
 	})
+}
+
+// AppsSyncHandler updates the app catalog from its upstream repository.
+func (s *Server) AppsSyncHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), appsSyncTimeout)
+	defer cancel()
+	if err := s.syncAppCatalog(ctx); err != nil {
+		http.Error(w, fmt.Sprintf("sync app catalog: %v", err), http.StatusBadGateway)
+		return
+	}
+	http.Redirect(w, r, "/apps?synced=1", http.StatusSeeOther)
 }
 
 func generateRandomString(min, max int) string {
@@ -1096,10 +1264,18 @@ func (w *sseWriter) Write(p []byte) (n int, err error) {
 }
 
 func init() {
+	RegisterInitSchemaHook((*Server).initAppsSchema)
 	RegisterInitHook(func(s *Server) error {
-		if err := s.initAppsDB(); err != nil {
-			return err
+		ctx, cancel := context.WithTimeout(context.Background(), appsSyncTimeout)
+		defer cancel()
+		if err := s.syncAppCatalog(ctx); err != nil {
+			// Keep serving the last successfully downloaded catalog when the
+			// network is unavailable or the checkout has local changes.
+			if loadErr := s.loadAppTemplates(); loadErr != nil {
+				return fmt.Errorf("sync app catalog: %v; load cached catalog: %w", err, loadErr)
+			}
+			return fmt.Errorf("sync app catalog (using cached catalog): %w", err)
 		}
-		return s.loadAppTemplates()
+		return nil
 	})
 }

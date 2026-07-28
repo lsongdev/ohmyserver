@@ -14,8 +14,8 @@
   </div>
 
   <div class="page-header gap-5">
-    <button class="" onclick="window.location.reload()">↻ Refresh</button>
-    <button class="" id="cancel-btn" onclick="cancelDeployment()" style="display: none;">Cancel Deployment</button>
+    <button class="button" onclick="window.location.reload()">↻ Refresh</button>
+    <button class="button button-danger" id="cancel-btn" onclick="cancelDeployment()" style="display: none;">Cancel Deployment</button>
   </div>
 </div>
 
@@ -24,6 +24,18 @@
     <span class="label">Triggered by:</span>
     <span class="value">{{.deployment.TriggeredBy}}</span>
   </div>
+  {{if .deployment.Commit}}
+  <div class="info-item">
+    <span class="label">Commit:</span>
+    <span class="value"><code>{{.deployment.Commit}}</code></span>
+  </div>
+  {{end}}
+  {{if .deployment.Author}}
+  <div class="info-item">
+    <span class="label">Author:</span>
+    <span class="value">{{.deployment.Author}}</span>
+  </div>
+  {{end}}
   <div class="info-item">
     <span class="label">Started:</span>
     <span class="value">{{if .deployment.StartedAt}}{{.deployment.StartedAt}}{{else}}Pending...{{end}}</span>
@@ -147,7 +159,7 @@
   const deploymentId = {{.deployment.ID }};
   let eventSource = null;
   let isComplete = false;
-  let lastLogId = {{ if .deployment.LastLogID }}{ {.deployment.LastLogID } } { {else } } 0{ { end } };
+  let lastLogId = {{if .deployment.LastLogID}}{{.deployment.LastLogID}}{{else}}0{{end}};
 
   document.addEventListener('DOMContentLoaded', function () {
     // Show cancel button if deployment is running
@@ -260,8 +272,9 @@
     })
       .then(response => {
         if (response.ok) {
-          updateStatus('cancelled');
-          handleCompletion('cancelled');
+          const cancelBtn = document.getElementById('cancel-btn');
+          cancelBtn.disabled = true;
+          cancelBtn.textContent = 'Cancelling...';
         } else {
           response.text().then(msg => alert('Failed to cancel: ' + msg));
         }

@@ -8,6 +8,7 @@ oms_install_path="${OHMYSERVER_INSTALL_PATH:-/usr/local/bin/ohmyserver}"
 oms_panel_address="${OHMYSERVER_PANEL_ADDRESS:-0.0.0.0:9000}"
 oms_repository="${OHMYSERVER_REPOSITORY:-lsongdev/ohmyserver}"
 oms_temp_dir=""
+oms_access_token=""
 
 cleanup() {
 	if [ -n "$oms_temp_dir" ] && [ -d "$oms_temp_dir" ]; then
@@ -113,10 +114,17 @@ if [ -f "$oms_database_path" ]; then
 fi
 
 if [ ! -f "$oms_data_dir/config.yaml" ]; then
+	oms_access_token="$(
+		od -An -N32 -tx1 /dev/urandom | tr -d ' \n'
+	)"
+	if [ "${#oms_access_token}" -ne 64 ]; then
+		echo "Failed to generate panel access token." >&2
+		exit 1
+	fi
 	oms_config_temp="$(mktemp)"
 	cat >"$oms_config_temp" <<EOF
 listen: "$oms_panel_address"
-access_key: ""
+access_key: "$oms_access_token"
 database:
   driver: sqlite
   path: "$oms_database_path"
@@ -170,6 +178,12 @@ while [ "$oms_attempt" -lt 20 ]; do
 		[ "$(curl --fail --silent --header 'Host: localhost' http://127.0.0.1/)" = "OhMyServer Web Server" ]; then
 		echo "OhMyServer panel: http://$(hostname -I | awk '{print $1}'):9000/"
 		echo "Default Worker: http://$(hostname -I | awk '{print $1}')/"
+		if [ -n "$oms_access_token" ]; then
+			echo "Panel Access Token: $oms_access_token"
+			echo "Save this token now; it is required to sign in."
+		else
+			echo "Panel Access Token: preserved from $oms_data_dir/config.yaml"
+		fi
 		exit 0
 	fi
 	oms_attempt=$((oms_attempt + 1))

@@ -1,0 +1,51 @@
+{{define "page"}}
+
+<nav>
+  <a href="/ntp">overview</a>
+  <a href="/ntp/settings">settings</a>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h2>NTP Server</h2>
+    <p>Provide local network time from this host's system clock.</p>
+  </div>
+  <form method="POST" action="/ntp/action">
+    {{if .status.Running}}
+    <button class="button" type="submit" name="action" value="reload">Reload</button>
+    <button class="button button-danger" type="submit" name="action" value="stop">Stop</button>
+    {{else}}
+    <button class="button button-primary" type="submit" name="action" value="start">Start</button>
+    {{end}}
+  </form>
+</div>
+
+<div class="grid grid-3 gap-10">
+  <section class="section">
+    <h3>Status</h3>
+    {{if .status.Running}}
+    <p><span class="badge badge-active">running</span></p>
+    <p>Listen: <code>{{.status.ListenAddr}}</code></p>
+    {{else}}
+    <p><span class="badge badge-inactive">stopped</span></p>
+    {{if .status.LastError}}<p>{{.status.LastError}}</p>{{end}}
+    {{end}}
+  </section>
+  <section class="section">
+    <h3>Clock</h3>
+    <p>Stratum <b>{{.settings.Stratum}}</b></p>
+    <p>Reference ID <code>{{.settings.ReferenceID}}</code></p>
+  </section>
+  <section class="section">
+    <h3>Traffic</h3>
+    <p><b>{{.status.Requests}}</b> requests since start</p>
+    {{if .status.Running}}<p>Started {{formatDate .status.StartedAt}}</p>{{end}}
+  </section>
+</div>
+
+<section class="section">
+  <h3>Client configuration</h3>
+  <p>Point clients at this server's LAN address on UDP port <code>123</code>. Binding the standard port may require elevated privileges or <code>CAP_NET_BIND_SERVICE</code>.</p>
+</section>
+
+{{end}}

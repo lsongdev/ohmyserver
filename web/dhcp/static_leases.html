@@ -1,0 +1,40 @@
+{{define "page"}}
+
+<nav>
+  <a href="/dhcp">overview</a>
+  <a href="/dhcp/leases">leases</a>
+  <a href="/dhcp/static-leases">static leases</a>
+  <a href="/dhcp/settings">settings</a>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h2>Static Leases</h2>
+    <p>Fixed IPv4 assignments associated with client MAC addresses.</p>
+  </div>
+  <a class="button button-primary" href="/dhcp/static-leases/new">New static lease</a>
+</div>
+
+<section class="section">
+  {{if .staticLeases}}
+  <table class="table">
+    <thead>
+      <tr><th>IP address</th><th>MAC address</th><th>Hostname</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      {{range .staticLeases}}
+      <tr>
+        <td><a href="/dhcp/static-leases/{{.ID}}"><code>{{.IP}}</code></a></td>
+        <td><code>{{.MAC}}</code></td>
+        <td>{{.Hostname}}</td>
+        <td>{{.Description}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p>No static leases configured.</p>
+  {{end}}
+</section>
+
+{{end}}

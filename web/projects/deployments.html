@@ -10,8 +10,7 @@
     <h2>Deployments: {{.project.Name}}</h2>
     {{if .project.Repo}}
     <form action="/projects/{{.project.ID}}/deployments" method="post" style="display: inline;">
-        <input type="hidden" name="auto_deploy" value="1">
-        <button type="submit">Deploy</button>
+        <button type="submit" class="button button-primary">Deploy</button>
     </form>
     {{else}}
     <a href="/projects/{{.project.ID}}/settings" class="button">Set Repository</a>

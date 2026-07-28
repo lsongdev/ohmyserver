@@ -11,8 +11,10 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/lsongdev/acme-go v0.0.0-20260403095516-04f0b6832575
 	github.com/lsongdev/clashapi-go v0.0.0-20260506085541-7d037170d5b5
+	github.com/lsongdev/dhcp-go v0.0.0-20260728081411-bb497a8e114c
 	github.com/lsongdev/dns-go v0.0.0-20260526003909-ad575eb83682
 	github.com/lsongdev/idrac-go v0.0.0-20260406044348-bf8a10c471b3
+	github.com/lsongdev/ntp-go v0.0.0-20260728080956-58638dac0cb4
 	github.com/lsongdev/openwrt-go v0.0.0-20260411153216-6c064a0962c3
 	github.com/lsongdev/speedtest-go v0.0.0-20260423054920-93af072d218e
 	github.com/lsongdev/workers-go v0.0.0-20260406114953-755eda039598

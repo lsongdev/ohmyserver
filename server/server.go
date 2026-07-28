@@ -30,9 +30,9 @@ type H map[string]any
 
 type Server struct {
 	db            *sql.DB
-	appsDB        *sql.DB
 	config        *config.Config
 	docker        *DockerClient
+	deployRuntime deploymentRuntime
 	tcpProxy      *forward.TCPProxy
 	webServer     *yabber.Server
 	webServerMu   sync.Mutex
@@ -42,10 +42,14 @@ type Server struct {
 	acmeContext   context.Context
 	acmeCancel    context.CancelFunc
 	dnsRuntime    *DNSRuntime
+	ntpRuntime    *NTPRuntime
+	dhcpRuntime   *DHCPRuntime
 	cronScheduler *cron.Scheduler
 	deployments   map[int64]*DeploymentExecutor // Map of deployment ID to executor
+	deploymentsMu sync.RWMutex
 	appInstalls   map[string]*AppInstallTask
 	appInstallMu  sync.RWMutex
+	appsSyncMu    sync.Mutex
 }
 
 // AppInstallTask tracks the installation progress of an app
@@ -74,19 +78,9 @@ func NewServer(cfg *config.Config) (server *Server, err error) {
 		return nil, err
 	}
 
-	// Initialize in-memory SQLite for app catalog
-	appsDB, err := sql.Open("sqlite", ":memory:")
-	if err != nil {
-		db.Close()
-		return nil, err
-	}
-	appsDB.SetMaxOpenConns(1)
-	appsDB.SetConnMaxLifetime(0)
-
 	acmeContext, acmeCancel := context.WithCancel(context.Background())
 	server = &Server{
 		db:          db,
-		appsDB:      appsDB,
 		docker:      d,
 		config:      cfg,
 		deployments: make(map[int64]*DeploymentExecutor),
@@ -97,12 +91,10 @@ func NewServer(cfg *config.Config) (server *Server, err error) {
 	}
 	if err := server.initSchema(); err != nil {
 		db.Close()
-		appsDB.Close()
 		return nil, err
 	}
 	if err := server.ensureServicePreferences(); err != nil {
 		db.Close()
-		appsDB.Close()
 		return nil, err
 	}
 

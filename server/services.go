@@ -36,11 +36,21 @@ func (s *Server) ensureServicePreferences() error {
 	if settings, err := s.GetDNSSettings(); err == nil {
 		dnsEnabled = settings.Enabled
 	}
+	ntpEnabled := false
+	if settings, err := s.GetNTPSettings(); err == nil {
+		ntpEnabled = settings.Enabled
+	}
+	dhcpEnabled := false
+	if settings, err := s.GetDHCPSettings(); err == nil {
+		dhcpEnabled = settings.Enabled
+	}
 	defaults := []struct {
 		id      string
 		enabled bool
 	}{
 		{id: "dns", enabled: dnsEnabled},
+		{id: "ntp", enabled: ntpEnabled},
+		{id: "dhcp", enabled: dhcpEnabled},
 		{id: "web", enabled: true},
 		{id: "forward", enabled: true},
 	}
@@ -157,6 +167,26 @@ func (s *Server) startService(_ context.Context, serviceID string) error {
 			return err
 		}
 		return s.refreshDNSAndReload()
+	case "ntp":
+		settings, err := s.GetNTPSettings()
+		if err != nil {
+			return err
+		}
+		settings.Enabled = true
+		if err := s.UpdateNTPSettings(*settings); err != nil {
+			return err
+		}
+		return s.reloadNTP()
+	case "dhcp":
+		settings, err := s.GetDHCPSettings()
+		if err != nil {
+			return err
+		}
+		settings.Enabled = true
+		if err := s.UpdateDHCPSettings(*settings); err != nil {
+			return err
+		}
+		return s.reloadDHCP()
 	case "web":
 		return s.applyYabber()
 	case "forward":
@@ -180,6 +210,32 @@ func (s *Server) stopService(_ context.Context, serviceID string) error {
 			return nil
 		}
 		return s.dnsRuntime.Stop()
+	case "ntp":
+		settings, err := s.GetNTPSettings()
+		if err != nil {
+			return err
+		}
+		settings.Enabled = false
+		if err := s.UpdateNTPSettings(*settings); err != nil {
+			return err
+		}
+		if s.ntpRuntime == nil {
+			return nil
+		}
+		return s.ntpRuntime.Stop()
+	case "dhcp":
+		settings, err := s.GetDHCPSettings()
+		if err != nil {
+			return err
+		}
+		settings.Enabled = false
+		if err := s.UpdateDHCPSettings(*settings); err != nil {
+			return err
+		}
+		if s.dhcpRuntime == nil {
+			return nil
+		}
+		return s.dhcpRuntime.Stop()
 	case "web":
 		return s.stopWebServer()
 	case "forward":
@@ -195,6 +251,10 @@ func (s *Server) reloadService(_ context.Context, serviceID string) error {
 	switch serviceID {
 	case "dns":
 		return s.refreshDNSAndReload()
+	case "ntp":
+		return s.reloadNTP()
+	case "dhcp":
+		return s.reloadDHCP()
 	case "web":
 		return s.applyYabber()
 	case "forward":
@@ -243,6 +303,20 @@ func (s *Server) configuredServiceConflicts(includeDisabled string) ([]ServiceCo
 		add("DNS Server", "tcp", settings.TCPAddr)
 		add("DNS Server", "tcp", settings.DoTAddr)
 		add("DNS Server", "tcp", settings.DoHAddr)
+	}
+	if enabled("ntp", false) {
+		settings, err := s.GetNTPSettings()
+		if err != nil {
+			return nil, err
+		}
+		add("NTP Server", "udp", settings.ListenAddr)
+	}
+	if enabled("dhcp", false) {
+		settings, err := s.GetDHCPSettings()
+		if err != nil {
+			return nil, err
+		}
+		add("DHCP Server", "udp", settings.ListenAddr)
 	}
 	if enabled("web", true) {
 		listeners, err := s.GetAllWebListeners()
@@ -342,7 +416,10 @@ func uniqueServiceNames(group []configuredEndpoint) []string {
 }
 
 func conflictContainsService(group []configuredEndpoint, id string) bool {
-	name := map[string]string{"dns": "DNS Server", "web": "Web Server", "forward": "Port Forwarding"}[id]
+	name := map[string]string{
+		"dns": "DNS Server", "ntp": "NTP Server", "dhcp": "DHCP Server",
+		"web": "Web Server", "forward": "Port Forwarding",
+	}[id]
 	for _, endpoint := range group {
 		if endpoint.service == name {
 			return true

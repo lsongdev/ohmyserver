@@ -19,15 +19,36 @@
   <div class="form-group">
     <label for="repo">Repository URL</label>
     <input type="text" id="repo" name="repo" class="input" value="{{.project.Repo}}" placeholder="https://github.com/user/repo.git">
-    <small class="form-hint">Git repository URL for automatic deployment</small>
+    <small class="form-hint">Repository root must contain a Dockerfile.</small>
   </div>
 
-  <button type="submit" >Update Project</button>
-  <a href="/projects/{{.project.ID}}" >Cancel</a>
+  <h3>GitHub Webhook</h3>
+  <div class="form-group">
+    <label for="webhook_url">Payload URL</label>
+    <input type="text" id="webhook_url" class="input" value="{{.webhookURL}}" readonly>
+  </div>
+  <div class="form-group">
+    <label for="webhook_branch">Branch</label>
+    <input type="text" id="webhook_branch" name="webhook_branch" class="input" value="{{.project.WebhookBranch}}" required>
+  </div>
+  <div class="form-group">
+    <label for="current_webhook_secret">Secret</label>
+    <input type="text" id="current_webhook_secret" class="input" value="{{.project.WebhookSecret}}" readonly>
+  </div>
+  <div class="form-group">
+    <label for="webhook_secret">New Secret</label>
+    <input type="password" id="webhook_secret" name="webhook_secret" class="input">
+    <small class="form-hint">Leave blank to keep the current secret.</small>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="button button-primary">Update Project</button>
+    <a href="/projects/{{.project.ID}}" class="button">Cancel</a>
+  </div>
 </form>
 
 <div class="form-group">
-  <a method="post" href="/projects/{{.project.ID}}/delete" >Delete Project</a>
+  <a method="delete" href="/projects/{{.project.ID}}" class="button button-danger" onclick="return confirm('Delete this project?')">Delete Project</a>
 </div>
 
 {{end}}

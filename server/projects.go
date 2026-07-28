@@ -1,11 +1,16 @@
 package server
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
+
+var ErrDeploymentInProgress = errors.New("deployment already in progress")
 
 func (s *Server) ProjectsView(w http.ResponseWriter, r *http.Request) {
 	projects, err := s.GetAllProjects()
@@ -39,29 +44,15 @@ func (s *Server) DeploymentsView(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Create deployment record with auto-deployment settings
-		deployment, err := s.CreateDeployment(id, "", "", project.Name, "", "", "", "", "Manual")
+		deployment, err := s.StartProjectDeployment(project, "Manual")
 		if err != nil {
-			s.Error(w, fmt.Errorf("failed to create deployment: %w", err))
+			status := http.StatusInternalServerError
+			if errors.Is(err, ErrDeploymentInProgress) {
+				status = http.StatusConflict
+			}
+			http.Error(w, err.Error(), status)
 			return
 		}
-
-		// Create deployment executor and run asynchronously
-		executor := NewDeploymentExecutor(s, deployment)
-
-		s.deployments[deployment.ID] = executor
-
-		go func() {
-			defer func() {
-
-				delete(s.deployments, deployment.ID)
-
-			}()
-			if err := executor.Execute(); err != nil {
-				// Log error but don't do anything else - status is already updated
-				fmt.Println("Deployment error:", err)
-			}
-		}()
 
 		// Redirect to deployment detail page
 		http.Redirect(w, r, "/projects/"+idStr+"/deployments/"+strconv.FormatInt(deployment.ID, 10), http.StatusSeeOther)
@@ -132,6 +123,10 @@ func (s *Server) DeploymentDetailView(w http.ResponseWriter, r *http.Request) {
 	deployment, err := s.GetDeployment(deploymentId)
 	if err != nil {
 		s.Error(w, err)
+		return
+	}
+	if deployment.ProjectID != id {
+		http.NotFound(w, r)
 		return
 	}
 
@@ -231,9 +226,9 @@ func (s *Server) NewProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := r.FormValue("name")
+	name := strings.TrimSpace(r.FormValue("name"))
 	description := r.FormValue("description")
-	repo := r.FormValue("repo")
+	repo := strings.TrimSpace(r.FormValue("repo"))
 
 	if name == "" {
 		s.Error(w, &Error{Message: "Project name is required"})
@@ -264,8 +259,13 @@ func (s *Server) EditProject(w http.ResponseWriter, r *http.Request) {
 			s.Error(w, err)
 			return
 		}
+		scheme := "http"
+		if r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https") {
+			scheme = "https"
+		}
 		s.Render(w, "projects/settings", H{
-			"project": project,
+			"project":    project,
+			"webhookURL": fmt.Sprintf("%s://%s/hooks/github/%d", scheme, r.Host, project.ID),
 		})
 		return
 	}
@@ -277,11 +277,33 @@ func (s *Server) EditProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name := r.FormValue("name")
+	name := strings.TrimSpace(r.FormValue("name"))
 	description := r.FormValue("description")
-	repo := r.FormValue("repo")
+	repo := strings.TrimSpace(r.FormValue("repo"))
+	webhookBranch := strings.TrimSpace(r.FormValue("webhook_branch"))
+	webhookSecret := strings.TrimSpace(r.FormValue("webhook_secret"))
 
-	err = s.UpdateProject(id, name, description, repo)
+	if name == "" {
+		s.Error(w, &Error{Message: "Project name is required"})
+		return
+	}
+	if webhookBranch == "" {
+		webhookBranch = "main"
+	}
+	if !validGitHubBranch(webhookBranch) {
+		s.Error(w, &Error{Message: "Invalid GitHub webhook branch"})
+		return
+	}
+	if webhookSecret == "" {
+		project, err := s.GetProjectByID(id)
+		if err != nil {
+			s.Error(w, err)
+			return
+		}
+		webhookSecret = project.WebhookSecret
+	}
+
+	err = s.UpdateProject(id, name, description, repo, webhookBranch, webhookSecret)
 	if err != nil {
 		s.Error(w, err)
 		return
@@ -291,7 +313,8 @@ func (s *Server) EditProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) DeleteProjectHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	if r.Method != http.MethodDelete && r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodDelete)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
@@ -324,10 +347,20 @@ func (e *Error) Error() string {
 
 // DeploymentLogsHandler handles SSE for real-time deployment logs
 func (s *Server) DeploymentLogsHandler(w http.ResponseWriter, r *http.Request) {
+	projectID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
 	deploymentIdStr := r.PathValue("deploymentId")
 	deploymentId, err := strconv.ParseInt(deploymentIdStr, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid deployment ID", http.StatusBadRequest)
+		return
+	}
+	deployment, err := s.GetDeployment(deploymentId)
+	if err != nil || deployment.ProjectID != projectID {
+		http.NotFound(w, r)
 		return
 	}
 
@@ -397,6 +430,11 @@ func (s *Server) CancelDeploymentHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	projectID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
 	deploymentIdStr := r.PathValue("deploymentId")
 	deploymentId, err := strconv.ParseInt(deploymentIdStr, 10, 64)
 	if err != nil {
@@ -404,16 +442,17 @@ func (s *Server) CancelDeploymentHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Find and cancel the deployment executor
+	deployment, err := s.GetDeployment(deploymentId)
+	if err != nil || deployment.ProjectID != projectID {
+		http.NotFound(w, r)
+		return
+	}
+
+	s.deploymentsMu.RLock()
 	executor, exists := s.deployments[deploymentId]
+	s.deploymentsMu.RUnlock()
 	if !exists {
 		// Deployment not currently running, check if already completed
-		deployment, err := s.GetDeployment(deploymentId)
-		if err != nil {
-			http.Error(w, "Deployment not found", http.StatusNotFound)
-			return
-		}
-
 		if deployment.Status == DeploymentStatusCompleted ||
 			deployment.Status == DeploymentStatusFailed ||
 			deployment.Status == DeploymentStatusCancelled {
@@ -422,8 +461,14 @@ func (s *Server) CancelDeploymentHandler(w http.ResponseWriter, r *http.Request)
 		}
 
 		// Deployment exists but executor not found (server restart?)
-		// Mark as cancelled anyway
-		s.UpdateDeploymentStatus(deploymentId, DeploymentStatusCancelled)
+		if err := s.UpdateDeploymentStatus(deploymentId, DeploymentStatusCancelled); err != nil {
+			http.Error(w, "Failed to cancel deployment", http.StatusInternalServerError)
+			return
+		}
+		_ = s.AddDeploymentLog(deploymentId, fmt.Sprintf(
+			"[%s] Deployment cancelled without an active executor",
+			time.Now().Format("2006-01-02 15:04:05"),
+		))
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -431,5 +476,75 @@ func (s *Server) CancelDeploymentHandler(w http.ResponseWriter, r *http.Request)
 	// Cancel the executor
 	executor.Cancel()
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusAccepted)
+}
+
+// StartProjectDeployment serializes triggers per project and registers the
+// executor before returning the deployment to the handler.
+func (s *Server) StartProjectDeployment(project *Project, triggeredBy string) (*Deployment, error) {
+	s.deploymentsMu.Lock()
+	defer s.deploymentsMu.Unlock()
+
+	active, err := s.GetActiveDeploymentByProject(project.ID)
+	if err != nil {
+		return nil, fmt.Errorf("check active deployment: %w", err)
+	}
+	if active != nil {
+		return nil, fmt.Errorf("%w: deployment #%d is %s", ErrDeploymentInProgress, active.ID, active.Status)
+	}
+
+	deployment, err := s.CreateDeployment(project.ID, "", "", "", "", "", "", "", triggeredBy)
+	if err != nil {
+		return nil, fmt.Errorf("create deployment: %w", err)
+	}
+	s.launchDeploymentLocked(deployment)
+	return deployment, nil
+}
+
+func (s *Server) StartGitHubDeployment(project *Project, commit, commitMsg, author, deliveryID string) (*Deployment, bool, error) {
+	s.deploymentsMu.Lock()
+	defer s.deploymentsMu.Unlock()
+
+	existing, err := s.GetDeploymentByGitHubDeliveryID(deliveryID)
+	if err != nil {
+		return nil, false, fmt.Errorf("check webhook delivery: %w", err)
+	}
+	if existing != nil {
+		return existing, true, nil
+	}
+	active, err := s.GetActiveDeploymentByProject(project.ID)
+	if err != nil {
+		return nil, false, fmt.Errorf("check active deployment: %w", err)
+	}
+	if active != nil {
+		return nil, false, fmt.Errorf("%w: deployment #%d is %s", ErrDeploymentInProgress, active.ID, active.Status)
+	}
+	deployment, err := s.CreateGitHubDeployment(project.ID, commit, commitMsg, author, deliveryID)
+	if err != nil {
+		return nil, false, fmt.Errorf("create GitHub deployment: %w", err)
+	}
+	s.launchDeploymentLocked(deployment)
+	return deployment, false, nil
+}
+
+// launchDeploymentLocked starts an executor while trigger registration remains
+// protected by deploymentsMu.
+func (s *Server) launchDeploymentLocked(deployment *Deployment) {
+	executor := NewDeploymentExecutor(s, deployment)
+	s.deployments[deployment.ID] = executor
+
+	go func() {
+		defer func() {
+			s.deploymentsMu.Lock()
+			delete(s.deployments, deployment.ID)
+			s.deploymentsMu.Unlock()
+		}()
+		if err := executor.Execute(); err != nil {
+			log.Printf("Deployment %d failed: %v", deployment.ID, err)
+		}
+	}()
+}
+
+func init() {
+	RegisterInitHook((*Server).RecoverInterruptedDeployments)
 }

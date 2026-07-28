@@ -46,12 +46,14 @@ func ptrTime(t time.Time) *time.Time {
 
 // Project represents a project in the database
 type Project struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Repo        string    `json:"repo"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID            int64     `json:"id"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description"`
+	Repo          string    `json:"repo"`
+	WebhookSecret string    `json:"-"`
+	WebhookBranch string    `json:"webhook_branch"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 // DeploymentStatus represents the status of a deployment
@@ -107,13 +109,16 @@ func (s *Server) initSchema() error {
 
 // CreateProject creates a new project in the database
 func (s *Server) CreateProject(name, description, repo string) (*Project, error) {
-
+	webhookSecret, err := newWebhookSecret()
+	if err != nil {
+		return nil, err
+	}
 	now := time.Now()
 	query := `
-	INSERT INTO projects (name, description, repo, created_at, updated_at)
-	VALUES (?, ?, ?, ?, ?)
+	INSERT INTO projects (name, description, repo, webhook_secret, webhook_branch, created_at, updated_at)
+	VALUES (?, ?, ?, ?, 'main', ?, ?)
 	`
-	result, err := s.db.Exec(query, name, description, repo, now, now)
+	result, err := s.db.Exec(query, name, description, repo, webhookSecret, now, now)
 	if err != nil {
 		return nil, err
 	}
@@ -124,12 +129,14 @@ func (s *Server) CreateProject(name, description, repo string) (*Project, error)
 	}
 
 	return &Project{
-		ID:          id,
-		Name:        name,
-		Description: description,
-		Repo:        repo,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:            id,
+		Name:          name,
+		Description:   description,
+		Repo:          repo,
+		WebhookSecret: webhookSecret,
+		WebhookBranch: "main",
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}, nil
 }
 
@@ -137,14 +144,17 @@ func (s *Server) CreateProject(name, description, repo string) (*Project, error)
 func (s *Server) GetProjectByID(id int64) (*Project, error) {
 
 	query := `
-	SELECT id, name, description, repo, created_at, updated_at
+	SELECT id, name, description, repo, webhook_secret, webhook_branch, created_at, updated_at
 	FROM projects
 	WHERE id = ?
 	`
 
 	var project Project
 	var createdAt, updatedAt string
-	err := s.db.QueryRow(query, id).Scan(&project.ID, &project.Name, &project.Description, &project.Repo, &createdAt, &updatedAt)
+	err := s.db.QueryRow(query, id).Scan(
+		&project.ID, &project.Name, &project.Description, &project.Repo,
+		&project.WebhookSecret, &project.WebhookBranch, &createdAt, &updatedAt,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +168,7 @@ func (s *Server) GetProjectByID(id int64) (*Project, error) {
 func (s *Server) GetAllProjects() ([]Project, error) {
 
 	query := `
-	SELECT id, name, description, repo, created_at, updated_at
+	SELECT id, name, description, repo, webhook_secret, webhook_branch, created_at, updated_at
 	FROM projects
 	ORDER BY created_at DESC
 	`
@@ -173,7 +183,10 @@ func (s *Server) GetAllProjects() ([]Project, error) {
 	for rows.Next() {
 		var project Project
 		var createdAt, updatedAt string
-		if err := rows.Scan(&project.ID, &project.Name, &project.Description, &project.Repo, &createdAt, &updatedAt); err != nil {
+		if err := rows.Scan(
+			&project.ID, &project.Name, &project.Description, &project.Repo,
+			&project.WebhookSecret, &project.WebhookBranch, &createdAt, &updatedAt,
+		); err != nil {
 			return nil, err
 		}
 		project.CreatedAt = parseTime(createdAt)
@@ -184,16 +197,16 @@ func (s *Server) GetAllProjects() ([]Project, error) {
 	return projects, rows.Err()
 }
 
-// UpdateProject updates an existing project
-func (s *Server) UpdateProject(id int64, name, description, repo string) error {
+// UpdateProject updates project and webhook settings atomically.
+func (s *Server) UpdateProject(id int64, name, description, repo, webhookBranch, webhookSecret string) error {
 
 	now := time.Now()
 	query := `
 	UPDATE projects
-	SET name = ?, description = ?, repo = ?, updated_at = ?
+	SET name = ?, description = ?, repo = ?, webhook_branch = ?, webhook_secret = ?, updated_at = ?
 	WHERE id = ?
 	`
-	_, err := s.db.Exec(query, name, description, repo, now, id)
+	_, err := s.db.Exec(query, name, description, repo, webhookBranch, webhookSecret, now, id)
 	return err
 }
 
@@ -239,6 +252,50 @@ func (s *Server) CreateDeployment(projectID int64, dockerImage, dockerfile, cont
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}, nil
+}
+
+func (s *Server) CreateGitHubDeployment(projectID int64, commit, commitMsg, author, deliveryID string) (*Deployment, error) {
+	now := time.Now()
+	result, err := s.db.Exec(`
+		INSERT INTO deployments (
+			project_id, status, docker_image, dockerfile, container_name, container_id,
+			command, "commit", commit_msg, author, triggered_by, github_delivery_id,
+			created_at, updated_at
+		)
+		VALUES (?, 'pending', '', '', '', '', '', ?, ?, ?, 'GitHub push', ?, ?, ?)
+	`, projectID, commit, commitMsg, author, deliveryID, now, now)
+	if err != nil {
+		return nil, err
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+	return &Deployment{
+		ID:          id,
+		ProjectID:   projectID,
+		Status:      DeploymentStatusPending,
+		Commit:      commit,
+		CommitMsg:   commitMsg,
+		Author:      author,
+		TriggeredBy: "GitHub push",
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}, nil
+}
+
+func (s *Server) GetDeploymentByGitHubDeliveryID(deliveryID string) (*Deployment, error) {
+	var id int64
+	err := s.db.QueryRow(`
+		SELECT id FROM deployments WHERE github_delivery_id = ?
+	`, deliveryID).Scan(&id)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return s.GetDeployment(id)
 }
 
 // GetDeployment retrieves a deployment by ID
@@ -358,6 +415,77 @@ func (s *Server) UpdateDeploymentContainerID(id int64, containerID string) error
 	return err
 }
 
+// UpdateDeploymentSource records the immutable source revision used by a build.
+func (s *Server) UpdateDeploymentSource(id int64, commit, commitMsg, author string) error {
+	now := time.Now()
+	_, err := s.db.Exec(`
+		UPDATE deployments
+		SET "commit" = ?, commit_msg = ?, author = ?, updated_at = ?
+		WHERE id = ?
+	`, commit, commitMsg, author, now, id)
+	return err
+}
+
+// UpdateDeploymentArtifact records the image and stable container name produced
+// by the build before deployment begins.
+func (s *Server) UpdateDeploymentArtifact(id int64, imageName, containerName string) error {
+	now := time.Now()
+	_, err := s.db.Exec(`
+		UPDATE deployments
+		SET docker_image = ?, container_name = ?, updated_at = ?
+		WHERE id = ?
+	`, imageName, containerName, now, id)
+	return err
+}
+
+// GetActiveDeploymentByProject returns the pending or running deployment for a
+// project, if one exists.
+func (s *Server) GetActiveDeploymentByProject(projectID int64) (*Deployment, error) {
+	var id int64
+	err := s.db.QueryRow(`
+		SELECT id
+		FROM deployments
+		WHERE project_id = ? AND status IN ('pending', 'running')
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, projectID).Scan(&id)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return s.GetDeployment(id)
+}
+
+// RecoverInterruptedDeployments closes deployments whose in-memory executors
+// were lost during a process restart.
+func (s *Server) RecoverInterruptedDeployments() error {
+	now := time.Now()
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec(`
+		INSERT INTO deployment_logs (deployment_id, message, created_at)
+		SELECT id, ?, ?
+		FROM deployments
+		WHERE status IN ('pending', 'running')
+	`, fmt.Sprintf("[%s] Deployment interrupted by server restart", now.Format("2006-01-02 15:04:05")), now); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`
+		UPDATE deployments
+		SET status = 'failed', completed_at = ?, updated_at = ?
+		WHERE status IN ('pending', 'running')
+	`, now, now); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 // GetLatestDeploymentByProject retrieves the most recent deployment for a project
 func (s *Server) GetLatestDeploymentByProject(projectID int64) (*Deployment, error) {
 
@@ -399,6 +527,24 @@ func (s *Server) GetLatestDeploymentByProject(projectID int64) (*Deployment, err
 	return &deployment, nil
 }
 
+func (s *Server) GetLatestSuccessfulDeploymentByProject(projectID int64) (*Deployment, error) {
+	var id int64
+	err := s.db.QueryRow(`
+		SELECT id
+		FROM deployments
+		WHERE project_id = ? AND status = 'completed' AND container_id <> ''
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, projectID).Scan(&id)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return s.GetDeployment(id)
+}
+
 // ProjectRuntimeStatus represents the runtime status of a project
 type ProjectRuntimeStatus struct {
 	Status        string // running, stopped, error, not_deployed
@@ -413,14 +559,26 @@ func (s *Server) GetProjectRuntimeStatus(projectID int64) (*ProjectRuntimeStatus
 	status := &ProjectRuntimeStatus{
 		Status: "not_deployed",
 	}
+	containers := s.projectContainerInspector()
 
-	// Get latest deployment
-	deployment, err := s.GetLatestDeploymentByProject(projectID)
+	// A failed build does not replace the previous successful container.
+	deployment, err := s.GetLatestSuccessfulDeploymentByProject(projectID)
 	if err != nil {
 		return nil, err
 	}
 
 	if deployment == nil {
+		latest, err := s.GetLatestDeploymentByProject(projectID)
+		if err != nil || latest == nil {
+			return status, err
+		}
+		switch latest.Status {
+		case DeploymentStatusPending, DeploymentStatusRunning:
+			status.Status = "starting"
+		case DeploymentStatusFailed:
+			status.Status = "error"
+			status.Error = "Deployment failed"
+		}
 		return status, nil
 	}
 
@@ -431,7 +589,7 @@ func (s *Server) GetProjectRuntimeStatus(projectID int64) (*ProjectRuntimeStatus
 	if deployment.ContainerID == "" {
 		// If we have a container name but no ID, try to find the container by name
 		if deployment.ContainerName != "" {
-			container, err := s.docker.GetContainer(deployment.ContainerName)
+			container, err := containers.GetContainer(deployment.ContainerName)
 			if err == nil && container.State.Running {
 				status.IsRunning = true
 				status.Status = "running"
@@ -455,10 +613,10 @@ func (s *Server) GetProjectRuntimeStatus(projectID int64) (*ProjectRuntimeStatus
 
 	// Check if container exists and is running
 	// Try by container ID first, then by name
-	container, err := s.docker.GetContainer(deployment.ContainerID)
+	container, err := containers.GetContainer(deployment.ContainerID)
 	if err != nil && deployment.ContainerName != "" {
 		// Try by container name if ID fails
-		container, err = s.docker.GetContainer(deployment.ContainerName)
+		container, err = containers.GetContainer(deployment.ContainerName)
 	}
 
 	if err != nil {
@@ -504,7 +662,7 @@ func (s *Server) GetLogsByDeployment(deploymentID int64) ([]DeploymentLog, error
 	SELECT id, deployment_id, message, created_at
 	FROM deployment_logs
 	WHERE deployment_id = ?
-	ORDER BY created_at ASC
+	ORDER BY id ASC
 	`
 
 	rows, err := s.db.Query(query, deploymentID)
@@ -2145,6 +2303,8 @@ func init() {
 			name TEXT NOT NULL UNIQUE,
 			description TEXT,
 			repo TEXT DEFAULT '',
+			webhook_secret TEXT NOT NULL DEFAULT '',
+			webhook_branch TEXT NOT NULL DEFAULT 'main',
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 		);
@@ -2162,6 +2322,7 @@ func init() {
 			commit_msg TEXT DEFAULT '',
 			author TEXT DEFAULT '',
 			triggered_by TEXT DEFAULT 'Manual',
+			github_delivery_id TEXT,
 			started_at DATETIME,
 			completed_at DATETIME,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -2201,7 +2362,10 @@ func init() {
 	RegisterMigrateHook(func(s *Server) error {
 		migrationSQLs := []string{
 			`ALTER TABLE projects ADD COLUMN repo TEXT DEFAULT ''`,
+			`ALTER TABLE projects ADD COLUMN webhook_secret TEXT NOT NULL DEFAULT ''`,
+			`ALTER TABLE projects ADD COLUMN webhook_branch TEXT NOT NULL DEFAULT 'main'`,
 			`ALTER TABLE deployments ADD COLUMN container_id TEXT DEFAULT ''`,
+			`ALTER TABLE deployments ADD COLUMN github_delivery_id TEXT`,
 			`ALTER TABLE llm_models ADD COLUMN mapped_name TEXT`,
 			`ALTER TABLE system_stats ADD COLUMN hostname TEXT DEFAULT ''`,
 			`ALTER TABLE system_stats ADD COLUMN cpu_cores INTEGER DEFAULT 0`,
@@ -2220,7 +2384,16 @@ func init() {
 		for _, sql := range migrationSQLs {
 			s.db.Exec(sql)
 		}
-		_, err := s.db.Exec(`UPDATE projects SET repo = '' WHERE repo IS NULL`)
+		if _, err := s.db.Exec(`UPDATE projects SET repo = '' WHERE repo IS NULL`); err != nil {
+			return err
+		}
+		if _, err := s.db.Exec(`UPDATE projects SET webhook_branch = 'main' WHERE webhook_branch IS NULL OR webhook_branch = ''`); err != nil {
+			return err
+		}
+		if _, err := s.db.Exec(`UPDATE projects SET webhook_secret = lower(hex(randomblob(32))) WHERE webhook_secret IS NULL OR webhook_secret = ''`); err != nil {
+			return err
+		}
+		_, err := s.db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_deployments_github_delivery ON deployments(github_delivery_id) WHERE github_delivery_id IS NOT NULL`)
 		return err
 	})
 }

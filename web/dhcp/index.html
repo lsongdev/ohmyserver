@@ -1,0 +1,61 @@
+{{define "page"}}
+
+<nav>
+  <a href="/dhcp">overview</a>
+  <a href="/dhcp/leases">leases</a>
+  <a href="/dhcp/static-leases">static leases</a>
+  <a href="/dhcp/settings">settings</a>
+</nav>
+
+<div class="page-header">
+  <div>
+    <h2>DHCP Server</h2>
+    <p>Allocate IPv4 addresses and advertise gateway, DNS, and NTP services.</p>
+  </div>
+  <form method="POST" action="/dhcp/action">
+    {{if .status.Running}}
+    <button class="button" type="submit" name="action" value="reload">Reload</button>
+    <button class="button button-danger" type="submit" name="action" value="stop">Stop</button>
+    {{else}}
+    <button class="button button-primary" type="submit" name="action" value="start">Start</button>
+    {{end}}
+  </form>
+</div>
+
+<div class="grid grid-3 gap-10">
+  <section class="section">
+    <h3>Status</h3>
+    {{if .status.Running}}
+    <p><span class="badge badge-active">running</span></p>
+    <p>Listen: <code>{{.status.ListenAddr}}</code></p>
+    {{else}}
+    <p><span class="badge badge-inactive">stopped</span></p>
+    {{if .status.LastError}}<p>{{.status.LastError}}</p>{{end}}
+    {{end}}
+  </section>
+  <section class="section">
+    <h3>Address pool</h3>
+    <p><code>{{.settings.PoolStart}}</code></p>
+    <p>through <code>{{.settings.PoolEnd}}</code></p>
+  </section>
+  <section class="section">
+    <h3>Traffic</h3>
+    <p><b>{{.status.Requests}}</b> requests since start</p>
+    {{if .status.Running}}<p>Started {{formatDate .status.StartedAt}}</p>{{end}}
+  </section>
+</div>
+
+<div class="grid grid-2 gap-10">
+  <section class="section">
+    <h3>Leases</h3>
+    <p><b>{{.leaseCount}}</b> allocated records</p>
+    <a href="/dhcp/leases">View leases</a>
+  </section>
+  <section class="section">
+    <h3>Static Leases</h3>
+    <p><b>{{.staticLeaseCount}}</b> fixed assignments</p>
+    <a href="/dhcp/static-leases">Manage static leases</a>
+  </section>
+</div>
+
+{{end}}

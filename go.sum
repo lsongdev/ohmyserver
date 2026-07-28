@@ -75,10 +75,14 @@ github.com/lsongdev/acme-go v0.0.0-20260403095516-04f0b6832575 h1:KnI948m9xiSLr3
 github.com/lsongdev/acme-go v0.0.0-20260403095516-04f0b6832575/go.mod h1:1KrVxJuepskM7iomUN5YXMAs1J/X+JYENhktM97EkAo=
 github.com/lsongdev/clashapi-go v0.0.0-20260506085541-7d037170d5b5 h1:XlYvKBK4mA+8wACUYrkbfbUmowsFPXi6LbATIe8WcQM=
 github.com/lsongdev/clashapi-go v0.0.0-20260506085541-7d037170d5b5/go.mod h1:Gxy5IoqJtSX2ZO8CGXiQvRNRaKgWID+JUWufTEp7FME=
+github.com/lsongdev/dhcp-go v0.0.0-20260728081411-bb497a8e114c h1:IljeEjXqs0o0VHkURPV5UpSiyTErsqAdAeq1HzENS8Q=
+github.com/lsongdev/dhcp-go v0.0.0-20260728081411-bb497a8e114c/go.mod h1:SWjLMDxT/McT9XOWDmUcmnlBvtey2P177VygTfl7u30=
 github.com/lsongdev/dns-go v0.0.0-20260526003909-ad575eb83682 h1:ZGcl1ViJT07Qsa/Ckn5Gsl6rAO61/1uavX6Np6VDcD4=
 github.com/lsongdev/dns-go v0.0.0-20260526003909-ad575eb83682/go.mod h1:PZ4rPdKD71nY3qboL7vDI1dBbDVqWKywdoYSBgNa0EE=
 github.com/lsongdev/idrac-go v0.0.0-20260406044348-bf8a10c471b3 h1:tHeR8XmhAIp51OtV6ZQPD3Cd5ulbNFy4hr6Uv4f6OFM=
 github.com/lsongdev/idrac-go v0.0.0-20260406044348-bf8a10c471b3/go.mod h1:P8PE89brxBfDa3liBEti4Aau+Dh2VJVf/jahZOSCARM=
+github.com/lsongdev/ntp-go v0.0.0-20260728080956-58638dac0cb4 h1:q49zA+fWmlYkV+yOFb2g1T0aZaiUjT7w7jd9HkWleEw=
+github.com/lsongdev/ntp-go v0.0.0-20260728080956-58638dac0cb4/go.mod h1:svnGebaTGHGmXTXTVSRSe1nSmcFEkf3e9sa52b5+2A4=
 github.com/lsongdev/openwrt-go v0.0.0-20260411153216-6c064a0962c3 h1:u0gHqNDJ+nJOrTrk/4lboJBgH2Oh+FvLQwsuIeFkr7o=
 github.com/lsongdev/openwrt-go v0.0.0-20260411153216-6c064a0962c3/go.mod h1:xOFp3DgbDtqWKCrPRphjHNmq1mQMLfQf6ic5puTXu/A=
 github.com/lsongdev/speedtest-go v0.0.0-20260423054920-93af072d218e h1:Fo+ZLIJsZGZlYMILPTgdbhMxrjmqsQ+kTH00NIX1YKY=
