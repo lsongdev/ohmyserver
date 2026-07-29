@@ -1,0 +1,41 @@
+{{define "page"}}
+
+{{template "webserver-nav" .}}
+
+<div class="page-header">
+    <div>
+        <h2>Policies</h2>
+        <p>Reusable request limits for listeners, virtual hosts, and routes.</p>
+    </div>
+    <a href="/web/policies/new" class="button button-primary">New Policy</a>
+</div>
+
+<div class="section">
+    {{if .policies}}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr><th>Name</th><th>Request</th><th>Rate Limit</th><th>Concurrency</th></tr>
+            </thead>
+            <tbody>
+                {{range .policies}}
+                <tr>
+                    <td><a href="/web/policies/{{.ID}}">{{.Name}}</a></td>
+                    <td>
+                        {{if .MaxBodyBytes}}body ≤ {{.MaxBodyBytes}} bytes{{end}}
+                        {{if .RequestTimeoutSeconds}} timeout {{.RequestTimeoutSeconds}}s{{end}}
+                        {{if and (not .MaxBodyBytes) (not .RequestTimeoutSeconds)}}-{{end}}
+                    </td>
+                    <td>{{if .RateRequestsPerSecond}}{{.RateRequestsPerSecond}} req/s, burst {{.RateBurst}}, {{.RateKey}}{{else}}-{{end}}</td>
+                    <td>{{if .ConcurrencyMax}}{{.ConcurrencyMax}}{{else}}-{{end}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <p class="empty-message">No request policies configured. <a href="/web/policies/new">Create one</a>.</p>
+    {{end}}
+</div>
+
+{{end}}

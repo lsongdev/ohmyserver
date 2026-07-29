@@ -1,5 +1,7 @@
 {{define "page"}}
 
+{{template "webserver-nav" .}}
+
 <div class="page-header">
     <h2>{{if .isEdit}}{{.host.Name}}{{else}}New Virtual Host{{end}}</h2>
     {{if .isEdit}}
@@ -56,7 +58,7 @@
 
     <div class="form-actions">
         <button class="button button-primary" type="submit">Save</button>
-        <a class="button" href="{{if .isEdit}}/web/hosts/{{.host.ID}}{{else}}/web{{end}}">Cancel</a>
+        <a class="button" href="{{if .isEdit}}/web/hosts/{{.host.ID}}{{else}}/web/hosts{{end}}">Cancel</a>
     </div>
 </form>
 

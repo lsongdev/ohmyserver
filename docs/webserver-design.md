@@ -565,6 +565,7 @@ OhMyServer 将 Yabber 的生产能力映射为数据库控制面：
 - Reverse Proxy Route 可单独设置完整请求超时、响应头超时和单上游最大连接数。
 - Yabber 内置指标显示在 Web Server 与 Host 页面；`/web/metrics` 在面板认证之后输出 Prometheus 文本。
 - 站点访问日志以 JSON Lines 写入 OhMyServer 标准输出，包含 request ID、Listener、Host、Route、可信客户端 IP、状态码、耗时和拒绝策略。
+- Web Server 顶部导航将 Overview、Listeners、Policies 和 Virtual Hosts 分页展示，配置表不会堆叠在运行概览中。
 
 限流器是单进程内存状态。同名 Policy 在多个绑定位置共享一个运行时状态，未变化的 Policy 在热更新时保留桶状态。未来部署多个 OhMyServer/Yabber 实例时，需要另行设计分布式限流后端。
 

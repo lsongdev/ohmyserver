@@ -295,7 +295,11 @@ func (s *Server) Render(w http.ResponseWriter, templateName string, data H) {
 		},
 	}
 
-	tmpl, err := template.New("").Funcs(funcMap).ParseFS(web.Files, "layout.html", templateName+".html")
+	templateFiles := []string{"layout.html", templateName + ".html"}
+	if strings.HasPrefix(templateName, "webservers/") {
+		templateFiles = append(templateFiles, "webservers/nav.html")
+	}
+	tmpl, err := template.New("").Funcs(funcMap).ParseFS(web.Files, templateFiles...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

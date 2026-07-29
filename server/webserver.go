@@ -1156,42 +1156,57 @@ func (s *Server) activeCertificates() ([]Certificate, error) {
 }
 
 func (s *Server) WebServerView(w http.ResponseWriter, r *http.Request) {
+	running := false
+	var metrics yabber.MetricsSnapshot
+	s.webServerMu.Lock()
+	if s.webServer != nil {
+		running = s.webServer.Running()
+		metrics = s.webServer.Metrics()
+	}
+	s.webServerMu.Unlock()
+	s.Render(w, "webservers/index", H{
+		"running": running,
+		"metrics": metrics,
+	})
+}
+
+func (s *Server) WebListenersView(w http.ResponseWriter, r *http.Request) {
 	listeners, err := s.GetAllWebListeners()
 	if err != nil {
 		s.Error(w, err)
 		return
 	}
-	hosts, err := s.GetAllWebHosts()
-	if err != nil {
-		s.Error(w, err)
-		return
-	}
 	addresses := map[string]string{}
-	running := false
-	var metrics yabber.MetricsSnapshot
 	var statuses map[string]yabber.ListenerStatus
 	s.webServerMu.Lock()
 	if s.webServer != nil {
 		addresses = s.webServer.Addresses()
-		running = s.webServer.Running()
-		metrics = s.webServer.Metrics()
 		statuses = s.webServer.ListenerStatuses()
 	}
 	s.webServerMu.Unlock()
+	s.Render(w, "webservers/listeners", H{
+		"listeners": listeners,
+		"addresses": addresses,
+		"statuses":  statuses,
+	})
+}
+
+func (s *Server) WebPoliciesView(w http.ResponseWriter, r *http.Request) {
 	policies, err := s.GetAllWebPolicies()
 	if err != nil {
 		s.Error(w, err)
 		return
 	}
-	s.Render(w, "webservers/index", H{
-		"listeners": listeners,
-		"hosts":     hosts,
-		"policies":  policies,
-		"addresses": addresses,
-		"running":   running,
-		"metrics":   metrics,
-		"statuses":  statuses,
-	})
+	s.Render(w, "webservers/policies", H{"policies": policies})
+}
+
+func (s *Server) WebHostsView(w http.ResponseWriter, r *http.Request) {
+	hosts, err := s.GetAllWebHosts()
+	if err != nil {
+		s.Error(w, err)
+		return
+	}
+	s.Render(w, "webservers/hosts", H{"hosts": hosts})
 }
 
 func (s *Server) WebServerMetricsHandler(w http.ResponseWriter, r *http.Request) {
@@ -1237,7 +1252,7 @@ func (s *Server) WebListenerNewHandler(w http.ResponseWriter, r *http.Request) {
 		s.Render(w, "webservers/listener", H{"error": err.Error(), "listener": listener, "certificates": certificates, "policies": policies, "isEdit": false})
 		return
 	}
-	http.Redirect(w, r, "/web", http.StatusSeeOther)
+	http.Redirect(w, r, "/web/listeners", http.StatusSeeOther)
 }
 
 func (s *Server) WebListenerHandler(w http.ResponseWriter, r *http.Request) {
@@ -1283,7 +1298,7 @@ func (s *Server) WebListenerHandler(w http.ResponseWriter, r *http.Request) {
 			s.Render(w, "webservers/listener", H{"error": err.Error(), "listener": updated, "certificates": certificates, "policies": policies, "isEdit": true})
 			return
 		}
-		http.Redirect(w, r, "/web", http.StatusSeeOther)
+		http.Redirect(w, r, "/web/listeners", http.StatusSeeOther)
 	case http.MethodDelete:
 		if err = s.DeleteWebListener(id); err == nil {
 			err = s.applyYabber()
@@ -1292,7 +1307,7 @@ func (s *Server) WebListenerHandler(w http.ResponseWriter, r *http.Request) {
 			s.Error(w, err)
 			return
 		}
-		http.Redirect(w, r, "/web", http.StatusSeeOther)
+		http.Redirect(w, r, "/web/listeners", http.StatusSeeOther)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -1420,14 +1435,14 @@ func (s *Server) webHostForm(w http.ResponseWriter, r *http.Request, current *We
 	}
 	method := requestMethod(r)
 	if method == http.MethodDelete && current != nil {
-		if err := s.DeleteWebHost(current.ID); err == nil {
+		if err = s.DeleteWebHost(current.ID); err == nil {
 			err = s.applyYabber()
 		}
 		if err != nil {
 			s.Error(w, err)
 			return
 		}
-		http.Redirect(w, r, "/web", http.StatusSeeOther)
+		http.Redirect(w, r, "/web/hosts", http.StatusSeeOther)
 		return
 	}
 	host, err := parseWebHostForm(r)
@@ -1745,7 +1760,7 @@ func (s *Server) WebPolicyNewHandler(w http.ResponseWriter, r *http.Request) {
 		s.Render(w, "webservers/policy", H{"error": err.Error(), "policy": policy, "isEdit": false})
 		return
 	}
-	http.Redirect(w, r, "/web", http.StatusSeeOther)
+	http.Redirect(w, r, "/web/policies", http.StatusSeeOther)
 }
 
 func (s *Server) WebPolicyHandler(w http.ResponseWriter, r *http.Request) {
@@ -1779,7 +1794,7 @@ func (s *Server) WebPolicyHandler(w http.ResponseWriter, r *http.Request) {
 			s.Render(w, "webservers/policy", H{"error": err.Error(), "policy": policy, "isEdit": true})
 			return
 		}
-		http.Redirect(w, r, "/web", http.StatusSeeOther)
+		http.Redirect(w, r, "/web/policies", http.StatusSeeOther)
 	case http.MethodDelete:
 		if err = s.DeleteWebPolicy(id); err == nil {
 			err = s.applyYabber()
@@ -1788,7 +1803,7 @@ func (s *Server) WebPolicyHandler(w http.ResponseWriter, r *http.Request) {
 			s.Error(w, err)
 			return
 		}
-		http.Redirect(w, r, "/web", http.StatusSeeOther)
+		http.Redirect(w, r, "/web/policies", http.StatusSeeOther)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}

@@ -1,0 +1,48 @@
+{{define "page"}}
+
+{{template "webserver-nav" .}}
+
+<div class="page-header">
+    <div>
+        <h2>Virtual Hosts</h2>
+        <p>Domain matching, certificates, and routes.</p>
+    </div>
+    <a href="/web/hosts/new" class="button button-primary">New Host</a>
+</div>
+
+<div class="section">
+    {{if .hosts}}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Hostnames</th>
+                    <th>Listeners</th>
+                    <th>Certificate</th>
+                    <th>Routes</th>
+                    <th>Policies</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .hosts}}
+                <tr>
+                    <td><a href="/web/hosts/{{.ID}}">{{.Name}}</a></td>
+                    <td><code>{{.Hostnames}}</code></td>
+                    <td>{{range $i, $name := .ListenerNames}}{{if $i}}, {{end}}<code>{{$name}}</code>{{else}}-{{end}}</td>
+                    <td>{{if .CertificateName}}{{.CertificateName}}{{else}}-{{end}}</td>
+                    <td>{{len .Routes}}</td>
+                    <td>{{range $i, $name := .PolicyNames}}{{if $i}}, {{end}}<code>{{$name}}</code>{{else}}-{{end}}</td>
+                    <td>{{if .Enabled}}<span class="badge badge-success">enabled</span>{{else}}<span class="badge">disabled</span>{{end}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <p class="empty-message">No virtual hosts configured. <a href="/web/hosts/new">Create one</a>.</p>
+    {{end}}
+</div>
+
+{{end}}

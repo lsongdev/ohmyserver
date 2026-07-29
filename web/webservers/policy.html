@@ -1,5 +1,7 @@
 {{define "page"}}
 
+{{template "webserver-nav" .}}
+
 <div class="page-header">
     <div>
         <h2>{{if .isEdit}}Edit Policy{{else}}New Policy{{end}}</h2>
@@ -69,7 +71,7 @@
 
     <div class="form-actions">
         <button class="button button-primary" type="submit">Save</button>
-        <a class="button" href="/web">Cancel</a>
+        <a class="button" href="/web/policies">Cancel</a>
     </div>
 </form>
 

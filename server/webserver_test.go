@@ -227,6 +227,10 @@ func TestWebServerTemplates(t *testing.T) {
 		Routes:        []WebRoute{route},
 	}
 	certificates := []Certificate{{ID: 1, Domains: "example.com", Status: "active"}}
+	policy := WebPolicy{
+		ID: 1, Name: "public", RateKey: "client_ip",
+		RateRequestsPerSecond: 10, RateBurst: 20,
+	}
 
 	tests := []struct {
 		name     string
@@ -247,6 +251,27 @@ func TestWebServerTemplates(t *testing.T) {
 			name:     "new listener",
 			template: "webservers/listener",
 			data:     H{"certificates": certificates, "isEdit": false},
+		},
+		{
+			name:     "listeners",
+			template: "webservers/listeners",
+			data: H{
+				"listeners": []WebListener{*listener},
+				"addresses": map[string]string{"https": "0.0.0.0:443"},
+				"statuses": map[string]yabber.ListenerStatus{
+					"https": {Address: "0.0.0.0:443", Enabled: true, Running: true},
+				},
+			},
+		},
+		{
+			name:     "policies",
+			template: "webservers/policies",
+			data:     H{"policies": []WebPolicy{policy}},
+		},
+		{
+			name:     "hosts",
+			template: "webservers/hosts",
+			data:     H{"hosts": []WebHost{*host}},
 		},
 		{
 			name:     "edit listener",
@@ -276,10 +301,7 @@ func TestWebServerTemplates(t *testing.T) {
 		{
 			name:     "policy",
 			template: "webservers/policy",
-			data: H{"policy": &WebPolicy{
-				ID: 1, Name: "public", RateKey: "client_ip",
-				RateRequestsPerSecond: 10, RateBurst: 20,
-			}, "isEdit": true},
+			data:     H{"policy": &policy, "isEdit": true},
 		},
 	}
 
@@ -289,6 +311,11 @@ func TestWebServerTemplates(t *testing.T) {
 			server.Render(response, test.template, test.data)
 			if response.Code != 200 {
 				t.Fatalf("status = %d, body = %s", response.Code, response.Body.String())
+			}
+			for _, href := range []string{`href="/web"`, `href="/web/listeners"`, `href="/web/policies"`, `href="/web/hosts"`} {
+				if !strings.Contains(response.Body.String(), href) {
+					t.Fatalf("missing web server navigation %s", href)
+				}
 			}
 		})
 	}

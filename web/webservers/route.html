@@ -1,5 +1,7 @@
 {{define "page"}}
 
+{{template "webserver-nav" .}}
+
 <div class="page-header">
     <h2>{{if .isEdit}}Edit Route{{else}}New Route{{end}}</h2>
     {{if .isEdit}}
