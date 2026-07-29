@@ -29,27 +29,30 @@ type H map[string]any
 // Template helper functions
 
 type Server struct {
-	db            *sql.DB
-	config        *config.Config
-	docker        *DockerClient
-	deployRuntime deploymentRuntime
-	tcpProxy      *forward.TCPProxy
-	webServer     *yabber.Server
-	webServerMu   sync.Mutex
-	acmeHTTP01Mu  sync.RWMutex
-	acmeHTTP01    map[string]string
-	acmeWorkers   sync.WaitGroup
-	acmeContext   context.Context
-	acmeCancel    context.CancelFunc
-	dnsRuntime    *DNSRuntime
-	ntpRuntime    *NTPRuntime
-	dhcpRuntime   *DHCPRuntime
-	cronScheduler *cron.Scheduler
-	deployments   map[int64]*DeploymentExecutor // Map of deployment ID to executor
-	deploymentsMu sync.RWMutex
-	appInstalls   map[string]*AppInstallTask
-	appInstallMu  sync.RWMutex
-	appsSyncMu    sync.Mutex
+	db                    *sql.DB
+	config                *config.Config
+	docker                *DockerClient
+	deployRuntime         deploymentRuntime
+	tcpProxy              *forward.TCPProxy
+	webServer             *yabber.Server
+	webServerMu           sync.Mutex
+	acmeHTTP01Mu          sync.RWMutex
+	acmeHTTP01            map[string]string
+	acmeWorkers           sync.WaitGroup
+	acmeContext           context.Context
+	acmeCancel            context.CancelFunc
+	dnsRuntime            *DNSRuntime
+	ntpRuntime            *NTPRuntime
+	dhcpRuntime           *DHCPRuntime
+	cronScheduler         *cron.Scheduler
+	deployments           map[int64]*DeploymentExecutor // Map of deployment ID to executor
+	deploymentsMu         sync.RWMutex
+	appInstalls           map[string]*AppInstallTask
+	appInstallMu          sync.RWMutex
+	appsSyncMu            sync.Mutex
+	packageManagerFactory func() (packageManagerRuntime, error)
+	startedAt             time.Time
+	scheduleUpdate        func() error
 }
 
 // AppInstallTask tracks the installation progress of an app
@@ -88,6 +91,7 @@ func NewServer(cfg *config.Config) (server *Server, err error) {
 		acmeHTTP01:  make(map[string]string),
 		acmeContext: acmeContext,
 		acmeCancel:  acmeCancel,
+		startedAt:   time.Now(),
 	}
 	if err := server.initSchema(); err != nil {
 		db.Close()

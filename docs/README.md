@@ -11,6 +11,7 @@
 
 - [Improvement Suggestions](improvements.md) - Project analysis and improvement recommendations
 - [Refactoring Guide](refactoring-guide.md) - Concrete refactoring steps and code examples
+- [产品定位与角色化平台规划](product-roadmap.md) - Router、NAS、Cloud、HomeLab、IoT 等角色规划与能力路线
 - [Web Server 与 ACME、DNS 联动设计](webserver-design.md) - 极简 Web Server、证书热更新、DNS 联动与服务管理设计
 - [极简 CI/CD 服务设计](cicd-design.md) - GitHub Webhook、持久化部署队列、Docker 构建与安全发布
 

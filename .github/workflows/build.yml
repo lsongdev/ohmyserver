@@ -10,7 +10,6 @@ permissions:
   contents: write
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -19,14 +18,20 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version-file: go.mod
+    - name: Set release metadata
+      run: |
+        echo "version=nightly-$(date -u +'%Y%m%d')-${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+        echo "build_time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
     - name: Build
-      run: make build
-    - name: Set current date as env variable
-      run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+      run: make build VERSION="${{ env.version }}" COMMIT="${GITHUB_SHA}" BUILD_TIME="${{ env.build_time }}"
     - name: Upload Release
-      uses: softprops/action-gh-release@v1
+      if: github.event_name == 'push'
+      uses: softprops/action-gh-release@v3
       with:
-        tag_name: nightly-tag-${{ env.date }}
-        name: release-${{ env.date }}
+        tag_name: ${{ env.version }}
+        name: ${{ env.version }}
+        target_commitish: ${{ github.sha }}
         files: bin/*
+        fail_on_unmatched_files: true
+        generate_release_notes: true
         draft: false

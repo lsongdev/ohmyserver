@@ -74,7 +74,7 @@
   <a href="/docker/volumes">volumes</a>
   <a href="/docker/networks">networks</a>
   <a href="/docker/compose">compose</a>
-  <a href="/apps">apps</a>
+  <a href="/docker/apps">apps</a>
 </nav>
 
 <div class="page-header">
@@ -82,7 +82,7 @@
   <div class="search-wrapper flex gap-5">
     <span class="badge badge-secondary">{{.count}} apps</span>
     <input type="text" id="app-search" placeholder="Search apps..." class="form-control search-input">
-    <form method="POST" action="/apps/sync">
+    <form method="POST" action="/docker/apps/sync">
       <button type="submit" class="button button-small">Sync apps</button>
     </form>
   </div>
@@ -93,11 +93,11 @@
 {{end}}
 
 <div class="flex gap-5 filter-bar">
-  <a href="/apps" class="button button-small {{if eq .filter "all"}}button-primary{{end}}">All</a>
-  <a href="/apps?filter=running" class="button button-small {{if eq .filter "running"}}button-primary{{end}}">Running</a>
-  <a href="/apps?filter=installed" class="button button-small {{if eq .filter "installed"}}button-primary{{end}}">Installed</a>
+  <a href="/docker/apps" class="button button-small {{if eq .filter "all"}}button-primary{{end}}">All</a>
+  <a href="/docker/apps?filter=running" class="button button-small {{if eq .filter "running"}}button-primary{{end}}">Running</a>
+  <a href="/docker/apps?filter=installed" class="button button-small {{if eq .filter "installed"}}button-primary{{end}}">Installed</a>
   {{range .categories}}
-  <a href="/apps?filter={{$.filter}}&category={{.}}" class="button button-small {{if eq $.category .}}button-primary{{end}}">{{.}}</a>
+  <a href="/docker/apps?filter={{$.filter}}&category={{.}}" class="button button-small {{if eq $.category .}}button-primary{{end}}">{{.}}</a>
   {{end}}
 </div>
 
@@ -109,10 +109,10 @@
   {{if not $status}}{{$status = "not_installed"}}{{else}}{{$status = $status.State}}{{end}}
   <div class="card selectable app-card" data-name="{{.Name}}" data-id="{{.ID}}" data-status="{{$status}}">
     <div class="flex gap-10 items-start">
-      <img src="/apps/{{.ID}}/icon" alt="{{.Name}}" class="app-icon-sm">
+      <img src="/docker/apps/{{.ID}}/icon" alt="{{.Name}}" class="app-icon-sm">
       <div class="app-card-content">
         <div class="flex items-center flex-wrap flex-between">
-          <b class="app-name"><a href="/apps/{{.ID}}">{{.Name}}</a></b>
+          <b class="app-name"><a href="/docker/apps/{{.ID}}">{{.Name}}</a></b>
           {{if eq $status "running"}}
           <span class="badge badge-running">running</span>
           {{else if eq $status "installed"}}
@@ -133,29 +133,29 @@
         </div>
         <!-- <div class="flex gap-2 app-actions">
           {{if eq $status "running"}}
-          <form method="POST" action="/apps/{{.ID}}/action" class="inline-form">
+          <form method="POST" action="/docker/apps/{{.ID}}/action" class="inline-form">
             <input type="hidden" name="action" value="stop">
-            <input type="hidden" name="redirect" value="/apps?filter={{$.filter}}&category={{$.category}}">
+            <input type="hidden" name="redirect" value="/docker/apps?filter={{$.filter}}&category={{$.category}}">
             <button type="submit" class="button button-danger button-small">Stop</button>
           </form>
-          <form method="POST" action="/apps/{{.ID}}/action" class="inline-form">
+          <form method="POST" action="/docker/apps/{{.ID}}/action" class="inline-form">
             <input type="hidden" name="action" value="restart">
-            <input type="hidden" name="redirect" value="/apps?filter={{$.filter}}&category={{$.category}}">
+            <input type="hidden" name="redirect" value="/docker/apps?filter={{$.filter}}&category={{$.category}}">
             <button type="submit" class="button button-warning button-small">Restart</button>
           </form>
           {{else if eq $status "installed"}}
-          <form method="POST" action="/apps/{{.ID}}/action" class="inline-form">
+          <form method="POST" action="/docker/apps/{{.ID}}/action" class="inline-form">
             <input type="hidden" name="action" value="start">
-            <input type="hidden" name="redirect" value="/apps?filter={{$.filter}}&category={{$.category}}">
+            <input type="hidden" name="redirect" value="/docker/apps?filter={{$.filter}}&category={{$.category}}">
             <button type="submit" class="button button-primary button-small">Start</button>
           </form>
-          <form method="POST" action="/apps/{{.ID}}/action" class="inline-form">
+          <form method="POST" action="/docker/apps/{{.ID}}/action" class="inline-form">
             <input type="hidden" name="action" value="uninstall">
-            <input type="hidden" name="redirect" value="/apps?filter={{$.filter}}&category={{$.category}}">
+            <input type="hidden" name="redirect" value="/docker/apps?filter={{$.filter}}&category={{$.category}}">
             <button type="submit" class="button button-small" onclick="return confirm('Uninstall {{.Name}}?')">Uninstall</button>
           </form>
           {{else}}
-          <a href="/apps/{{.ID}}/install" class="button button-primary button-small">Install</a>
+          <a href="/docker/apps/{{.ID}}/install" class="button button-primary button-small">Install</a>
           {{end}}
         </div> -->
       </div>

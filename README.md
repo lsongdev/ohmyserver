@@ -14,7 +14,11 @@ On a Linux server with systemd:
 curl -fsSL https://raw.githubusercontent.com/lsongdev/ohmyserver/main/install.sh | sudo sh
 ```
 
-The installer downloads the latest release, creates a system service, and starts the panel on port `9000`.
+The installer verifies the release SHA256 checksum, creates the system service,
+and starts the panel on port `9000`. It also installs a narrowly scoped systemd
+update unit. Future releases can be checked and installed from **About →
+Updates** without giving the panel general root privileges. The previous binary
+is retained as `/usr/local/bin/ohmyserver.previous`.
 
 > Review scripts before running them as root. The installer supports Linux on `amd64` and `arm64`.
 

@@ -744,7 +744,7 @@ func (s *Server) AppsSyncHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("sync app catalog: %v", err), http.StatusBadGateway)
 		return
 	}
-	http.Redirect(w, r, "/apps?synced=1", http.StatusSeeOther)
+	http.Redirect(w, r, "/docker/apps?synced=1", http.StatusSeeOther)
 }
 
 func generateRandomString(min, max int) string {
@@ -1161,7 +1161,7 @@ func (s *Server) AppActionHandler(w http.ResponseWriter, r *http.Request) {
 
 	redirect := r.FormValue("redirect")
 	if redirect == "" {
-		redirect = "/apps"
+		redirect = "/docker/apps"
 	}
 	http.Redirect(w, r, redirect, http.StatusSeeOther)
 }

@@ -31,6 +31,10 @@ if ! command -v curl >/dev/null 2>&1; then
 	echo "curl is required." >&2
 	exit 1
 fi
+if ! command -v sha256sum >/dev/null 2>&1; then
+	echo "sha256sum is required." >&2
+	exit 1
+fi
 if ! getent passwd "$oms_service_user" >/dev/null 2>&1; then
 	useradd --system --create-home --home-dir "/var/lib/$oms_service_name" \
 		--shell /usr/sbin/nologin "$oms_service_user"
@@ -59,6 +63,7 @@ esac
 oms_asset_name="ohmyserver-$oms_release_os-$oms_release_arch"
 oms_temp_dir="$(mktemp -d)"
 oms_binary_source="$oms_temp_dir/$oms_asset_name"
+oms_checksums_source="$oms_temp_dir/checksums.txt"
 if [ -n "${GITHUB_TOKEN:-}" ]; then
 	oms_release_json="$oms_temp_dir/release.json"
 	curl --fail --silent --show-error --location \
@@ -66,8 +71,12 @@ if [ -n "${GITHUB_TOKEN:-}" ]; then
 		--header "Accept: application/vnd.github+json" \
 		"https://api.github.com/repos/$oms_repository/releases/latest" \
 		--output "$oms_release_json"
-	oms_asset_api_url="$(
-		awk -v wanted="$oms_asset_name" '
+
+	download_private_asset() {
+		oms_wanted_asset="$1"
+		oms_wanted_destination="$2"
+		oms_asset_api_url="$(
+			awk -v wanted="$oms_wanted_asset" '
 			/"url": "https:\/\/api.github.com\/repos\/.*\/releases\/assets\// {
 				url = $2
 				gsub(/[",]/, "", url)
@@ -80,27 +89,47 @@ if [ -n "${GITHUB_TOKEN:-}" ]; then
 					exit
 				}
 			}
-		' "$oms_release_json"
-	)"
-	if [ -z "$oms_asset_api_url" ]; then
-		echo "Latest release does not contain $oms_asset_name." >&2
-		exit 1
-	fi
-	curl --fail --silent --show-error --location \
-		--header "Authorization: Bearer $GITHUB_TOKEN" \
-		--header "Accept: application/octet-stream" \
-		"$oms_asset_api_url" --output "$oms_binary_source"
+			' "$oms_release_json"
+		)"
+		if [ -z "$oms_asset_api_url" ]; then
+			echo "Latest release does not contain $oms_wanted_asset." >&2
+			exit 1
+		fi
+		curl --fail --silent --show-error --location \
+			--header "Authorization: Bearer $GITHUB_TOKEN" \
+			--header "Accept: application/octet-stream" \
+			"$oms_asset_api_url" --output "$oms_wanted_destination"
+	}
+	download_private_asset "$oms_asset_name" "$oms_binary_source"
+	download_private_asset "checksums.txt" "$oms_checksums_source"
 else
 	oms_download_url="https://github.com/$oms_repository/releases/latest/download/$oms_asset_name"
 	if ! curl --fail --silent --show-error --location "$oms_download_url" --output "$oms_binary_source"; then
 		echo "Release download failed. If the repository is private, run with GITHUB_TOKEN set." >&2
 		exit 1
 	fi
+	curl --fail --silent --show-error --location \
+		"https://github.com/$oms_repository/releases/latest/download/checksums.txt" \
+		--output "$oms_checksums_source"
 fi
 if [ ! -s "$oms_binary_source" ]; then
 	echo "Downloaded release asset is empty: $oms_asset_name" >&2
 	exit 1
 fi
+oms_verification_file="$oms_temp_dir/verification.txt"
+awk -v wanted="$oms_asset_name" '
+	$2 == wanted || $2 == "*" wanted {
+		print $1 "  " wanted
+		found = 1
+	}
+	END {
+		if (!found) exit 1
+	}
+' "$oms_checksums_source" >"$oms_verification_file" || {
+	echo "checksums.txt does not contain $oms_asset_name." >&2
+	exit 1
+}
+(cd "$oms_temp_dir" && sha256sum --check "$(basename "$oms_verification_file")")
 
 systemctl stop "$oms_service_name.service" 2>/dev/null || true
 
@@ -152,6 +181,8 @@ Type=simple
 User=$oms_service_user
 Group=$oms_service_user
 WorkingDirectory=$oms_service_home
+RuntimeDirectory=$oms_service_name
+RuntimeDirectoryMode=0750
 ExecStart=$oms_install_path
 Restart=on-failure
 RestartSec=3
@@ -166,10 +197,48 @@ EOF
 install -m 0644 "$oms_unit_temp" "/etc/systemd/system/$oms_service_name.service"
 rm -f "$oms_unit_temp"
 
+oms_update_service_temp="$(mktemp)"
+cat >"$oms_update_service_temp" <<EOF
+[Unit]
+Description=Update OhMyServer from the latest verified GitHub release
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStartPre=/usr/bin/rm -f /run/$oms_service_name/update
+ExecStart=$oms_install_path update apply
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+UMask=0027
+EOF
+install -m 0644 "$oms_update_service_temp" "/etc/systemd/system/$oms_service_name-update.service"
+rm -f "$oms_update_service_temp"
+
+oms_update_path_temp="$(mktemp)"
+cat >"$oms_update_path_temp" <<EOF
+[Unit]
+Description=Watch for OhMyServer update requests
+After=$oms_service_name.service
+
+[Path]
+PathExists=/run/$oms_service_name/update
+Unit=$oms_service_name-update.service
+
+[Install]
+WantedBy=multi-user.target
+EOF
+install -m 0644 "$oms_update_path_temp" "/etc/systemd/system/$oms_service_name-update.path"
+rm -f "$oms_update_path_temp"
+
 sudo -H -u "$oms_service_user" "$oms_install_path" --init-default-web
 
 systemctl daemon-reload
 systemctl enable "$oms_service_name.service"
+systemctl enable --now "$oms_service_name-update.path"
 systemctl restart "$oms_service_name.service"
 
 oms_attempt=0

@@ -1,0 +1,132 @@
+{{define "page"}}
+
+<div class="page-header">
+  <div>
+    <h2>System Packages</h2>
+    {{if not .unavailable}}
+    <p>{{.managerName}} · <code>{{.backend}}</code> · <code>{{.executable}}</code></p>
+    <p>Changes: <code>{{.mutationMode}}</code></p>
+    {{end}}
+  </div>
+  {{if not .unavailable}}
+  <div class="form-actions">
+    <form method="post" action="/packages/refresh">
+      <button class="button" type="submit">Refresh Metadata</button>
+    </form>
+    <form method="post" action="/packages/upgrade" onsubmit="return confirm('Upgrade all available packages? This may restart services or require a reboot.')">
+      <button class="button button-primary" type="submit">Upgrade All</button>
+    </form>
+  </div>
+  {{end}}
+</div>
+
+{{if .message}}
+<div class="section"><p>{{.message}}</p></div>
+{{end}}
+
+{{if .unavailable}}
+<div class="section">
+  <p>No supported package manager was detected on this host.</p>
+  <p>Supported backends: APT, DNF/DNF5, Pacman, APK, opkg, and Homebrew.</p>
+</div>
+{{else}}
+
+<nav>
+  <a href="/packages?view=installed">Installed</a>
+  <a href="/packages?view=upgradable">Upgradable</a>
+  <a href="/packages?view=search">Search</a>
+</nav>
+
+{{if not .capabilities.SafeUpgradeAll}}
+<div class="section">
+  <p><strong>Warning:</strong> this backend does not consider a full-system package upgrade safe. Review the Upgradable list and prefer upgrading selected packages.</p>
+</div>
+{{end}}
+
+<div class="section">
+  <h3>Install Package</h3>
+  <form method="post" action="/packages/install">
+    <div class="form-group">
+      <label for="package-name">Package name</label>
+      <input class="input" id="package-name" name="package" type="text" required autocomplete="off" placeholder="curl">
+    </div>
+    <div class="form-actions">
+      <button class="button button-primary" type="submit">Install</button>
+    </div>
+  </form>
+</div>
+
+{{if eq .view "search"}}
+<div class="section">
+  <form method="get" action="/packages">
+    <div class="form-group">
+      <label for="package-query">Search repositories</label>
+      <input class="input" id="package-query" name="q" type="search" value="{{.query}}" required autocomplete="off" placeholder="Package name">
+    </div>
+    <div class="form-actions">
+      <button class="button" type="submit">Search</button>
+    </div>
+    <input class="input" name="view" type="hidden" value="search">
+  </form>
+</div>
+{{end}}
+
+<div class="section">
+  <div class="page-header">
+    <h3>{{if eq .view "installed"}}Installed{{else if eq .view "upgradable"}}Upgradable{{else}}Search Results{{end}}</h3>
+    <span>{{len .packages}} packages</span>
+  </div>
+
+  {{if .packages}}
+  <div class="table-container">
+    <table class="table table-nowrap">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Installed</th>
+          <th>Latest</th>
+          <th>Architecture</th>
+          <th>Repository</th>
+          <th>Description</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .packages}}
+        <tr>
+          <td><code>{{.Name}}</code></td>
+          <td>{{if .Version}}{{.Version}}{{else}}-{{end}}</td>
+          <td>{{if .LatestVersion}}{{.LatestVersion}}{{else}}-{{end}}</td>
+          <td>{{if .Architecture}}{{.Architecture}}{{else}}-{{end}}</td>
+          <td>{{if .Repository}}{{.Repository}}{{else}}-{{end}}</td>
+          <td>{{if .Description}}{{.Description}}{{else}}-{{end}}</td>
+          <td>
+            {{if eq $.view "installed"}}
+            <a method="delete" href="/packages/remove?name={{urlquery .Name}}" class="button button-danger" onclick="return confirm('Remove this package? Dependent packages may also be removed.')">Remove</a>
+            {{else if eq $.view "upgradable"}}
+            <form method="post" action="/packages/upgrade?name={{urlquery .Name}}">
+              <button class="button button-primary" type="submit">Upgrade</button>
+            </form>
+            {{else}}
+            <form method="post" action="/packages/install">
+              <input class="input" name="package" type="hidden" value="{{.Name}}">
+              <button class="button button-primary" type="submit">Install</button>
+            </form>
+            {{end}}
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p class="empty-message">
+    {{if and (eq .view "search") (not .query)}}Enter a package name to search.
+    {{else if eq .view "upgradable"}}All packages are up to date.
+    {{else}}No packages found.{{end}}
+  </p>
+  {{end}}
+</div>
+
+{{end}}
+{{end}}

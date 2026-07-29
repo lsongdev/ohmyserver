@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/lsongdev/ohmyserver/config"
@@ -56,6 +57,12 @@ func loggingMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "update" {
+		if err := runUpdateCommand(os.Args[2:]); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	initDefaultWeb := flag.Bool("init-default-web", false, "initialize the database and ensure a default :80 Worker host")
 	flag.Parse()
 
@@ -133,12 +140,12 @@ func main() {
 	router.HandleFunc("/docker/compose/up", auth(server.ComposeUpSSEHandler))
 	router.HandleFunc("/docker/compose/action", auth(server.ComposeActionHandler))
 	router.HandleFunc("/docker/compose/{name}", auth(server.ComposeDetailView))
-	router.HandleFunc("/apps", auth(server.AppsView))
-	router.HandleFunc("/apps/sync", auth(server.AppsSyncHandler))
-	router.HandleFunc("/apps/{id}", auth(server.AppDetailView))
-	router.HandleFunc("/apps/{id}/icon", auth(server.AppIconHandler))
-	router.HandleFunc("/apps/{id}/install", auth(server.AppInstallTriggerHandler))
-	router.HandleFunc("/apps/{id}/action", auth(server.AppActionHandler))
+	router.HandleFunc("/docker/apps", auth(server.AppsView))
+	router.HandleFunc("/docker/apps/sync", auth(server.AppsSyncHandler))
+	router.HandleFunc("/docker/apps/{id}", auth(server.AppDetailView))
+	router.HandleFunc("/docker/apps/{id}/icon", auth(server.AppIconHandler))
+	router.HandleFunc("/docker/apps/{id}/install", auth(server.AppInstallTriggerHandler))
+	router.HandleFunc("/docker/apps/{id}/action", auth(server.AppActionHandler))
 	router.HandleFunc("/projects", auth(server.ProjectsView))
 	router.HandleFunc("/projects/new", auth(server.NewProject))
 	router.HandleFunc("/projects/{id}", auth(server.ProjectDetailView))
@@ -259,6 +266,7 @@ func main() {
 	router.HandleFunc("/settings/new", auth(server.SettingsNewHandler))
 	router.HandleFunc("/settings/{id}", auth(server.SettingsEditHandler))
 	router.HandleFunc("/about", auth(server.AboutView))
+	router.HandleFunc("/about/update", auth(server.UpdateHandler))
 	router.HandleFunc("/ipmi", auth(server.IPMIView))
 	router.HandleFunc("/ipmi/new", auth(server.IPMINewHandler))
 	router.HandleFunc("/ipmi/{id}", auth(server.IPMIDetailHandler))
@@ -298,6 +306,11 @@ func main() {
 	router.HandleFunc("/disks", auth(server.DisksView))
 	router.HandleFunc("/disks/detail", auth(server.DiskDetailHandler))
 	router.HandleFunc("/disks/test", auth(server.DiskTestHandler))
+	router.HandleFunc("/packages", auth(server.SystemPackagesView))
+	router.HandleFunc("/packages/refresh", auth(server.SystemPackagesRefreshHandler))
+	router.HandleFunc("/packages/install", auth(server.SystemPackagesInstallHandler))
+	router.HandleFunc("/packages/remove", auth(server.SystemPackagesRemoveHandler))
+	router.HandleFunc("/packages/upgrade", auth(server.SystemPackagesUpgradeHandler))
 	router.HandleFunc("/web", auth(server.WebServerView))
 	router.HandleFunc("/web/metrics", auth(server.WebServerMetricsHandler))
 	router.HandleFunc("/web/listeners", auth(server.WebListenersView))
