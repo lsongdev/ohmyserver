@@ -28,6 +28,7 @@ const (
 	defaultAPIBaseURL     = "https://api.github.com"
 	maxBinarySize         = 256 << 20
 	maxChecksumsSize      = 1 << 20
+	defaultHTTPTimeout    = time.Hour
 )
 
 type Asset struct {
@@ -63,7 +64,7 @@ func NewClient() *Client {
 	return &Client{
 		Repository: DefaultRepository,
 		APIBaseURL: defaultAPIBaseURL,
-		HTTPClient: &http.Client{Timeout: 2 * time.Minute},
+		HTTPClient: &http.Client{Timeout: defaultHTTPTimeout},
 	}
 }
 
@@ -106,7 +107,7 @@ func (c *Client) httpClient() *http.Client {
 	if c.HTTPClient != nil {
 		return c.HTTPClient
 	}
-	return &http.Client{Timeout: 2 * time.Minute}
+	return &http.Client{Timeout: defaultHTTPTimeout}
 }
 
 func AssetName(goos, goarch string) (string, error) {

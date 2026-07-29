@@ -208,6 +208,7 @@ Wants=network-online.target
 Type=oneshot
 User=root
 Group=root
+TimeoutStartSec=1h
 ExecStartPre=/usr/bin/rm -f /run/$oms_service_name/update
 ExecStart=$oms_install_path update apply
 NoNewPrivileges=true

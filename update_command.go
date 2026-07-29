@@ -19,11 +19,11 @@ func runUpdateCommand(args []string) error {
 		return errors.New("usage: ohmyserver update <check|apply>")
 	}
 	client := updater.NewClient()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
 
 	switch args[0] {
 	case "check":
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
 		release, err := client.Latest(ctx)
 		if err != nil {
 			return err
@@ -38,6 +38,8 @@ func runUpdateCommand(args []string) error {
 			buildinfo.Version, buildinfo.ShortCommit(), release.TagName, hasBinary, hasChecksums)
 		return nil
 	case "apply":
+		ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
+		defer cancel()
 		current, err := user.Current()
 		if err != nil || current.Uid != "0" {
 			return errors.New("update apply must run as root")
