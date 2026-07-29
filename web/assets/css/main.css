@@ -1,45 +1,37 @@
-body {
-  /* overflow: hidden; */
-}
-
 main>nav {
   top: 0;
+  z-index: 20;
   position: sticky;
+  display: flex;
+  gap: 6px;
+  max-width: 100%;
   padding: 10px 0;
-  backdrop-filter: blur(3px);
-  border-radius: 10px;
-  display: inline-block;
+  overflow-x: auto;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  background: var(--container-background, #fff);
+  background: color-mix(in srgb, var(--container-background, #fff) 88%, transparent);
+  border-bottom: 1px solid #eaeef2;
 }
 
 aside>nav {
   text-transform: uppercase;
 }
 
-.page-header {
-  display: flex;
-  overflow: hidden;
-  align-items: center;
-  margin-bottom: 20px;
-  white-space: nowrap;
-  justify-content: space-between;
-}
-
-.page-header h2 {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .layout-content {
   padding: 1em;
 }
 
-@media screen and (max-width: 768px) {
-  body {
-    overflow: initial;
-  }
+.info-value {
+  overflow-wrap: anywhere;
 }
 
-
+@media screen and (max-width: 768px) {
+  main>nav {
+    margin: -1em -1em 1em;
+    padding: 10px 1em;
+  }
+}
 
 .info-grid {
   display: grid;
@@ -67,4 +59,10 @@ aside>nav {
   color: #333;
   font-weight: 600;
   font-size: 15px;
+}
+
+@media screen and (max-width: 768px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
 }
