@@ -45,7 +45,20 @@
             </select>
         </div>
         <div class="form-group">
-            <label><input type="checkbox" name="enabled" {{if or (not .listener) .listener.Enabled}}checked{{end}}> Enabled</label>
+            <label for="trusted_proxies">Trusted Proxies</label>
+            <textarea class="input" id="trusted_proxies" name="trusted_proxies" rows="3" placeholder="127.0.0.1/32&#10;10.0.0.0/8">{{if .listener}}{{.listener.TrustedProxies}}{{end}}</textarea>
+            <small>Only these direct peers may provide <code>X-Forwarded-For</code>. Leave empty when Yabber receives traffic directly.</small>
+        </div>
+        <div class="form-group">
+            <label>Policies</label>
+            {{range .policies}}
+            <label><input class="input" type="checkbox" name="policy_ids" value="{{.ID}}" {{if and $.listener (containsInt64 $.listener.PolicyIDs .ID)}}checked{{end}}> {{.Name}}</label>
+            {{else}}
+            <small>No policies configured. <a href="/web/policies/new">Create a policy</a>.</small>
+            {{end}}
+        </div>
+        <div class="form-group">
+            <label><input class="input" type="checkbox" name="enabled" {{if or (not .listener) .listener.Enabled}}checked{{end}}> Enabled</label>
         </div>
     </div>
 

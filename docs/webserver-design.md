@@ -555,6 +555,19 @@ Web Server 状态页应展示：
 - 文件站点先 `filepath.Clean`，并依赖 `http.FileServer` 的路径约束，禁止任意路径拼接。
 - HTTP 管理接口与站点流量分开监听。
 
+### 13.1 生产流量策略与可观测性
+
+OhMyServer 将 Yabber 的生产能力映射为数据库控制面：
+
+- `web_policies` 保存可复用的请求体、请求超时、速率和并发限制。
+- Listener、Virtual Host、Route 通过有序关联表引用 Policy，执行顺序为 Listener → Host → Route。
+- Listener 的 `trusted_proxies` 明确控制哪些直连代理可以提供 `X-Forwarded-For`；未配置时始终使用 TCP 对端地址。
+- Reverse Proxy Route 可单独设置完整请求超时、响应头超时和单上游最大连接数。
+- Yabber 内置指标显示在 Web Server 与 Host 页面；`/web/metrics` 在面板认证之后输出 Prometheus 文本。
+- 站点访问日志以 JSON Lines 写入 OhMyServer 标准输出，包含 request ID、Listener、Host、Route、可信客户端 IP、状态码、耗时和拒绝策略。
+
+限流器是单进程内存状态。同名 Policy 在多个绑定位置共享一个运行时状态，未变化的 Policy 在热更新时保留桶状态。未来部署多个 OhMyServer/Yabber 实例时，需要另行设计分布式限流后端。
+
 ## 14. 推荐实施顺序
 
 ### Phase 1：抽出纯 Web Server 运行时

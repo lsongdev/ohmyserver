@@ -17,7 +17,7 @@ require (
 	github.com/lsongdev/ntp-go v0.0.0-20260728080956-58638dac0cb4
 	github.com/lsongdev/openwrt-go v0.0.0-20260411153216-6c064a0962c3
 	github.com/lsongdev/speedtest-go v0.0.0-20260423054920-93af072d218e
-	github.com/lsongdev/yabber v0.0.0-20260728165755-b84e9aa5f0d5
+	github.com/lsongdev/yabber v0.0.0-20260729032210-7ba542731aae
 	github.com/lsongdev/yeelight-go v0.0.0-20260429060907-76de1d03edb6
 	github.com/namedotcom/go v0.0.0-20180403034216-08470befbe04
 	github.com/nrdcg/dnspod-go v0.4.0

@@ -1,0 +1,76 @@
+{{define "page"}}
+
+<div class="page-header">
+    <div>
+        <h2>{{if .isEdit}}Edit Policy{{else}}New Policy{{end}}</h2>
+        <p>Reusable request protection for listeners, virtual hosts, and routes.</p>
+    </div>
+    {{if .isEdit}}
+    <a method="delete" href="/web/policies/{{.policy.ID}}" class="button button-danger" onclick="return confirm('Delete this policy?')">Delete</a>
+    {{end}}
+</div>
+
+{{if .error}}<div class="error-message">{{.error}}</div>{{end}}
+
+<form class="form" method="post" action="{{if .isEdit}}/web/policies/{{.policy.ID}}{{else}}/web/policies/new{{end}}">
+    {{if .isEdit}}<input class="input" type="hidden" name="_method" value="PUT">{{end}}
+
+    <div class="section">
+        <h3>Policy</h3>
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input class="input" type="text" id="name" name="name" required value="{{if .policy}}{{.policy.Name}}{{end}}" placeholder="public-api">
+        </div>
+        <div class="form-group">
+            <label for="max_body_bytes">Maximum Request Body (bytes)</label>
+            <input class="input" type="number" min="0" id="max_body_bytes" name="max_body_bytes" value="{{if .policy}}{{.policy.MaxBodyBytes}}{{end}}" placeholder="10485760">
+        </div>
+        <div class="form-group">
+            <label for="request_timeout_seconds">Request Timeout (seconds)</label>
+            <input class="input" type="number" min="0" id="request_timeout_seconds" name="request_timeout_seconds" value="{{if .policy}}{{.policy.RequestTimeoutSeconds}}{{end}}" placeholder="30">
+            <small>Do not use a timeout policy on WebSocket, SSE, or long-lived streaming routes.</small>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Rate Limit</h3>
+        <div class="form-group">
+            <label for="rate_requests_per_second">Requests per Second</label>
+            <input class="input" type="number" min="0" step="0.01" id="rate_requests_per_second" name="rate_requests_per_second" value="{{if .policy}}{{.policy.RateRequestsPerSecond}}{{end}}" placeholder="10">
+        </div>
+        <div class="form-group">
+            <label for="rate_burst">Burst</label>
+            <input class="input" type="number" min="0" id="rate_burst" name="rate_burst" value="{{if .policy}}{{.policy.RateBurst}}{{end}}" placeholder="20">
+        </div>
+        <div class="form-group">
+            <label for="rate_key">Key</label>
+            <select class="input" id="rate_key" name="rate_key">
+                <option value="client_ip" {{if or (not .policy) (eq .policy.RateKey "client_ip")}}selected{{end}}>Client IP</option>
+                <option value="global" {{if and .policy (eq .policy.RateKey "global")}}selected{{end}}>Global</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="rate_max_keys">Maximum Client Keys</label>
+            <input class="input" type="number" min="0" id="rate_max_keys" name="rate_max_keys" value="{{if .policy}}{{.policy.RateMaxKeys}}{{end}}" placeholder="10000">
+        </div>
+        <div class="form-group">
+            <label for="rate_idle_timeout_seconds">Idle Key Timeout (seconds)</label>
+            <input class="input" type="number" min="0" id="rate_idle_timeout_seconds" name="rate_idle_timeout_seconds" value="{{if .policy}}{{.policy.RateIdleTimeoutSeconds}}{{end}}" placeholder="600">
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>Concurrency</h3>
+        <div class="form-group">
+            <label for="concurrency_max">Maximum Concurrent Requests</label>
+            <input class="input" type="number" min="0" id="concurrency_max" name="concurrency_max" value="{{if .policy}}{{.policy.ConcurrencyMax}}{{end}}" placeholder="100">
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button class="button button-primary" type="submit">Save</button>
+        <a class="button" href="/web">Cancel</a>
+    </div>
+</form>
+
+{{end}}

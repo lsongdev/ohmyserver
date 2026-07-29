@@ -26,6 +26,9 @@ type WebListener struct {
 	MinTLSVersion          string
 	DefaultCertificateID   *int64
 	DefaultCertificateName string
+	TrustedProxies         string
+	PolicyIDs              []int64
+	PolicyNames            []string
 	CreatedAt              time.Time
 	UpdatedAt              time.Time
 }
@@ -40,30 +43,52 @@ type WebHost struct {
 	ForceHTTPS      bool
 	ListenerIDs     []int64
 	ListenerNames   []string
+	PolicyIDs       []int64
+	PolicyNames     []string
 	Routes          []WebRoute
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
 
 type WebRoute struct {
-	ID               int64
-	HostID           int64
-	HostName         string
-	Name             string
-	Enabled          bool
-	Method           string
-	Path             string
-	HandlerType      string
-	UpstreamURL      string
-	Root             string
-	StripPrefix      string
-	ResponseStatus   int
-	ResponseBody     string
-	RedirectLocation string
-	RedirectStatus   int
-	WorkerScript     string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	ID                           int64
+	HostID                       int64
+	HostName                     string
+	Name                         string
+	Enabled                      bool
+	Method                       string
+	Path                         string
+	HandlerType                  string
+	UpstreamURL                  string
+	Root                         string
+	StripPrefix                  string
+	ResponseStatus               int
+	ResponseBody                 string
+	RedirectLocation             string
+	RedirectStatus               int
+	WorkerScript                 string
+	RequestTimeoutSeconds        int
+	ResponseHeaderTimeoutSeconds int
+	MaxConnsPerHost              int
+	PolicyIDs                    []int64
+	PolicyNames                  []string
+	CreatedAt                    time.Time
+	UpdatedAt                    time.Time
+}
+
+type WebPolicy struct {
+	ID                     int64
+	Name                   string
+	MaxBodyBytes           int64
+	RequestTimeoutSeconds  int
+	RateRequestsPerSecond  float64
+	RateBurst              int
+	RateKey                string
+	RateMaxKeys            int
+	RateIdleTimeoutSeconds int
+	ConcurrencyMax         int
+	CreatedAt              time.Time
+	UpdatedAt              time.Time
 }
 
 func (s *Server) initWebServerSchema() error {
@@ -76,6 +101,7 @@ func (s *Server) initWebServerSchema() error {
 		enabled INTEGER NOT NULL DEFAULT 1,
 		min_tls_version TEXT NOT NULL DEFAULT 'TLS1.2',
 		default_certificate_id INTEGER,
+		trusted_proxies TEXT NOT NULL DEFAULT '',
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (default_certificate_id) REFERENCES certificates(id)
@@ -114,10 +140,51 @@ func (s *Server) initWebServerSchema() error {
 		redirect_location TEXT NOT NULL DEFAULT '',
 		redirect_status INTEGER NOT NULL DEFAULT 0,
 		worker_script TEXT NOT NULL DEFAULT '',
+		request_timeout_seconds INTEGER NOT NULL DEFAULT 0,
+		response_header_timeout_seconds INTEGER NOT NULL DEFAULT 0,
+		max_conns_per_host INTEGER NOT NULL DEFAULT 0,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (host_id) REFERENCES web_hosts(id) ON DELETE CASCADE,
 		UNIQUE (host_id, name)
+	);
+	CREATE TABLE IF NOT EXISTS web_policies (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE,
+		max_body_bytes INTEGER NOT NULL DEFAULT 0,
+		request_timeout_seconds INTEGER NOT NULL DEFAULT 0,
+		rate_requests_per_second REAL NOT NULL DEFAULT 0,
+		rate_burst INTEGER NOT NULL DEFAULT 0,
+		rate_key TEXT NOT NULL DEFAULT 'client_ip',
+		rate_max_keys INTEGER NOT NULL DEFAULT 10000,
+		rate_idle_timeout_seconds INTEGER NOT NULL DEFAULT 600,
+		concurrency_max INTEGER NOT NULL DEFAULT 0,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	CREATE TABLE IF NOT EXISTS web_listener_policies (
+		listener_id INTEGER NOT NULL,
+		policy_id INTEGER NOT NULL,
+		position INTEGER NOT NULL DEFAULT 0,
+		PRIMARY KEY (listener_id, policy_id),
+		FOREIGN KEY (listener_id) REFERENCES web_listeners(id) ON DELETE CASCADE,
+		FOREIGN KEY (policy_id) REFERENCES web_policies(id) ON DELETE RESTRICT
+	);
+	CREATE TABLE IF NOT EXISTS web_host_policies (
+		host_id INTEGER NOT NULL,
+		policy_id INTEGER NOT NULL,
+		position INTEGER NOT NULL DEFAULT 0,
+		PRIMARY KEY (host_id, policy_id),
+		FOREIGN KEY (host_id) REFERENCES web_hosts(id) ON DELETE CASCADE,
+		FOREIGN KEY (policy_id) REFERENCES web_policies(id) ON DELETE RESTRICT
+	);
+	CREATE TABLE IF NOT EXISTS web_route_policies (
+		route_id INTEGER NOT NULL,
+		policy_id INTEGER NOT NULL,
+		position INTEGER NOT NULL DEFAULT 0,
+		PRIMARY KEY (route_id, policy_id),
+		FOREIGN KEY (route_id) REFERENCES web_routes(id) ON DELETE CASCADE,
+		FOREIGN KEY (policy_id) REFERENCES web_policies(id) ON DELETE RESTRICT
 	);
 	CREATE INDEX IF NOT EXISTS idx_web_listeners_enabled ON web_listeners(enabled);
 	CREATE INDEX IF NOT EXISTS idx_web_hosts_enabled ON web_hosts(enabled);
@@ -125,6 +192,20 @@ func (s *Server) initWebServerSchema() error {
 	`
 	if _, err := s.db.Exec(query); err != nil {
 		return err
+	}
+	for _, column := range []struct {
+		table      string
+		name       string
+		definition string
+	}{
+		{"web_listeners", "trusted_proxies", "TEXT NOT NULL DEFAULT ''"},
+		{"web_routes", "request_timeout_seconds", "INTEGER NOT NULL DEFAULT 0"},
+		{"web_routes", "response_header_timeout_seconds", "INTEGER NOT NULL DEFAULT 0"},
+		{"web_routes", "max_conns_per_host", "INTEGER NOT NULL DEFAULT 0"},
+	} {
+		if err := s.ensureWebServerColumn(column.table, column.name, column.definition); err != nil {
+			return err
+		}
 	}
 
 	var count int
@@ -141,10 +222,38 @@ func (s *Server) initWebServerSchema() error {
 	return nil
 }
 
+func (s *Server) ensureWebServerColumn(table, name, definition string) error {
+	rows, err := s.db.Query("PRAGMA table_info(" + table + ")")
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var cid, notNull, primaryKey int
+		var columnName, columnType string
+		var defaultValue any
+		if err := rows.Scan(&cid, &columnName, &columnType, &notNull, &defaultValue, &primaryKey); err != nil {
+			rows.Close()
+			return err
+		}
+		if columnName == name {
+			return rows.Close()
+		}
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	_, err = s.db.Exec("ALTER TABLE " + table + " ADD COLUMN " + name + " " + definition)
+	return err
+}
+
 func (s *Server) GetAllWebListeners() ([]WebListener, error) {
 	rows, err := s.db.Query(`
 		SELECT l.id, l.name, l.address, l.protocol, l.enabled, l.min_tls_version,
-		       l.default_certificate_id, COALESCE(c.domains, ''),
+		       l.default_certificate_id, COALESCE(c.domains, ''), l.trusted_proxies,
 		       l.created_at, l.updated_at
 		FROM web_listeners l
 		LEFT JOIN certificates c ON c.id = l.default_certificate_id
@@ -153,29 +262,48 @@ func (s *Server) GetAllWebListeners() ([]WebListener, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	var listeners []WebListener
 	for rows.Next() {
 		listener, err := scanWebListener(rows)
 		if err != nil {
+			rows.Close()
 			return nil, err
 		}
 		listeners = append(listeners, *listener)
 	}
-	return listeners, rows.Err()
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return nil, err
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	for i := range listeners {
+		if err := s.loadWebPolicyRelations("listener", listeners[i].ID, &listeners[i].PolicyIDs, &listeners[i].PolicyNames); err != nil {
+			return nil, err
+		}
+	}
+	return listeners, nil
 }
 
 func (s *Server) GetWebListener(id int64) (*WebListener, error) {
 	row := s.db.QueryRow(`
 		SELECT l.id, l.name, l.address, l.protocol, l.enabled, l.min_tls_version,
-		       l.default_certificate_id, COALESCE(c.domains, ''),
+		       l.default_certificate_id, COALESCE(c.domains, ''), l.trusted_proxies,
 		       l.created_at, l.updated_at
 		FROM web_listeners l
 		LEFT JOIN certificates c ON c.id = l.default_certificate_id
 		WHERE l.id = ?
 	`, id)
-	return scanWebListener(row)
+	listener, err := scanWebListener(row)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.loadWebPolicyRelations("listener", listener.ID, &listener.PolicyIDs, &listener.PolicyNames); err != nil {
+		return nil, err
+	}
+	return listener, nil
 }
 
 type rowScanner interface {
@@ -189,7 +317,7 @@ func scanWebListener(row rowScanner) (*WebListener, error) {
 	if err := row.Scan(
 		&listener.ID, &listener.Name, &listener.Address, &listener.Protocol,
 		&listener.Enabled, &listener.MinTLSVersion, &certificateID,
-		&listener.DefaultCertificateName, &createdAt, &updatedAt,
+		&listener.DefaultCertificateName, &listener.TrustedProxies, &createdAt, &updatedAt,
 	); err != nil {
 		return nil, err
 	}
@@ -202,27 +330,52 @@ func scanWebListener(row rowScanner) (*WebListener, error) {
 }
 
 func (s *Server) CreateWebListener(listener *WebListener) (int64, error) {
-	result, err := s.db.Exec(`
-		INSERT INTO web_listeners
-			(name, address, protocol, enabled, min_tls_version, default_certificate_id, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`, listener.Name, listener.Address, listener.Protocol, listener.Enabled,
-		listener.MinTLSVersion, nullableInt64(listener.DefaultCertificateID), time.Now(), time.Now())
+	tx, err := s.db.Begin()
 	if err != nil {
 		return 0, err
 	}
-	return result.LastInsertId()
+	defer tx.Rollback()
+	result, err := tx.Exec(`
+		INSERT INTO web_listeners
+			(name, address, protocol, enabled, min_tls_version, default_certificate_id,
+			 trusted_proxies, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, listener.Name, listener.Address, listener.Protocol, listener.Enabled,
+		listener.MinTLSVersion, nullableInt64(listener.DefaultCertificateID),
+		listener.TrustedProxies, time.Now(), time.Now())
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	if err := replaceWebPolicyRelations(tx, "listener", id, listener.PolicyIDs); err != nil {
+		return 0, err
+	}
+	return id, tx.Commit()
 }
 
 func (s *Server) UpdateWebListener(listener *WebListener) error {
-	_, err := s.db.Exec(`
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`
 		UPDATE web_listeners
 		SET name = ?, address = ?, protocol = ?, enabled = ?,
-		    min_tls_version = ?, default_certificate_id = ?, updated_at = ?
+		    min_tls_version = ?, default_certificate_id = ?, trusted_proxies = ?, updated_at = ?
 		WHERE id = ?
 	`, listener.Name, listener.Address, listener.Protocol, listener.Enabled,
-		listener.MinTLSVersion, nullableInt64(listener.DefaultCertificateID), time.Now(), listener.ID)
-	return err
+		listener.MinTLSVersion, nullableInt64(listener.DefaultCertificateID),
+		listener.TrustedProxies, time.Now(), listener.ID); err != nil {
+		return err
+	}
+	if err := replaceWebPolicyRelations(tx, "listener", listener.ID, listener.PolicyIDs); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (s *Server) DeleteWebListener(id int64) error {
@@ -235,8 +388,18 @@ func (s *Server) DeleteWebListener(id int64) error {
 	if references > 0 {
 		return fmt.Errorf("listener is used by %d virtual host(s)", references)
 	}
-	_, err := s.db.Exec(`DELETE FROM web_listeners WHERE id = ?`, id)
-	return err
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`DELETE FROM web_listener_policies WHERE listener_id = ?`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM web_listeners WHERE id = ?`, id); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (s *Server) GetAllWebHosts() ([]WebHost, error) {
@@ -330,6 +493,9 @@ func (s *Server) loadWebHostRelations(host *WebHost) error {
 	if err := rows.Close(); err != nil {
 		return err
 	}
+	if err := s.loadWebPolicyRelations("host", host.ID, &host.PolicyIDs, &host.PolicyNames); err != nil {
+		return err
+	}
 	routes, err := s.GetWebRoutesByHost(host.ID)
 	if err != nil {
 		return err
@@ -360,6 +526,9 @@ func (s *Server) CreateWebHost(host *WebHost) (int64, error) {
 	if err := replaceHostListeners(tx, id, host.ListenerIDs); err != nil {
 		return 0, err
 	}
+	if err := replaceWebPolicyRelations(tx, "host", id, host.PolicyIDs); err != nil {
+		return 0, err
+	}
 	return id, tx.Commit()
 }
 
@@ -379,6 +548,9 @@ func (s *Server) UpdateWebHost(host *WebHost) error {
 		return err
 	}
 	if err := replaceHostListeners(tx, host.ID, host.ListenerIDs); err != nil {
+		return err
+	}
+	if err := replaceWebPolicyRelations(tx, "host", host.ID, host.PolicyIDs); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -405,7 +577,9 @@ func (s *Server) DeleteWebHost(id int64) error {
 	}
 	defer tx.Rollback()
 	for _, query := range []string{
+		`DELETE FROM web_route_policies WHERE route_id IN (SELECT id FROM web_routes WHERE host_id = ?)`,
 		`DELETE FROM web_routes WHERE host_id = ?`,
+		`DELETE FROM web_host_policies WHERE host_id = ?`,
 		`DELETE FROM web_host_listeners WHERE host_id = ?`,
 		`DELETE FROM web_hosts WHERE id = ?`,
 	} {
@@ -422,6 +596,8 @@ func (s *Server) GetWebRoutesByHost(hostID int64) ([]WebRoute, error) {
 		       r.handler_type, r.upstream_url, r.root, r.strip_prefix,
 		       r.response_status, r.response_body, r.redirect_location,
 		       r.redirect_status, r.worker_script,
+		       r.request_timeout_seconds, r.response_header_timeout_seconds,
+		       r.max_conns_per_host,
 		       r.created_at, r.updated_at
 		FROM web_routes r
 		JOIN web_hosts h ON h.id = r.host_id
@@ -431,16 +607,28 @@ func (s *Server) GetWebRoutesByHost(hostID int64) ([]WebRoute, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	var routes []WebRoute
 	for rows.Next() {
 		route, err := scanWebRoute(rows)
 		if err != nil {
+			rows.Close()
 			return nil, err
 		}
 		routes = append(routes, *route)
 	}
-	return routes, rows.Err()
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return nil, err
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	for i := range routes {
+		if err := s.loadWebPolicyRelations("route", routes[i].ID, &routes[i].PolicyIDs, &routes[i].PolicyNames); err != nil {
+			return nil, err
+		}
+	}
+	return routes, nil
 }
 
 func (s *Server) GetWebRoute(id int64) (*WebRoute, error) {
@@ -449,12 +637,21 @@ func (s *Server) GetWebRoute(id int64) (*WebRoute, error) {
 		       r.handler_type, r.upstream_url, r.root, r.strip_prefix,
 		       r.response_status, r.response_body, r.redirect_location,
 		       r.redirect_status, r.worker_script,
+		       r.request_timeout_seconds, r.response_header_timeout_seconds,
+		       r.max_conns_per_host,
 		       r.created_at, r.updated_at
 		FROM web_routes r
 		JOIN web_hosts h ON h.id = r.host_id
 		WHERE r.id = ?
 	`, id)
-	return scanWebRoute(row)
+	route, err := scanWebRoute(row)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.loadWebPolicyRelations("route", route.ID, &route.PolicyIDs, &route.PolicyNames); err != nil {
+		return nil, err
+	}
+	return route, nil
 }
 
 func scanWebRoute(row rowScanner) (*WebRoute, error) {
@@ -466,6 +663,8 @@ func scanWebRoute(row rowScanner) (*WebRoute, error) {
 		&route.Root, &route.StripPrefix, &route.ResponseStatus,
 		&route.ResponseBody, &route.RedirectLocation, &route.RedirectStatus,
 		&route.WorkerScript,
+		&route.RequestTimeoutSeconds, &route.ResponseHeaderTimeoutSeconds,
+		&route.MaxConnsPerHost,
 		&createdAt, &updatedAt,
 	); err != nil {
 		return nil, err
@@ -476,41 +675,79 @@ func scanWebRoute(row rowScanner) (*WebRoute, error) {
 }
 
 func (s *Server) CreateWebRoute(route *WebRoute) (int64, error) {
-	now := time.Now()
-	result, err := s.db.Exec(`
-		INSERT INTO web_routes
-			(host_id, name, enabled, method, path, handler_type, upstream_url,
-			 root, strip_prefix, response_status, response_body,
-			 redirect_location, redirect_status, worker_script, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, route.HostID, route.Name, route.Enabled, route.Method, route.Path,
-		route.HandlerType, route.UpstreamURL, route.Root, route.StripPrefix,
-		route.ResponseStatus, route.ResponseBody, route.RedirectLocation,
-		route.RedirectStatus, route.WorkerScript, now, now)
+	tx, err := s.db.Begin()
 	if err != nil {
 		return 0, err
 	}
-	return result.LastInsertId()
+	defer tx.Rollback()
+	now := time.Now()
+	result, err := tx.Exec(`
+		INSERT INTO web_routes
+			(host_id, name, enabled, method, path, handler_type, upstream_url,
+			 root, strip_prefix, response_status, response_body,
+			 redirect_location, redirect_status, worker_script,
+			 request_timeout_seconds, response_header_timeout_seconds,
+			 max_conns_per_host, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, route.HostID, route.Name, route.Enabled, route.Method, route.Path,
+		route.HandlerType, route.UpstreamURL, route.Root, route.StripPrefix,
+		route.ResponseStatus, route.ResponseBody, route.RedirectLocation,
+		route.RedirectStatus, route.WorkerScript, route.RequestTimeoutSeconds,
+		route.ResponseHeaderTimeoutSeconds, route.MaxConnsPerHost, now, now)
+	if err != nil {
+		return 0, err
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	if err := replaceWebPolicyRelations(tx, "route", id, route.PolicyIDs); err != nil {
+		return 0, err
+	}
+	return id, tx.Commit()
 }
 
 func (s *Server) UpdateWebRoute(route *WebRoute) error {
-	_, err := s.db.Exec(`
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`
 		UPDATE web_routes
 		SET name = ?, enabled = ?, method = ?, path = ?, handler_type = ?,
 		    upstream_url = ?, root = ?, strip_prefix = ?, response_status = ?,
 		    response_body = ?, redirect_location = ?, redirect_status = ?,
-		    worker_script = ?, updated_at = ?
+		    worker_script = ?, request_timeout_seconds = ?,
+		    response_header_timeout_seconds = ?, max_conns_per_host = ?, updated_at = ?
 		WHERE id = ?
 	`, route.Name, route.Enabled, route.Method, route.Path, route.HandlerType,
 		route.UpstreamURL, route.Root, route.StripPrefix, route.ResponseStatus,
 		route.ResponseBody, route.RedirectLocation, route.RedirectStatus,
-		route.WorkerScript, time.Now(), route.ID)
-	return err
+		route.WorkerScript, route.RequestTimeoutSeconds,
+		route.ResponseHeaderTimeoutSeconds, route.MaxConnsPerHost,
+		time.Now(), route.ID); err != nil {
+		return err
+	}
+	if err := replaceWebPolicyRelations(tx, "route", route.ID, route.PolicyIDs); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (s *Server) DeleteWebRoute(id int64) error {
-	_, err := s.db.Exec(`DELETE FROM web_routes WHERE id = ?`, id)
-	return err
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`DELETE FROM web_route_policies WHERE route_id = ?`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM web_routes WHERE id = ?`, id); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func nullableInt64(value *int64) any {
@@ -518,6 +755,164 @@ func nullableInt64(value *int64) any {
 		return nil
 	}
 	return *value
+}
+
+func webPolicyRelation(scope string) (table, idColumn string, ok bool) {
+	switch scope {
+	case "listener":
+		return "web_listener_policies", "listener_id", true
+	case "host":
+		return "web_host_policies", "host_id", true
+	case "route":
+		return "web_route_policies", "route_id", true
+	default:
+		return "", "", false
+	}
+}
+
+func (s *Server) loadWebPolicyRelations(scope string, id int64, ids *[]int64, names *[]string) error {
+	table, idColumn, ok := webPolicyRelation(scope)
+	if !ok {
+		return fmt.Errorf("invalid web policy scope %q", scope)
+	}
+	rows, err := s.db.Query(`
+		SELECT p.id, p.name
+		FROM `+table+` b
+		JOIN web_policies p ON p.id = b.policy_id
+		WHERE b.`+idColumn+` = ?
+		ORDER BY b.position ASC, p.name ASC
+	`, id)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var policyID int64
+		var policyName string
+		if err := rows.Scan(&policyID, &policyName); err != nil {
+			return err
+		}
+		*ids = append(*ids, policyID)
+		*names = append(*names, policyName)
+	}
+	return rows.Err()
+}
+
+func replaceWebPolicyRelations(tx *sql.Tx, scope string, id int64, policyIDs []int64) error {
+	table, idColumn, ok := webPolicyRelation(scope)
+	if !ok {
+		return fmt.Errorf("invalid web policy scope %q", scope)
+	}
+	if _, err := tx.Exec(`DELETE FROM `+table+` WHERE `+idColumn+` = ?`, id); err != nil {
+		return err
+	}
+	for position, policyID := range policyIDs {
+		if _, err := tx.Exec(
+			`INSERT INTO `+table+` (`+idColumn+`, policy_id, position) VALUES (?, ?, ?)`,
+			id, policyID, position,
+		); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Server) GetAllWebPolicies() ([]WebPolicy, error) {
+	rows, err := s.db.Query(`
+		SELECT id, name, max_body_bytes, request_timeout_seconds,
+		       rate_requests_per_second, rate_burst, rate_key, rate_max_keys,
+		       rate_idle_timeout_seconds, concurrency_max, created_at, updated_at
+		FROM web_policies
+		ORDER BY name ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var policies []WebPolicy
+	for rows.Next() {
+		policy, err := scanWebPolicy(rows)
+		if err != nil {
+			return nil, err
+		}
+		policies = append(policies, *policy)
+	}
+	return policies, rows.Err()
+}
+
+func (s *Server) GetWebPolicy(id int64) (*WebPolicy, error) {
+	return scanWebPolicy(s.db.QueryRow(`
+		SELECT id, name, max_body_bytes, request_timeout_seconds,
+		       rate_requests_per_second, rate_burst, rate_key, rate_max_keys,
+		       rate_idle_timeout_seconds, concurrency_max, created_at, updated_at
+		FROM web_policies
+		WHERE id = ?
+	`, id))
+}
+
+func scanWebPolicy(row rowScanner) (*WebPolicy, error) {
+	var policy WebPolicy
+	var createdAt, updatedAt string
+	if err := row.Scan(
+		&policy.ID, &policy.Name, &policy.MaxBodyBytes, &policy.RequestTimeoutSeconds,
+		&policy.RateRequestsPerSecond, &policy.RateBurst, &policy.RateKey,
+		&policy.RateMaxKeys, &policy.RateIdleTimeoutSeconds, &policy.ConcurrencyMax,
+		&createdAt, &updatedAt,
+	); err != nil {
+		return nil, err
+	}
+	policy.CreatedAt = parseTime(createdAt)
+	policy.UpdatedAt = parseTime(updatedAt)
+	return &policy, nil
+}
+
+func (s *Server) CreateWebPolicy(policy *WebPolicy) (int64, error) {
+	result, err := s.db.Exec(`
+		INSERT INTO web_policies
+			(name, max_body_bytes, request_timeout_seconds, rate_requests_per_second,
+			 rate_burst, rate_key, rate_max_keys, rate_idle_timeout_seconds,
+			 concurrency_max, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, policy.Name, policy.MaxBodyBytes, policy.RequestTimeoutSeconds,
+		policy.RateRequestsPerSecond, policy.RateBurst, policy.RateKey,
+		policy.RateMaxKeys, policy.RateIdleTimeoutSeconds, policy.ConcurrencyMax,
+		time.Now(), time.Now())
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func (s *Server) UpdateWebPolicy(policy *WebPolicy) error {
+	_, err := s.db.Exec(`
+		UPDATE web_policies
+		SET name = ?, max_body_bytes = ?, request_timeout_seconds = ?,
+		    rate_requests_per_second = ?, rate_burst = ?, rate_key = ?,
+		    rate_max_keys = ?, rate_idle_timeout_seconds = ?,
+		    concurrency_max = ?, updated_at = ?
+		WHERE id = ?
+	`, policy.Name, policy.MaxBodyBytes, policy.RequestTimeoutSeconds,
+		policy.RateRequestsPerSecond, policy.RateBurst, policy.RateKey,
+		policy.RateMaxKeys, policy.RateIdleTimeoutSeconds, policy.ConcurrencyMax,
+		time.Now(), policy.ID)
+	return err
+}
+
+func (s *Server) DeleteWebPolicy(id int64) error {
+	var references int
+	if err := s.db.QueryRow(`
+		SELECT
+			(SELECT COUNT(*) FROM web_listener_policies WHERE policy_id = ?) +
+			(SELECT COUNT(*) FROM web_host_policies WHERE policy_id = ?) +
+			(SELECT COUNT(*) FROM web_route_policies WHERE policy_id = ?)
+	`, id, id, id).Scan(&references); err != nil {
+		return err
+	}
+	if references > 0 {
+		return fmt.Errorf("policy is used by %d listener, host, or route binding(s)", references)
+	}
+	_, err := s.db.Exec(`DELETE FROM web_policies WHERE id = ?`, id)
+	return err
 }
 
 type databaseCertificateLoader struct {
@@ -560,22 +955,52 @@ func (s *Server) buildYabberConfig() (yabber.Config, error) {
 	if err != nil {
 		return yabber.Config{}, err
 	}
+	policies, err := s.GetAllWebPolicies()
+	if err != nil {
+		return yabber.Config{}, err
+	}
 	config := yabber.Config{
 		Version: yabber.ConfigVersion,
 		Server: yabber.ServerConfig{
 			ShutdownTimeout:   10 * time.Second,
+			ReadTimeout:       30 * time.Second,
 			ReadHeaderTimeout: 5 * time.Second,
 			IdleTimeout:       60 * time.Second,
+			MaxHeaderBytes:    1 << 20,
 		},
+	}
+	for _, policy := range policies {
+		item := yabber.Policy{Name: policy.Name}
+		if policy.MaxBodyBytes > 0 || policy.RequestTimeoutSeconds > 0 {
+			item.Request = &yabber.RequestPolicy{
+				MaxBodyBytes: policy.MaxBodyBytes,
+				Timeout:      time.Duration(policy.RequestTimeoutSeconds) * time.Second,
+			}
+		}
+		if policy.RateRequestsPerSecond > 0 {
+			item.RateLimit = &yabber.RateLimitPolicy{
+				RequestsPerSecond: policy.RateRequestsPerSecond,
+				Burst:             policy.RateBurst,
+				Key:               policy.RateKey,
+				MaxKeys:           policy.RateMaxKeys,
+				IdleTimeout:       time.Duration(policy.RateIdleTimeoutSeconds) * time.Second,
+			}
+		}
+		if policy.ConcurrencyMax > 0 {
+			item.Concurrency = &yabber.ConcurrencyPolicy{Max: policy.ConcurrencyMax}
+		}
+		config.Policies = append(config.Policies, item)
 	}
 	certificateNames := make(map[string]struct{})
 	for _, listener := range listeners {
 		enabled := listener.Enabled
 		item := yabber.Listener{
-			Name:     listener.Name,
-			Address:  listener.Address,
-			Protocol: yabber.Protocol(listener.Protocol),
-			Enabled:  &enabled,
+			Name:           listener.Name,
+			Address:        listener.Address,
+			Protocol:       yabber.Protocol(listener.Protocol),
+			Enabled:        &enabled,
+			TrustedProxies: splitLines(listener.TrustedProxies),
+			Policies:       listener.PolicyNames,
 		}
 		if listener.Protocol == string(yabber.ProtocolHTTPS) {
 			item.TLS = &yabber.TLSConfig{
@@ -597,6 +1022,7 @@ func (s *Server) buildYabberConfig() (yabber.Config, error) {
 			Listeners: host.ListenerNames,
 			Enabled:   &enabled,
 			HTTP:      &yabber.HostHTTP{RedirectToHTTPS: host.ForceHTTPS},
+			Policies:  host.PolicyNames,
 		}
 		if host.CertificateID != nil {
 			name := certificateReference(host.CertificateID)
@@ -614,11 +1040,16 @@ func (s *Server) buildYabberConfig() (yabber.Config, error) {
 					Method: route.Method,
 					Path:   route.Path,
 				},
+				Policies: route.PolicyNames,
 			}
 			switch route.HandlerType {
 			case "reverse_proxy":
 				yabberRoute.Handle.ReverseProxy = &yabber.ReverseProxy{
-					URL: route.UpstreamURL, StripPrefix: route.StripPrefix,
+					URL:                   route.UpstreamURL,
+					StripPrefix:           route.StripPrefix,
+					RequestTimeout:        time.Duration(route.RequestTimeoutSeconds) * time.Second,
+					ResponseHeaderTimeout: time.Duration(route.ResponseHeaderTimeoutSeconds) * time.Second,
+					MaxConnsPerHost:       route.MaxConnsPerHost,
 				}
 			case "file_server":
 				yabberRoute.Handle.FileServer = &yabber.FileServer{
@@ -653,6 +1084,12 @@ func splitHostnames(value string) []string {
 	})
 }
 
+func splitLines(value string) []string {
+	return strings.FieldsFunc(value, func(r rune) bool {
+		return r == ',' || r == '\n' || r == '\r' || r == ' ' || r == '\t'
+	})
+}
+
 func (s *Server) applyYabber() error {
 	if s.serviceDesiredEnabled("web", true) {
 		if err := s.validateServiceStart("web"); err != nil {
@@ -671,6 +1108,7 @@ func (s *Server) applyYabber() error {
 			config,
 			yabber.WithCertificateLoader(databaseCertificateLoader{server: s}),
 			yabber.WithHTTP01Store(s),
+			yabber.WithAccessLog(log.Writer()),
 		)
 		if err != nil {
 			return err
@@ -730,18 +1168,41 @@ func (s *Server) WebServerView(w http.ResponseWriter, r *http.Request) {
 	}
 	addresses := map[string]string{}
 	running := false
+	var metrics yabber.MetricsSnapshot
+	var statuses map[string]yabber.ListenerStatus
 	s.webServerMu.Lock()
 	if s.webServer != nil {
 		addresses = s.webServer.Addresses()
 		running = s.webServer.Running()
+		metrics = s.webServer.Metrics()
+		statuses = s.webServer.ListenerStatuses()
 	}
 	s.webServerMu.Unlock()
+	policies, err := s.GetAllWebPolicies()
+	if err != nil {
+		s.Error(w, err)
+		return
+	}
 	s.Render(w, "webservers/index", H{
 		"listeners": listeners,
 		"hosts":     hosts,
+		"policies":  policies,
 		"addresses": addresses,
 		"running":   running,
+		"metrics":   metrics,
+		"statuses":  statuses,
 	})
+}
+
+func (s *Server) WebServerMetricsHandler(w http.ResponseWriter, r *http.Request) {
+	s.webServerMu.Lock()
+	instance := s.webServer
+	s.webServerMu.Unlock()
+	if instance == nil {
+		http.Error(w, "web server is stopped", http.StatusServiceUnavailable)
+		return
+	}
+	instance.MetricsHandler().ServeHTTP(w, r)
 }
 
 func (s *Server) WebListenerNewHandler(w http.ResponseWriter, r *http.Request) {
@@ -750,13 +1211,18 @@ func (s *Server) WebListenerNewHandler(w http.ResponseWriter, r *http.Request) {
 		s.Error(w, err)
 		return
 	}
+	policies, err := s.GetAllWebPolicies()
+	if err != nil {
+		s.Error(w, err)
+		return
+	}
 	if r.Method == http.MethodGet {
-		s.Render(w, "webservers/listener", H{"certificates": certificates, "isEdit": false})
+		s.Render(w, "webservers/listener", H{"certificates": certificates, "policies": policies, "isEdit": false})
 		return
 	}
 	listener, err := parseWebListenerForm(r)
 	if err != nil {
-		s.Render(w, "webservers/listener", H{"error": err.Error(), "listener": listener, "certificates": certificates, "isEdit": false})
+		s.Render(w, "webservers/listener", H{"error": err.Error(), "listener": listener, "certificates": certificates, "policies": policies, "isEdit": false})
 		return
 	}
 	id, err := s.CreateWebListener(listener)
@@ -768,7 +1234,7 @@ func (s *Server) WebListenerNewHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if err != nil {
-		s.Render(w, "webservers/listener", H{"error": err.Error(), "listener": listener, "certificates": certificates, "isEdit": false})
+		s.Render(w, "webservers/listener", H{"error": err.Error(), "listener": listener, "certificates": certificates, "policies": policies, "isEdit": false})
 		return
 	}
 	http.Redirect(w, r, "/web", http.StatusSeeOther)
@@ -790,31 +1256,36 @@ func (s *Server) WebListenerHandler(w http.ResponseWriter, r *http.Request) {
 		s.Error(w, err)
 		return
 	}
+	policies, err := s.GetAllWebPolicies()
+	if err != nil {
+		s.Error(w, err)
+		return
+	}
 	method := requestMethod(r)
 	switch method {
 	case http.MethodGet:
-		s.Render(w, "webservers/listener", H{"listener": listener, "certificates": certificates, "isEdit": true})
+		s.Render(w, "webservers/listener", H{"listener": listener, "certificates": certificates, "policies": policies, "isEdit": true})
 	case http.MethodPut:
 		updated, err := parseWebListenerForm(r)
 		if err != nil {
 			updated.ID = id
-			s.Render(w, "webservers/listener", H{"error": err.Error(), "listener": updated, "certificates": certificates, "isEdit": true})
+			s.Render(w, "webservers/listener", H{"error": err.Error(), "listener": updated, "certificates": certificates, "policies": policies, "isEdit": true})
 			return
 		}
 		updated.ID = id
-		if err := s.UpdateWebListener(updated); err == nil {
+		if err = s.UpdateWebListener(updated); err == nil {
 			err = s.applyYabber()
 			if err != nil {
 				_ = s.UpdateWebListener(listener)
 			}
 		}
 		if err != nil {
-			s.Render(w, "webservers/listener", H{"error": err.Error(), "listener": updated, "certificates": certificates, "isEdit": true})
+			s.Render(w, "webservers/listener", H{"error": err.Error(), "listener": updated, "certificates": certificates, "policies": policies, "isEdit": true})
 			return
 		}
 		http.Redirect(w, r, "/web", http.StatusSeeOther)
 	case http.MethodDelete:
-		if err := s.DeleteWebListener(id); err == nil {
+		if err = s.DeleteWebListener(id); err == nil {
 			err = s.applyYabber()
 		}
 		if err != nil {
@@ -832,11 +1303,17 @@ func parseWebListenerForm(r *http.Request) (*WebListener, error) {
 		return &WebListener{}, err
 	}
 	listener := &WebListener{
-		Name:          strings.TrimSpace(r.FormValue("name")),
-		Address:       strings.TrimSpace(r.FormValue("address")),
-		Protocol:      r.FormValue("protocol"),
-		Enabled:       r.FormValue("enabled") == "on",
-		MinTLSVersion: r.FormValue("min_tls_version"),
+		Name:           strings.TrimSpace(r.FormValue("name")),
+		Address:        strings.TrimSpace(r.FormValue("address")),
+		Protocol:       r.FormValue("protocol"),
+		Enabled:        r.FormValue("enabled") == "on",
+		MinTLSVersion:  r.FormValue("min_tls_version"),
+		TrustedProxies: strings.TrimSpace(r.FormValue("trusted_proxies")),
+	}
+	var err error
+	listener.PolicyIDs, err = parseWebPolicyIDs(r)
+	if err != nil {
+		return listener, err
 	}
 	if listener.MinTLSVersion == "" {
 		listener.MinTLSVersion = "TLS1.2"
@@ -876,7 +1353,17 @@ func (s *Server) WebHostHandler(w http.ResponseWriter, r *http.Request) {
 		s.Error(w, err)
 		return
 	}
-	s.Render(w, "webservers/host", H{"host": host})
+	var metrics []yabber.RouteMetrics
+	s.webServerMu.Lock()
+	if s.webServer != nil {
+		for _, routeMetrics := range s.webServer.Metrics().Routes {
+			if routeMetrics.Host == host.Name {
+				metrics = append(metrics, routeMetrics)
+			}
+		}
+	}
+	s.webServerMu.Unlock()
+	s.Render(w, "webservers/host", H{"host": host, "metrics": metrics})
 }
 
 func (s *Server) WebHostEditHandler(w http.ResponseWriter, r *http.Request) {
@@ -922,8 +1409,13 @@ func (s *Server) webHostForm(w http.ResponseWriter, r *http.Request, current *We
 		s.Error(w, err)
 		return
 	}
+	policies, err := s.GetAllWebPolicies()
+	if err != nil {
+		s.Error(w, err)
+		return
+	}
 	if r.Method == http.MethodGet {
-		s.Render(w, "webservers/host_form", H{"host": current, "listeners": listeners, "certificates": certificates, "isEdit": current != nil})
+		s.Render(w, "webservers/host_form", H{"host": current, "listeners": listeners, "certificates": certificates, "policies": policies, "isEdit": current != nil})
 		return
 	}
 	method := requestMethod(r)
@@ -952,7 +1444,7 @@ func (s *Server) webHostForm(w http.ResponseWriter, r *http.Request, current *We
 		}
 	}
 	if err != nil {
-		s.Render(w, "webservers/host_form", H{"error": err.Error(), "host": host, "listeners": listeners, "certificates": certificates, "isEdit": current != nil})
+		s.Render(w, "webservers/host_form", H{"error": err.Error(), "host": host, "listeners": listeners, "certificates": certificates, "policies": policies, "isEdit": current != nil})
 		return
 	}
 	if current == nil {
@@ -971,7 +1463,7 @@ func (s *Server) webHostForm(w http.ResponseWriter, r *http.Request, current *We
 		}
 	}
 	if err != nil {
-		s.Render(w, "webservers/host_form", H{"error": err.Error(), "host": host, "listeners": listeners, "certificates": certificates, "isEdit": current != nil})
+		s.Render(w, "webservers/host_form", H{"error": err.Error(), "host": host, "listeners": listeners, "certificates": certificates, "policies": policies, "isEdit": current != nil})
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/web/hosts/%d", host.ID), http.StatusSeeOther)
@@ -986,6 +1478,11 @@ func parseWebHostForm(r *http.Request) (*WebHost, error) {
 		Hostnames:  strings.TrimSpace(r.FormValue("hostnames")),
 		Enabled:    r.FormValue("enabled") == "on",
 		ForceHTTPS: r.FormValue("force_https") == "on",
+	}
+	var err error
+	host.PolicyIDs, err = parseWebPolicyIDs(r)
+	if err != nil {
+		return host, err
 	}
 	for _, value := range r.Form["listener_ids"] {
 		id, err := strconv.ParseInt(value, 10, 64)
@@ -1064,8 +1561,13 @@ func (s *Server) WebRouteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) webRouteForm(w http.ResponseWriter, r *http.Request, host *WebHost, current *WebRoute) {
+	policies, err := s.GetAllWebPolicies()
+	if err != nil {
+		s.Error(w, err)
+		return
+	}
 	if r.Method == http.MethodGet {
-		s.Render(w, "webservers/route", H{"host": host, "route": current, "isEdit": current != nil})
+		s.Render(w, "webservers/route", H{"host": host, "route": current, "policies": policies, "isEdit": current != nil})
 		return
 	}
 	method := requestMethod(r)
@@ -1087,7 +1589,7 @@ func (s *Server) webRouteForm(w http.ResponseWriter, r *http.Request, host *WebH
 		route.ID = current.ID
 	}
 	if err != nil {
-		s.Render(w, "webservers/route", H{"error": err.Error(), "host": host, "route": route, "isEdit": current != nil})
+		s.Render(w, "webservers/route", H{"error": err.Error(), "host": host, "route": route, "policies": policies, "isEdit": current != nil})
 		return
 	}
 	if current == nil {
@@ -1106,7 +1608,7 @@ func (s *Server) webRouteForm(w http.ResponseWriter, r *http.Request, host *WebH
 		}
 	}
 	if err != nil {
-		s.Render(w, "webservers/route", H{"error": err.Error(), "host": host, "route": route, "isEdit": current != nil})
+		s.Render(w, "webservers/route", H{"error": err.Error(), "host": host, "route": route, "policies": policies, "isEdit": current != nil})
 		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/web/hosts/%d/routes", host.ID), http.StatusSeeOther)
@@ -1129,8 +1631,29 @@ func parseWebRouteForm(r *http.Request) (*WebRoute, error) {
 		RedirectLocation: strings.TrimSpace(r.FormValue("redirect_location")),
 		WorkerScript:     r.FormValue("worker_script"),
 	}
+	var err error
+	route.PolicyIDs, err = parseWebPolicyIDs(r)
+	if err != nil {
+		return route, err
+	}
 	route.ResponseStatus, _ = strconv.Atoi(r.FormValue("response_status"))
 	route.RedirectStatus, _ = strconv.Atoi(r.FormValue("redirect_status"))
+	proxyLimits := []struct {
+		value  string
+		target *int
+		name   string
+	}{
+		{r.FormValue("request_timeout_seconds"), &route.RequestTimeoutSeconds, "request timeout"},
+		{r.FormValue("response_header_timeout_seconds"), &route.ResponseHeaderTimeoutSeconds, "response header timeout"},
+		{r.FormValue("max_conns_per_host"), &route.MaxConnsPerHost, "maximum upstream connections"},
+	}
+	for _, limit := range proxyLimits {
+		value, parseErr := parseOptionalInt(limit.value)
+		if parseErr != nil {
+			return route, fmt.Errorf("%s must be a non-negative integer", limit.name)
+		}
+		*limit.target = value
+	}
 	if route.Path == "" {
 		route.Path = "/"
 	}
@@ -1186,6 +1709,180 @@ func parseWebRouteForm(r *http.Request) (*WebRoute, error) {
 		return route, errors.New("invalid handler type")
 	}
 	return route, nil
+}
+
+func parseWebPolicyIDs(r *http.Request) ([]int64, error) {
+	var ids []int64
+	for _, value := range r.Form["policy_ids"] {
+		id, err := strconv.ParseInt(value, 10, 64)
+		if err != nil || id <= 0 {
+			return ids, errors.New("invalid policy")
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+func (s *Server) WebPolicyNewHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		s.Render(w, "webservers/policy", H{"isEdit": false})
+		return
+	}
+	policy, err := parseWebPolicyForm(r)
+	if err != nil {
+		s.Render(w, "webservers/policy", H{"error": err.Error(), "policy": policy, "isEdit": false})
+		return
+	}
+	id, err := s.CreateWebPolicy(policy)
+	if err == nil {
+		policy.ID = id
+		err = s.applyYabber()
+		if err != nil {
+			_ = s.DeleteWebPolicy(id)
+		}
+	}
+	if err != nil {
+		s.Render(w, "webservers/policy", H{"error": err.Error(), "policy": policy, "isEdit": false})
+		return
+	}
+	http.Redirect(w, r, "/web", http.StatusSeeOther)
+}
+
+func (s *Server) WebPolicyHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := pathID(r)
+	if err != nil {
+		s.Error(w, err)
+		return
+	}
+	current, err := s.GetWebPolicy(id)
+	if err != nil {
+		s.Error(w, err)
+		return
+	}
+	switch requestMethod(r) {
+	case http.MethodGet:
+		s.Render(w, "webservers/policy", H{"policy": current, "isEdit": true})
+	case http.MethodPut:
+		policy, parseErr := parseWebPolicyForm(r)
+		policy.ID = id
+		if parseErr != nil {
+			s.Render(w, "webservers/policy", H{"error": parseErr.Error(), "policy": policy, "isEdit": true})
+			return
+		}
+		if err = s.UpdateWebPolicy(policy); err == nil {
+			err = s.applyYabber()
+			if err != nil {
+				_ = s.UpdateWebPolicy(current)
+			}
+		}
+		if err != nil {
+			s.Render(w, "webservers/policy", H{"error": err.Error(), "policy": policy, "isEdit": true})
+			return
+		}
+		http.Redirect(w, r, "/web", http.StatusSeeOther)
+	case http.MethodDelete:
+		if err = s.DeleteWebPolicy(id); err == nil {
+			err = s.applyYabber()
+		}
+		if err != nil {
+			s.Error(w, err)
+			return
+		}
+		http.Redirect(w, r, "/web", http.StatusSeeOther)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+func parseWebPolicyForm(r *http.Request) (*WebPolicy, error) {
+	if err := r.ParseForm(); err != nil {
+		return &WebPolicy{}, err
+	}
+	policy := &WebPolicy{
+		Name:    strings.TrimSpace(r.FormValue("name")),
+		RateKey: r.FormValue("rate_key"),
+	}
+	if policy.RateKey == "" {
+		policy.RateKey = "client_ip"
+	}
+	var err error
+	if policy.MaxBodyBytes, err = parseOptionalInt64(r.FormValue("max_body_bytes")); err != nil {
+		return policy, errors.New("maximum body bytes must be a non-negative integer")
+	}
+	intFields := []struct {
+		value  string
+		target *int
+		name   string
+	}{
+		{r.FormValue("request_timeout_seconds"), &policy.RequestTimeoutSeconds, "request timeout"},
+		{r.FormValue("rate_burst"), &policy.RateBurst, "rate burst"},
+		{r.FormValue("rate_max_keys"), &policy.RateMaxKeys, "rate max keys"},
+		{r.FormValue("rate_idle_timeout_seconds"), &policy.RateIdleTimeoutSeconds, "rate idle timeout"},
+		{r.FormValue("concurrency_max"), &policy.ConcurrencyMax, "concurrency max"},
+	}
+	for _, field := range intFields {
+		value, parseErr := parseOptionalInt(field.value)
+		if parseErr != nil {
+			return policy, fmt.Errorf("%s must be a non-negative integer", field.name)
+		}
+		*field.target = value
+	}
+	if value := strings.TrimSpace(r.FormValue("rate_requests_per_second")); value != "" {
+		policy.RateRequestsPerSecond, err = strconv.ParseFloat(value, 64)
+		if err != nil || policy.RateRequestsPerSecond < 0 {
+			return policy, errors.New("requests per second must be a non-negative number")
+		}
+	}
+	if policy.Name == "" {
+		return policy, errors.New("name is required")
+	}
+	if policy.RateKey != "client_ip" && policy.RateKey != "global" {
+		return policy, errors.New("rate key must be client_ip or global")
+	}
+	if policy.RateRequestsPerSecond > 0 {
+		if policy.RateBurst == 0 {
+			return policy, errors.New("rate burst is required when rate limiting is enabled")
+		}
+		if policy.RateMaxKeys == 0 {
+			policy.RateMaxKeys = 10000
+		}
+		if policy.RateIdleTimeoutSeconds == 0 {
+			policy.RateIdleTimeoutSeconds = 600
+		}
+	} else {
+		policy.RateBurst = 0
+		policy.RateMaxKeys = 0
+		policy.RateIdleTimeoutSeconds = 0
+	}
+	if policy.MaxBodyBytes == 0 && policy.RequestTimeoutSeconds == 0 &&
+		policy.RateRequestsPerSecond == 0 && policy.ConcurrencyMax == 0 {
+		return policy, errors.New("configure at least one policy limit")
+	}
+	return policy, nil
+}
+
+func parseOptionalInt(value string) (int, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0, nil
+	}
+	result, err := strconv.Atoi(value)
+	if err != nil || result < 0 {
+		return 0, errors.New("invalid non-negative integer")
+	}
+	return result, nil
+}
+
+func parseOptionalInt64(value string) (int64, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0, nil
+	}
+	result, err := strconv.ParseInt(value, 10, 64)
+	if err != nil || result < 0 {
+		return 0, errors.New("invalid non-negative integer")
+	}
+	return result, nil
 }
 
 func pathID(r *http.Request) (int64, error) {

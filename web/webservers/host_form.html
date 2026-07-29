@@ -25,7 +25,7 @@
         <div class="form-group">
             <label>Listeners</label>
             {{range .listeners}}
-            <label><input type="checkbox" name="listener_ids" value="{{.ID}}" {{if and $.host (containsInt64 $.host.ListenerIDs .ID)}}checked{{end}}> {{.Name}} <code>{{.Address}}</code></label>
+            <label><input class="input" type="checkbox" name="listener_ids" value="{{.ID}}" {{if and $.host (containsInt64 $.host.ListenerIDs .ID)}}checked{{end}}> {{.Name}} <code>{{.Address}}</code></label>
             {{end}}
         </div>
         <div class="form-group">
@@ -39,10 +39,18 @@
             <small id="certificate-help">Only certificates covering every hostname are shown. <a id="certificate-new-link" href="/acme/certificates/new">Create a certificate</a>.</small>
         </div>
         <div class="form-group">
-            <label><input type="checkbox" name="force_https" {{if and .host .host.ForceHTTPS}}checked{{end}}> Redirect HTTP to HTTPS</label>
+            <label>Policies</label>
+            {{range .policies}}
+            <label><input class="input" type="checkbox" name="policy_ids" value="{{.ID}}" {{if and $.host (containsInt64 $.host.PolicyIDs .ID)}}checked{{end}}> {{.Name}}</label>
+            {{else}}
+            <small>No policies configured. <a href="/web/policies/new">Create a policy</a>.</small>
+            {{end}}
         </div>
         <div class="form-group">
-            <label><input type="checkbox" name="enabled" {{if or (not .host) .host.Enabled}}checked{{end}}> Enabled</label>
+            <label><input class="input" type="checkbox" name="force_https" {{if and .host .host.ForceHTTPS}}checked{{end}}> Redirect HTTP to HTTPS</label>
+        </div>
+        <div class="form-group">
+            <label><input class="input" type="checkbox" name="enabled" {{if or (not .host) .host.Enabled}}checked{{end}}> Enabled</label>
         </div>
     </div>
 

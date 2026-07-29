@@ -32,7 +32,15 @@
             <input class="input" type="text" id="path" name="path" value="{{if .route}}{{.route.Path}}{{else}}/{{end}}" required>
         </div>
         <div class="form-group">
-            <label><input type="checkbox" name="enabled" {{if or (not .route) .route.Enabled}}checked{{end}}> Enabled</label>
+            <label>Policies</label>
+            {{range .policies}}
+            <label><input class="input" type="checkbox" name="policy_ids" value="{{.ID}}" {{if and $.route (containsInt64 $.route.PolicyIDs .ID)}}checked{{end}}> {{.Name}}</label>
+            {{else}}
+            <small>No policies configured. <a href="/web/policies/new">Create a policy</a>.</small>
+            {{end}}
+        </div>
+        <div class="form-group">
+            <label><input class="input" type="checkbox" name="enabled" {{if or (not .route) .route.Enabled}}checked{{end}}> Enabled</label>
         </div>
     </div>
 
@@ -52,6 +60,20 @@
         <div class="form-group" data-handler-fields="reverse_proxy" {{if and .route (ne .route.HandlerType "reverse_proxy")}}hidden{{end}}>
             <label for="upstream_url">Upstream URL</label>
             <input class="input" type="url" id="upstream_url" name="upstream_url" data-required value="{{if .route}}{{.route.UpstreamURL}}{{end}}" placeholder="http://127.0.0.1:3000">
+        </div>
+        <div class="form-group" data-handler-fields="reverse_proxy" {{if and .route (ne .route.HandlerType "reverse_proxy")}}hidden{{end}}>
+            <label for="request_timeout_seconds">Request Timeout (seconds)</label>
+            <input class="input" type="number" min="0" id="request_timeout_seconds" name="request_timeout_seconds" value="{{if .route}}{{.route.RequestTimeoutSeconds}}{{end}}" placeholder="0">
+            <small>Zero disables the whole-request timeout. Keep it disabled for WebSocket, SSE, and streaming routes.</small>
+        </div>
+        <div class="form-group" data-handler-fields="reverse_proxy" {{if and .route (ne .route.HandlerType "reverse_proxy")}}hidden{{end}}>
+            <label for="response_header_timeout_seconds">Response Header Timeout (seconds)</label>
+            <input class="input" type="number" min="0" id="response_header_timeout_seconds" name="response_header_timeout_seconds" value="{{if .route}}{{.route.ResponseHeaderTimeoutSeconds}}{{end}}" placeholder="30">
+        </div>
+        <div class="form-group" data-handler-fields="reverse_proxy" {{if and .route (ne .route.HandlerType "reverse_proxy")}}hidden{{end}}>
+            <label for="max_conns_per_host">Maximum Upstream Connections</label>
+            <input class="input" type="number" min="0" id="max_conns_per_host" name="max_conns_per_host" value="{{if .route}}{{.route.MaxConnsPerHost}}{{end}}" placeholder="0">
+            <small>Zero uses the transport default.</small>
         </div>
 
         <div class="form-group" data-handler-fields="file_server" {{if or (not .route) (ne .route.HandlerType "file_server")}}hidden{{end}}>

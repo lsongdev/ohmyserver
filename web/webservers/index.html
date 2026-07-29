@@ -6,8 +6,33 @@
         <p>{{if .running}}running{{else}}stopped{{end}}</p>
     </div>
     <div class="flex gap-5">
+        <a href="/web/policies/new" class="button">New Policy</a>
         <a href="/web/listeners/new" class="button">New Listener</a>
         <a href="/web/hosts/new" class="button button-primary">New Host</a>
+    </div>
+</div>
+
+<div class="section">
+    <div class="page-header">
+        <h3>Runtime</h3>
+        <a href="/web/metrics">Prometheus Metrics</a>
+    </div>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr><th>Active</th><th>Requests</th><th>Errors</th><th>Rejected</th><th>Response Bytes</th><th>Total Duration</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{.metrics.ActiveRequests}}</td>
+                    <td>{{.metrics.Requests}}</td>
+                    <td>{{.metrics.Errors}}</td>
+                    <td>{{.metrics.Rejected}}</td>
+                    <td>{{.metrics.ResponseBytes}}</td>
+                    <td>{{.metrics.TotalDuration}}</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -23,6 +48,7 @@
                     <th>Configured</th>
                     <th>Bound</th>
                     <th>Default Certificate</th>
+                    <th>Policies</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -34,7 +60,15 @@
                     <td><code>{{.Address}}</code></td>
                     <td><code>{{with index $.addresses .Name}}{{.}}{{else}}-{{end}}</code></td>
                     <td>{{if .DefaultCertificateName}}{{.DefaultCertificateName}}{{else}}-{{end}}</td>
-                    <td>{{if .Enabled}}<span class="badge badge-success">enabled</span>{{else}}<span class="badge">disabled</span>{{end}}</td>
+                    <td>{{range $i, $name := .PolicyNames}}{{if $i}}, {{end}}<code>{{$name}}</code>{{else}}-{{end}}</td>
+                    <td>
+                        {{with index $.statuses .Name}}
+                            {{if .Running}}<span class="badge badge-success">running</span>{{else if .Enabled}}<span class="badge badge-danger">failed</span>{{else}}<span class="badge">disabled</span>{{end}}
+                            {{if .Error}}<small>{{.Error}}</small>{{end}}
+                        {{else}}
+                            {{if .Enabled}}<span class="badge badge-success">enabled</span>{{else}}<span class="badge">disabled</span>{{end}}
+                        {{end}}
+                    </td>
                 </tr>
                 {{end}}
             </tbody>
@@ -42,6 +76,35 @@
     </div>
     {{else}}
     <p class="empty-message">No listeners configured.</p>
+    {{end}}
+</div>
+
+<div class="section">
+    <h3>Policies</h3>
+    {{if .policies}}
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr><th>Name</th><th>Request</th><th>Rate Limit</th><th>Concurrency</th></tr>
+            </thead>
+            <tbody>
+                {{range .policies}}
+                <tr>
+                    <td><a href="/web/policies/{{.ID}}">{{.Name}}</a></td>
+                    <td>
+                        {{if .MaxBodyBytes}}body ≤ {{.MaxBodyBytes}} bytes{{end}}
+                        {{if .RequestTimeoutSeconds}} timeout {{.RequestTimeoutSeconds}}s{{end}}
+                        {{if and (not .MaxBodyBytes) (not .RequestTimeoutSeconds)}}-{{end}}
+                    </td>
+                    <td>{{if .RateRequestsPerSecond}}{{.RateRequestsPerSecond}} req/s, burst {{.RateBurst}}, {{.RateKey}}{{else}}-{{end}}</td>
+                    <td>{{if .ConcurrencyMax}}{{.ConcurrencyMax}}{{else}}-{{end}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <p class="empty-message">No request policies configured. <a href="/web/policies/new">Create one</a>.</p>
     {{end}}
 </div>
 
@@ -57,6 +120,7 @@
                     <th>Listeners</th>
                     <th>Certificate</th>
                     <th>Routes</th>
+                    <th>Policies</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -68,6 +132,7 @@
                     <td>{{range $i, $name := .ListenerNames}}{{if $i}}, {{end}}<code>{{$name}}</code>{{end}}</td>
                     <td>{{if .CertificateName}}{{.CertificateName}}{{else}}-{{end}}</td>
                     <td>{{len .Routes}}</td>
+                    <td>{{range $i, $name := .PolicyNames}}{{if $i}}, {{end}}<code>{{$name}}</code>{{else}}-{{end}}</td>
                     <td>{{if .Enabled}}<span class="badge badge-success">enabled</span>{{else}}<span class="badge">disabled</span>{{end}}</td>
                 </tr>
                 {{end}}

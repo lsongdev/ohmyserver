@@ -18,6 +18,7 @@
                 <tr><th>Listeners</th><td>{{range $i, $name := .host.ListenerNames}}{{if $i}}, {{end}}<code>{{$name}}</code>{{else}}-{{end}}</td></tr>
                 <tr><th>Certificate</th><td>{{if .host.CertificateName}}{{.host.CertificateName}}{{else}}Listener default / HTTP only{{end}}</td></tr>
                 <tr><th>Force HTTPS</th><td>{{if .host.ForceHTTPS}}yes{{else}}no{{end}}</td></tr>
+                <tr><th>Policies</th><td>{{range $i, $name := .host.PolicyNames}}{{if $i}}, {{end}}<code>{{$name}}</code>{{else}}-{{end}}</td></tr>
                 <tr><th>Routes</th><td><a href="/web/hosts/{{.host.ID}}/routes">{{len .host.Routes}}</a></td></tr>
                 <tr><th>Created</th><td>{{formatDate .host.CreatedAt}}</td></tr>
                 <tr><th>Updated</th><td>{{formatDate .host.UpdatedAt}}</td></tr>
@@ -30,7 +31,7 @@
     {{if .host.Routes}}
     <div class="table-wrap">
         <table class="table">
-            <thead><tr><th>Name</th><th>Match</th><th>Handler</th><th>Target</th><th>Status</th></tr></thead>
+            <thead><tr><th>Name</th><th>Match</th><th>Handler</th><th>Target</th><th>Policies</th><th>Status</th></tr></thead>
             <tbody>
                 {{range .host.Routes}}
                 <tr>
@@ -38,6 +39,7 @@
                     <td><code>{{if .Method}}{{.Method}} {{end}}{{.Path}}</code></td>
                     <td>{{.HandlerType}}</td>
                     <td><code>{{if .UpstreamURL}}{{.UpstreamURL}}{{else if .Root}}{{.Root}}{{else if .RedirectLocation}}{{.RedirectLocation}}{{else if eq .HandlerType "worker"}}Inline Worker{{else}}-{{end}}</code></td>
+                    <td>{{range $i, $name := .PolicyNames}}{{if $i}}, {{end}}<code>{{$name}}</code>{{else}}-{{end}}</td>
                     <td>{{if .Enabled}}<span class="badge badge-success">enabled</span>{{else}}<span class="badge">disabled</span>{{end}}</td>
                 </tr>
                 {{end}}
@@ -51,7 +53,28 @@
 
 <div class="section">
     <h3>Requests</h3>
-    <p class="empty-message">Request metrics and charts will appear here.</p>
+    {{if .metrics}}
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Listener</th><th>Route</th><th>Requests</th><th>Errors</th><th>Rejected</th><th>Bytes</th><th>Total Duration</th></tr></thead>
+            <tbody>
+                {{range .metrics}}
+                <tr>
+                    <td>{{.Listener}}</td>
+                    <td>{{if .Route}}{{.Route}}{{else}}-{{end}}</td>
+                    <td>{{.Requests}}</td>
+                    <td>{{.Errors}}</td>
+                    <td>{{.Rejected}}</td>
+                    <td>{{.ResponseBytes}}</td>
+                    <td>{{.TotalDuration}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <p class="empty-message">No requests recorded since the web server started.</p>
+    {{end}}
 </div>
 
 {{end}}
