@@ -5,7 +5,7 @@
   <form id="speedtest-form" method="post" action="/speedtest" >
     <div class="form-group">
       <label class="form-label">Speedtest Provider</label>
-      <select name="type" id="test-type" class="form-input">
+      <select name="type" id="test-type" class="input form-input">
         <option value="librespeed">LibreSpeed</option>
         <option value="speedtest">Speedtest (Ookla)</option>
       </select>
@@ -13,7 +13,7 @@
 
     <div class="form-group">
       <label class="form-label">Server</label>
-      <select name="server" id="test-server" class="form-input">
+      <select name="server" id="test-server" class="input form-input">
         {{range .librespeedServers}}
         <option value="{{.Host}}">{{.Name}}</option>
         {{end}}

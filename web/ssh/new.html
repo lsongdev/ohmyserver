@@ -63,7 +63,7 @@
 
   <div class="form-group" id="key-group" style="display:none;">
     <label for="private_key">Private Key</label>
-    <textarea id="private_key" name="private_key" rows="8"
+    <textarea class="input" id="private_key" name="private_key" rows="8"
       placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;...&#10;-----END RSA PRIVATE KEY-----">{{if and .server (eq .server.AuthType "key")}}{{.server.PrivateKey}}{{end}}</textarea>
     {{if .server}}<small>Leave blank to keep existing key</small>{{end}}
   </div>
@@ -71,7 +71,7 @@
   {{if not .connectOnly}}
   <div class="form-group">
     <label for="description">Description</label>
-    <textarea id="description" name="description" rows="3"
+    <textarea class="input" id="description" name="description" rows="3"
       placeholder="Optional description...">{{if .server}}{{.server.Description}}{{end}}</textarea>
     <small>Optional notes about this server</small>
   </div>

@@ -6,12 +6,12 @@
 <form class="form" method="POST" action="/cron/{{.job.ID}}/edit">
     <div class="form-group">
         <label for="name">Name</label>
-        <input type="text" id="name" name="name" value="{{.job.Name}}" required>
+        <input class="input" type="text" id="name" name="name" value="{{.job.Name}}" required>
     </div>
 
     <div class="form-group">
         <label for="type">Type</label>
-        <select id="type" name="type" required onchange="toggleScheduleHelp()">
+        <select class="input" id="type" name="type" required onchange="toggleScheduleHelp()">
             <option value="cron" {{if eq .job.Type "cron"}}selected{{end}}>Recurring (Cron)</option>
             <option value="once" {{if eq .job.Type "once"}}selected{{end}}>One-time</option>
         </select>
@@ -19,24 +19,24 @@
 
     <div class="form-group">
         <label for="schedule">Schedule</label>
-        <input type="text" id="schedule" name="schedule" value="{{.job.Schedule}}" required>
+        <input class="input" type="text" id="schedule" name="schedule" value="{{.job.Schedule}}" required>
         <small id="schedule-help">Cron expression (minute hour day month weekday)</small>
         <small id="schedule-help-once" style="display:none;">RFC3339 time format</small>
     </div>
 
     <div class="form-group">
         <label for="command">Command</label>
-        <textarea id="command" name="command" rows="4" required>{{.job.Command}}</textarea>
+        <textarea class="input" id="command" name="command" rows="4" required>{{.job.Command}}</textarea>
     </div>
 
     <div class="form-group">
         <label for="working_dir">Working Directory</label>
-        <input type="text" id="working_dir" name="working_dir" value="{{.job.WorkingDir}}">
+        <input class="input" type="text" id="working_dir" name="working_dir" value="{{.job.WorkingDir}}">
     </div>
 
     <div class="form-group">
         <label for="timeout">Timeout (seconds)</label>
-        <input type="number" id="timeout" name="timeout" value="{{.job.Timeout}}" min="0">
+        <input class="input" type="number" id="timeout" name="timeout" value="{{.job.Timeout}}" min="0">
     </div>
 
     <div class="form-actions">

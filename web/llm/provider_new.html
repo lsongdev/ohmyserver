@@ -17,12 +17,12 @@
 <form method="post">
   <div class="form-group">
     <label>Name</label>
-    <input type="text" name="name" value="{{if .name}}{{.name}}{{end}}" required placeholder="openai">
+    <input class="input" type="text" name="name" value="{{if .name}}{{.name}}{{end}}" required placeholder="openai">
   </div>
 
   <div class="form-group">
     <label>Type</label>
-    <select name="type">
+    <select class="input" name="type">
       {{range .ProviderTypes}}
       <option value="{{.}}" {{if eq $.type .}}selected{{end}}>{{.}}</option>
       {{end}}
@@ -31,13 +31,13 @@
 
   <div class="form-group">
     <label>API URL</label>
-    <input type="text" name="api_url" value="{{if .api_url}}{{.api_url}}{{else}}https://api.openai.com/v1{{end}}" >
+    <input class="input" type="text" name="api_url" value="{{if .api_url}}{{.api_url}}{{else}}https://api.openai.com/v1{{end}}" >
     <small>Default: https://api.openai.com/v1</small>
   </div>
 
   <div class="form-group">
     <label>API Key</label>
-    <input type="password" name="api_key" value="{{if .api_key}}{{.api_key}}{{end}}" required placeholder="sk-">
+    <input class="input" type="password" name="api_key" value="{{if .api_key}}{{.api_key}}{{end}}" required placeholder="sk-">
   </div>
 
   <div class="form-actions">

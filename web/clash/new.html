@@ -24,7 +24,7 @@
   <form action="/clash/{{.server.ID}}/config" method="POST">
     <div class="form-group">
       <label for="mode">Mode</label>
-      <select id="mode" name="mode">
+      <select class="input" id="mode" name="mode">
         <option value="direct" {{if eq .config.Mode "direct" }}selected{{end}}>Direct</option>
         <option value="rule" {{if eq .config.Mode "rule" }}selected{{end}}>Rule</option>
         <option value="global" {{if eq .config.Mode "global" }}selected{{end}}>Global</option>
@@ -33,27 +33,27 @@
 
     <div class="form-group">
       <label for="mixedPort">Mixed Port</label>
-      <input type="number" id="mixedPort" name="mixedPort" value="{{.config.MixedPort}}" min="0" max="65535">
+      <input class="input" type="number" id="mixedPort" name="mixedPort" value="{{.config.MixedPort}}" min="0" max="65535">
     </div>
 
     <div class="form-group">
       <label for="port">Port (HTTP)</label>
-      <input type="number" id="port" name="port" value="{{.config.Port}}" min="0" max="65535">
+      <input class="input" type="number" id="port" name="port" value="{{.config.Port}}" min="0" max="65535">
     </div>
 
     <div class="form-group">
       <label for="socksPort">Socks Port</label>
-      <input type="number" id="socksPort" name="socksPort" value="{{.config.SocksPort}}" min="0" max="65535">
+      <input class="input" type="number" id="socksPort" name="socksPort" value="{{.config.SocksPort}}" min="0" max="65535">
     </div>
 
     <div class="form-group">
       <label for="redirPort">Redir Port</label>
-      <input type="number" id="redirPort" name="redirPort" value="{{.config.RedirPort}}" min="0" max="65535">
+      <input class="input" type="number" id="redirPort" name="redirPort" value="{{.config.RedirPort}}" min="0" max="65535">
     </div>
 
     <div class="form-group">
       <label for="logLevel">Log Level</label>
-      <select id="logLevel" name="logLevel">
+      <select class="input" id="logLevel" name="logLevel">
         <option value="silent" {{if eq .config.LogLevel "silent" }}selected{{end}}>Silent</option>
         <option value="error" {{if eq .config.LogLevel "error" }}selected{{end}}>Error</option>
         <option value="warning" {{if eq .config.LogLevel "warning" }}selected{{end}}>Warning</option>
@@ -89,26 +89,26 @@
   <form method="POST">
     <div class="form-group">
       <label for="name">Name *</label>
-      <input type="text" id="name" name="name" value="{{if .server}}{{.server.Name}}{{else if .name}}{{.name}}{{end}}"
+      <input class="input" type="text" id="name" name="name" value="{{if .server}}{{.server.Name}}{{else if .name}}{{.name}}{{end}}"
         placeholder="My Clash Server" required>
     </div>
 
     <div class="form-group">
       <label for="api_url">API URL *</label>
-      <input type="text" id="api_url" name="api_url"
+      <input class="input" type="text" id="api_url" name="api_url"
         value="{{if .server}}{{.server.APIURL}}{{else if .apiURL}}{{.apiURL}}{{end}}"
         placeholder="http://192.168.2.1:7880" required>
     </div>
 
     <div class="form-group">
       <label for="secret">Secret</label>
-      <input type="password" id="secret" name="secret" value="{{if .server}}{{else if .secret}}{{.secret}}{{end}}"
+      <input class="input" type="password" id="secret" name="secret" value="{{if .server}}{{else if .secret}}{{.secret}}{{end}}"
         placeholder="{{if .server}}Leave blank to keep existing secret{{else}}clash@lsong.org{{end}}">
     </div>
 
     <div class="form-group">
       <label for="description">Description</label>
-      <textarea id="description" name="description" rows="3"
+      <textarea class="input" id="description" name="description" rows="3"
         placeholder="Optional description">{{if .server}}{{.server.Description}}{{else if .description}}{{.description}}{{end}}</textarea>
     </div>
 

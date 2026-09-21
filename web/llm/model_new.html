@@ -17,7 +17,7 @@
 <form method="post">
   <div class="form-group">
     <label>Provider</label>
-    <select name="provider_id" required>
+    <select class="input" name="provider_id" required>
       <!-- <option value="">Select Provider</option> -->
       {{range .providers}}
       <option value="{{.ID}}" {{if eq $.provider_id (printf "%d" .ID)}}selected{{end}}>{{.Name}}</option>
@@ -28,7 +28,7 @@
   <div class="form-group">
     <label>Model Name</label>
     <div style="display: flex; gap: 8px; align-items: center;">
-      <input type="text" name="model_name" list="model-names" value="{{if .model_name}}{{.model_name}}{{end}}" required
+      <input class="input" type="text" name="model_name" list="model-names" value="{{if .model_name}}{{.model_name}}{{end}}" required
         style="flex: 1;">
       <datalist id="model-names">
         {{range .models}}
@@ -44,7 +44,7 @@
 
   <div class="form-group">
     <label>Mapped Name</label>
-    <input type="text" name="mapped_name" value="{{if .mapped_name}}{{.mapped_name}}{{end}}"
+    <input class="input" type="text" name="mapped_name" value="{{if .mapped_name}}{{.mapped_name}}{{end}}"
       placeholder="Optional: Custom name for this model">
   </div>
 

@@ -11,13 +11,13 @@
 <form method="POST" action="/settings/{{.setting.ID}}/edit" class="setting-form">
     <div class="form-group">
         <label for="name">Name</label>
-        <input type="text" id="name" name="name" value="{{.setting.Name}}" required>
+        <input class="input" type="text" id="name" name="name" value="{{.setting.Name}}" required>
         <p class="help-text">Unique identifier for this setting</p>
     </div>
 
     <div class="form-group">
         <label for="type">Type</label>
-        <select id="type" name="type" required>
+        <select class="input" id="type" name="type" required>
             <option value="string" {{if eq .setting.Type "string"}}selected{{end}}>String</option>
             <option value="number" {{if eq .setting.Type "number"}}selected{{end}}>Number</option>
             <option value="boolean" {{if eq .setting.Type "boolean"}}selected{{end}}>Boolean</option>
@@ -28,12 +28,12 @@
 
     <div class="form-group">
         <label for="value">Value</label>
-        <textarea id="value" name="value" rows="4" required>{{.setting.Value}}</textarea>
+        <textarea class="input" id="value" name="value" rows="4" required>{{.setting.Value}}</textarea>
     </div>
 
     <div class="form-group">
         <label for="description">Description</label>
-        <input type="text" id="description" name="description" value="{{.setting.Description}}" placeholder="Describe what this setting does">
+        <input class="input" type="text" id="description" name="description" value="{{.setting.Description}}" placeholder="Describe what this setting does">
     </div>
 
     <div class="form-actions">
