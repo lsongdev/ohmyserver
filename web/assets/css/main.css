@@ -1,3 +1,6 @@
+@import url("https://lsong.org/stylesheets/index.css?v=20260921.1");
+@import url("/assets/css/stats.css");
+
 :root {
   --container-padding: 20px;
   --container-border-color: #e1e4e8;
@@ -6,6 +9,21 @@
   --layout-window-radius: 10px;
   --page-header-gap: 12px;
   --page-header-margin: 20px;
+}
+
+body {
+  background-color: #f0f0f0;
+}
+
+.skip-link {
+  display: none;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: var(--page-header-gap);
+  justify-content: space-between;
 }
 
 .container,
