@@ -11,38 +11,38 @@
 <form method="POST" action="{{if .server}}/idrac/{{.server.ID}}/edit{{else}}/idrac/new{{end}}" class="idrac-form">
     <div class="form-group">
         <label for="name">Name</label>
-        <input type="text" id="name" name="name" value="{{if .server}}{{.server.Name}}{{else if .name}}{{.name}}{{end}}" required placeholder="e.g., Production Server 1">
+        <input class="input" type="text" id="name" name="name" value="{{if .server}}{{.server.Name}}{{else if .name}}{{.name}}{{end}}" required placeholder="e.g., Production Server 1">
         <p class="help-text">Descriptive name for this server</p>
     </div>
 
     <div class="form-row">
         <div class="form-group">
             <label for="host">Host/IP</label>
-            <input type="text" id="host" name="host" value="{{if .server}}{{.server.Host}}{{else if .host}}{{.host}}{{end}}" required placeholder="192.168.1.100">
+            <input class="input" type="text" id="host" name="host" value="{{if .server}}{{.server.Host}}{{else if .host}}{{.host}}{{end}}" required placeholder="192.168.1.100">
         </div>
 
         <div class="form-group">
             <label for="port">Port</label>
-            <input type="number" id="port" name="port" value="{{if .server}}{{.server.Port}}{{else if .port}}{{.port}}{{else}}443{{end}}" required placeholder="443">
+            <input class="input" type="number" id="port" name="port" value="{{if .server}}{{.server.Port}}{{else if .port}}{{.port}}{{else}}443{{end}}" required placeholder="443">
         </div>
     </div>
 
     <div class="form-row">
         <div class="form-group">
             <label for="username">Username</label>
-            <input type="text" id="username" name="username" value="{{if .server}}{{.server.Username}}{{else if .username}}{{.username}}{{end}}" required placeholder="root">
+            <input class="input" type="text" id="username" name="username" value="{{if .server}}{{.server.Username}}{{else if .username}}{{.username}}{{end}}" required placeholder="root">
         </div>
 
         <div class="form-group">
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" {{if .server}}placeholder="Leave blank to keep current"{{else}}required{{end}}>
+            <input class="input" type="password" id="password" name="password" {{if .server}}placeholder="Leave blank to keep current"{{else}}required{{end}}>
             {{if .server}}<p class="help-text">Leave blank to keep current password</p>{{end}}
         </div>
     </div>
 
     <div class="form-group">
         <label for="version">iDRAC Version</label>
-        <select id="version" name="version" required>
+        <select class="input" id="version" name="version" required>
             {{with .server}}
             <option value="7" {{if eq .Version "7"}}selected{{end}}>iDRAC 7</option>
             <option value="8" {{if eq .Version "8"}}selected{{end}}>iDRAC 8</option>
@@ -58,7 +58,7 @@
 
     <div class="form-group">
         <label for="description">Description</label>
-        <input type="text" id="description" name="description" value="{{if .server}}{{.server.Description}}{{else if .description}}{{.description}}{{end}}" placeholder="Optional description">
+        <input class="input" type="text" id="description" name="description" value="{{if .server}}{{.server.Description}}{{else if .description}}{{.description}}{{end}}" placeholder="Optional description">
     </div>
 
     <div class="form-actions">

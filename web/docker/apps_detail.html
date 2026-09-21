@@ -175,15 +175,15 @@
     <form id="install-form">
       <div class="form-group">
         <label>App Port</label>
-        <input type="number" name="APP_PORT" value="{{.app.Port}}" class="form-control">
+        <input type="number" name="APP_PORT" value="{{.app.Port}}" class="input form-control">
       </div>
       <div class="form-group">
         <label>App Domain</label>
-        <input type="text" name="APP_DOMAIN" value="{{.app.ID}}.localhost" class="form-control">
+        <input type="text" name="APP_DOMAIN" value="{{.app.ID}}.localhost" class="input form-control">
       </div>
       <div class="form-group">
         <label>Local Domain</label>
-        <input type="text" name="LOCAL_DOMAIN" value="local" class="form-control">
+        <input type="text" name="LOCAL_DOMAIN" value="local" class="input form-control">
       </div>
 
       {{if .formFields}}
@@ -193,7 +193,7 @@
       <div class="form-group">
         <label>{{.label}}</label>
         <input type="{{.type}}" name="{{.env_variable}}" value="{{.value}}" {{if .required}}required{{end}} {{if
-          .min}}minlength="{{.min}}" {{end}} {{if .max}}maxlength="{{.max}}" {{end}} class="form-control"
+          .min}}minlength="{{.min}}" {{end}} {{if .max}}maxlength="{{.max}}" {{end}} class="input form-control"
           placeholder="{{.label}}">
       </div>
       {{end}}

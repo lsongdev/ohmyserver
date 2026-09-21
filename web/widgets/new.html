@@ -15,12 +15,12 @@
 
     <div class="form-group">
         <label for="name">Name</label>
-        <input type="text" id="name" name="name" value="{{if .server}}{{.server.Name}}{{else if .name}}{{.name}}{{end}}" required placeholder="e.g., System Monitor">
+        <input class="input" type="text" id="name" name="name" value="{{if .server}}{{.server.Name}}{{else if .name}}{{.name}}{{end}}" required placeholder="e.g., System Monitor">
     </div>
 
     <div class="form-group">
         <label for="type">Type</label>
-        <select id="type" name="type" required>
+        <select class="input" id="type" name="type" required>
             <option value="">Select type...</option>
             <option value="monitor" {{if eq .server.Type "monitor"}}selected{{end}}>Monitor</option>
             <option value="stats" {{if eq .server.Type "stats"}}selected{{end}}>Stats</option>
@@ -31,13 +31,13 @@
 
     <div class="form-group">
         <label for="config">Config (JSON)</label>
-        <textarea id="config" name="config" rows="4" placeholder='{"key": "value"}'>{{if .server}}{{.server.Config}}{{else if .config}}{{.config}}{{end}}</textarea>
+        <textarea class="input" id="config" name="config" rows="4" placeholder='{"key": "value"}'>{{if .server}}{{.server.Config}}{{else if .config}}{{.config}}{{end}}</textarea>
     </div>
 
     <div class="form-row">
         <div class="form-group">
             <label for="sort_order">Sort Order</label>
-            <input type="number" id="sort_order" name="sort_order" value="{{if .server}}{{.server.SortOrder}}{{end}}" placeholder="0">
+            <input class="input" type="number" id="sort_order" name="sort_order" value="{{if .server}}{{.server.SortOrder}}{{end}}" placeholder="0">
         </div>
         <div class="form-group">
             <label class="checkbox-label">
