@@ -7,6 +7,10 @@ access_key: ""
 # OhMyServer control-plane HTTP listener
 listen: "0.0.0.0:9000"
 
+# Optional URL prefix when mounted behind a reverse proxy, for example /panel
+# The proxy should preserve the prefix or strip it before forwarding requests.
+base_path: ""
+
 database:
   driver: sqlite3
   path: ~/.ohmyserver/ohmyserver.db

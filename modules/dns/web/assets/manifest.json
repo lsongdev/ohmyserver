@@ -1,0 +1,30 @@
+{
+  "contractVersion": 1,
+  "id": "dns",
+  "title": "DNS 服务",
+  "icon": "⌘",
+  "group": "网络服务",
+  "entry": "assets/module.js",
+  "styles": [
+    "assets/dns.css"
+  ],
+  "home": "/",
+  "navigation": [
+    {
+      "title": "运行状态与配置",
+      "path": "/"
+    },
+    {
+      "title": "区域",
+      "path": "/zones"
+    },
+    {
+      "title": "提供商",
+      "path": "/providers"
+    },
+    {
+      "title": "过滤规则与订阅",
+      "path": "/filters"
+    }
+  ]
+}

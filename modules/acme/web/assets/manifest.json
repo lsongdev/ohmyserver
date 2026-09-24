@@ -1,0 +1,32 @@
+{
+  "contractVersion": 1,
+  "id": "acme",
+  "title": "证书管理",
+  "icon": "◇",
+  "group": "网络服务",
+  "entry": "assets/module.js",
+  "styles": [],
+  "home": "/certificates",
+  "navigation": [
+    {
+      "title": "证书",
+      "path": "/certificates"
+    },
+    {
+      "title": "账户",
+      "path": "/accounts"
+    },
+    {
+      "title": "服务商",
+      "path": "/providers"
+    },
+    {
+      "title": "订单",
+      "path": "/orders"
+    },
+    {
+      "title": "签发记录",
+      "path": "/issuances"
+    }
+  ]
+}

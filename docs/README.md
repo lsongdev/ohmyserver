@@ -4,11 +4,13 @@
 
 - [Installation Guide](installation.md) - Step-by-step installation instructions
 - [Configuration Guide](configuration.md) - All configuration options
-- [API Reference](api-reference.md) - REST API documentation
+- [API v1 Reference](api-v1.md) - Current modular HTTP API and module mounts
+- [Legacy API Reference](api-reference.md) - Historical routes; not valid for the current app
 - [Architecture](architecture.md) - System architecture overview
 
 ## Developer Documentation
 
+- [模块化前后端重构方案](frontend-modular-refactor.md) - Preact + HTM 原生 ESM、无构建交付、/v1 模块 API 与分阶段迁移计划
 - [Improvement Suggestions](improvements.md) - Project analysis and improvement recommendations
 - [Refactoring Guide](refactoring-guide.md) - Concrete refactoring steps and code examples
 - [产品定位与角色化平台规划](product-roadmap.md) - Router、NAS、Cloud、HomeLab、IoT 等角色规划与能力路线
@@ -132,65 +134,33 @@
 
 ```
 ohmyserver/
-├── main.go                    # Application entry point & route registration
-├── config/
-│   └── config.go              # Configuration loading
-├── cron/
-│   ├── parser.go              # Cron expression parser
-│   └── scheduler.go           # Job scheduler
-├── domains/
-│   ├── domains.go             # Domain management
-│   ├── types/
-│   │   └── types.go           # Shared type definitions
-│   └── providers/
-│       ├── cloudflare/
-│       │   └── cloudflare.go  # Cloudflare DNS provider
-│       ├── dnspod/
-│       │   └── dnspod.go      # DNSPod DNS provider
-│       ├── namecom/
-│       │   └── namecom.go     # Name.com DNS provider
-│       └── dns_providers.go   # DNS provider registry
-├── proxy/
-│   └── tcp_proxy.go           # TCP proxy
-├── yabber/                    # HTTP/HTTPS server and reverse proxy
-├── server/
-│   ├── server.go              # Core server initialization
-│   ├── database.go            # Database operations
-│   ├── docker.go              # Docker client wrapper
-│   ├── deploy.go              # Deployment executor
-│   ├── monitor.go             # System monitoring
-│   ├── projects.go            # Project management
-│   ├── listeners.go           # TCP/HTTP listener management
-│   ├── domains.go             # Domain handlers
-│   ├── cronjob.go             # Cron job handlers
-│   ├── ssh.go                 # SSH management
-│   ├── esxi.go                # ESXi management
-│   ├── vmware-esxi.go         # VMware ESXi handlers
-│   ├── files.go               # File management
-│   ├── acme_handlers.go       # ACME/certificate handlers
-│   └── acme_types.go          # ACME type definitions
-├── web/
-│   ├── web.go                 # Web asset embedding
-│   ├── index.html             # Main dashboard
-│   ├── monitor.html           # Monitor page
-│   ├── settings.html          # Settings page
-│   ├── apps.html              # Apps page
-│   ├── layout.html            # Layout template
-│   ├── error.html             # Error template
-│   ├── acme/                  # ACME certificate pages
-│   ├── cron/                  # Cron job pages
-│   ├── docker/                # Docker management pages
-│   ├── dns/                   # DNS server management pages
-│   ├── esxi/                  # ESXi management pages
-│   ├── files/                 # File browser pages
-│   ├── proxy/                 # TCP/UDP proxy management pages
-│   ├── projects/              # Project management pages
-│   ├── ssh/                   # SSH management pages
-│   ├── webservers/            # Webserver pages
-│   └── assets/                # Static assets (CSS, JS)
-├── docs/                      # Documentation
-└── config.yaml.example        # Example configuration
+├── cmd/
+│   ├── ohmyserver/             # Host process entry point and HTTP shell
+│   └── agent/                  # Metrics collection agent
+├── go.work                     # Local workspace for extracted Go modules
+├── config/                     # Host configuration
+├── internal/
+│   ├── app/                    # Shared module mounting contracts
+│   ├── host/                   # Host lifecycle, assembly, adapters, and routes
+│   └── architecture/           # Architecture boundary checks
+├── modules/                    # Feature modules: Go API + owned web assets
+│   ├── docker/
+│   ├── acme/
+│   ├── dns/
+│   └── ...
+├── frontend/                   # Shell, shared UI, and pinned browser dependencies
+│   ├── app/
+│   ├── shared/
+│   └── vendor/
+├── pkg/                        # Reusable Go libraries and module web helpers
+│   ├── cron/
+│   ├── moduleweb/
+│   └── terminal/
+├── tests/module-smoke/          # Standalone module host checks
+└── docs/                        # User and architecture documentation
 ```
+
+The host entry point delegates startup to `internal/host`; HTTP routing, shell serving, and module assembly live there. Feature work belongs in `modules/<feature>/` with backend and frontend together.
 
 ## Configuration
 
@@ -319,7 +289,7 @@ For detailed configuration documentation, see [Configuration Guide](docs/configu
 - `POST /cron/{id}/toggle` - Enable/disable cron job
 - `POST /cron/{id}/run` - Run cron job now
 
-For complete API documentation, see [API Reference](docs/api-reference.md).
+For the current modular API, see [API v1 Reference](api-v1.md). The old [API Reference](api-reference.md) documents routes removed during the frontend/API migration.
 
 ## Architecture
 

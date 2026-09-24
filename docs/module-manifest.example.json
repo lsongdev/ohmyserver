@@ -1,0 +1,13 @@
+{
+  "contractVersion": 1,
+  "id": "docker",
+  "title": "Docker",
+  "icon": "◧",
+  "group": "容器与部署",
+  "entry": "assets/index.js",
+  "styles": ["assets/style.css"],
+  "navigation": [
+    { "title": "容器", "path": "/containers" },
+    { "title": "镜像", "path": "/images" }
+  ]
+}
