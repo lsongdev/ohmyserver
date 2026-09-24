@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lsongdev/ohmyserver/sysinfo"
+	"github.com/lsongdev/ohmyserver/modules/monitor/sysinfo"
 )
 
 func sendMetrics(serverURL, token string, payload *sysinfo.Metrics) error {

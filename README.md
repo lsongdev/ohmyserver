@@ -36,7 +36,7 @@ OhMyServer requires Go `1.26.1` or later.
 ```sh
 git clone https://github.com/lsongdev/ohmyserver.git
 cd ohmyserver
-go build -o ohmyserver .
+go build -o ohmyserver ./cmd/ohmyserver
 ./ohmyserver
 ```
 
@@ -46,7 +46,7 @@ Open `http://localhost:9000`. Optional settings are documented in [`config.yaml.
 
 ```sh
 go test ./...
-go run .
+go run ./cmd/ohmyserver
 ```
 
 Contributions and issue reports are welcome.

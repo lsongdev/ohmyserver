@@ -1,0 +1,16 @@
+{
+  "contractVersion": 1,
+  "id": "cron",
+  "title": "定时任务",
+  "icon": "◷",
+  "group": "基础设施",
+  "entry": "assets/module.js",
+  "styles": [],
+  "home": "/",
+  "navigation": [
+    {
+      "title": "任务列表",
+      "path": "/"
+    }
+  ]
+}

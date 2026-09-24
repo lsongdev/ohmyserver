@@ -1,0 +1,7 @@
+.system-about { display: grid; gap: 1rem; }
+.system-about .card { min-width: 0; }
+.system-about .card h2 { margin-top: 0; }
+.about-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: .75rem 1.5rem; margin: 1rem 0 0; }
+.about-grid dt { color: var(--muted, #667085); font-size: .875rem; }
+.about-grid dd { margin: .2rem 0 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .system-about .form-actions > .button { width: 100%; } }

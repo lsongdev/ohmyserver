@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <!-- Hosts mounted below a reverse-proxy prefix can replace this base URL. -->
+    <base href="/">
+    <title>OhMyServer</title>
+    <link rel="stylesheet" href="https://lsong.org/stylesheets/index.css">
+    <link rel="stylesheet" href="frontend/shared/shell.css">
+    <link rel="stylesheet" href="frontend/shared/mobile.css">
+    <link rel="stylesheet" href="frontend/shared/controls.css">
+    <link rel="stylesheet" href="frontend/vendor/xterm/xterm.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "preact": "./frontend/vendor/preact.module.js",
+          "preact/hooks": "./frontend/vendor/hooks.module.js",
+          "htm": "./frontend/vendor/htm.module.js",
+          "@xterm/xterm": "./frontend/vendor/xterm/xterm.mjs",
+          "@xterm/addon-fit": "./frontend/vendor/xterm-addon-fit/addon-fit.mjs",
+          "@panel/shared/": "./frontend/shared/"
+        }
+      }
+    </script>
+    <script type="module" src="frontend/app/main.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

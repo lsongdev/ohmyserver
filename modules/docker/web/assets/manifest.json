@@ -1,0 +1,38 @@
+{
+  "contractVersion": 1,
+  "id": "docker",
+  "title": "Docker",
+  "icon": "◧",
+  "group": "容器与部署",
+  "entry": "assets/module.js",
+  "styles": [
+    "assets/docker.css"
+  ],
+  "home": "/containers",
+  "navigation": [
+    {
+      "title": "容器",
+      "path": "/containers"
+    },
+    {
+      "title": "镜像",
+      "path": "/images"
+    },
+    {
+      "title": "存储卷",
+      "path": "/volumes"
+    },
+    {
+      "title": "网络",
+      "path": "/networks"
+    },
+    {
+      "title": "Compose",
+      "path": "/compose"
+    },
+    {
+      "title": "应用商店",
+      "path": "/apps"
+    }
+  ]
+}

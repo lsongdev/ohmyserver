@@ -1,0 +1,10 @@
+.dashboard-system,.dashboard-widgets{margin:18px 0 28px}
+.dashboard-system .page-toolbar h3,.dashboard-widgets>h3{margin:0;color:#344256;font-size:14px}
+.dashboard-stat-grid,.dashboard-widget-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px}
+.dashboard-stat-grid .card{display:grid;gap:6px;min-width:0}
+.dashboard-stat-grid h4,.dashboard-widget-grid h4{margin:0;color:#778397;font-size:11px;font-weight:600}
+.dashboard-stat-grid strong{font-size:23px;font-weight:600;letter-spacing:-.03em;color:#26364d}
+.dashboard-stat-grid span{font-size:11px;color:#778397;overflow-wrap:anywhere}
+.dashboard-widget-grid{margin-top:12px}
+.dashboard-widget-grid .card{display:grid;gap:8px}
+.dashboard-standalone{max-width:1100px;margin:0 auto;padding:1rem}.dashboard-standalone h1{font-size:1.35rem}

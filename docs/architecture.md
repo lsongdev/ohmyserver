@@ -243,16 +243,16 @@ func CollectStats() (*SystemStats, error) {
 - `GET /monitor/stats` - Current + historical stats
 - `GET /monitor/current` - Real-time stats only
 
-### 8. Cron Scheduler (`cron/`)
+### 8. Cron Scheduler (`modules/cron/`)
 
 **Components:**
 
-**`cron/parser.go`** - Cron Expression Parser
+**`modules/cron/parser.go`** - Cron Expression Parser
 - Supports standard 5-field cron format
 - Special expressions: `@yearly`, `@monthly`, `@weekly`, `@daily`, `@hourly`
 - Range, step, and list support
 
-**`cron/scheduler.go`** - Job Scheduler
+**`modules/cron/web/engine.go`** - Job Scheduler
 ```go
 type Scheduler struct {
     jobs       map[int64]*scheduledJob
@@ -302,24 +302,27 @@ Manages TCP port forwarding:
 
 **Structure:**
 ```
-dnsprovider/
-├── providers/
-│   ├── dns_providers.go # Provider factory
-│   ├── cloudflare/      # Cloudflare implementation
-│   ├── dnspod/          # DNSPod implementation
-│   └── namecom/         # Name.com implementation
-└── types/
-    └── types.go         # Shared type definitions
+modules/dns/
+├── runtime/            # DNS packet pipeline and network listeners
+└── providers/
+    ├── providers.go    # DNS module provider factory
+    ├── types/          # DNS provider contract and DTOs
+    ├── cloudflare/     # Cloudflare implementation
+    ├── dnspod/         # DNSPod implementation
+    └── namecom/        # Name.com implementation
+
 ```
 
 **Provider Interface:**
 ```go
 type IDNSProvider interface {
-    ListZones() ([]Zone, error)
-    ListRecords(zoneID string) ([]Record, error)
-    AddRecord(zoneID string, record *Record) error
-    UpdateRecord(zoneID string, record *Record) error
-    DeleteRecord(zoneID, recordID string) error
+    // Provider operations receive the caller context. Vendor SDKs without context
+    // support must still reject cancelled work before starting a request.
+    ListZones(ctx context.Context) ([]Zone, error)
+    ListRecords(ctx context.Context, zoneID string) ([]Record, error)
+    AddRecord(ctx context.Context, zoneID string, record *Record) error
+    UpdateRecord(ctx context.Context, zoneID string, record *Record) error
+    DeleteRecord(ctx context.Context, zoneID, recordID string) error
 }
 ```
 
@@ -345,7 +348,7 @@ Manages SSL/TLS certificates via the ACME protocol (Let's Encrypt compatible):
 4. Finalize order and download certificate
 5. Store certificate in database
 
-### 13. SSH and Terminal (`server/ssh.go`, `terminal/`)
+### 13. SSH and Terminal (`server/ssh.go`, `pkg/terminal/`)
 
 Provides remote server access via SSH:
 
@@ -574,9 +577,9 @@ Currently, the application does not include built-in authentication. For product
 ## Extension Points
 
 ### Adding New DNS Providers
-1. Create new directory under `dnsprovider/providers/`
+1. Create a new implementation under `modules/dns/providers/`
 2. Implement `DNSProvider` interface
-3. Register in provider factory (`dns_providers.go`)
+3. Register in the DNS module provider factory (`modules/dns/providers/providers.go`)
 
 ### Adding New ACME Providers
 1. Extend ACME provider configuration in `acme_types.go`
@@ -664,3 +667,6 @@ Currently, the application does not include built-in authentication. For product
 2. **Caching**: Add Redis for frequently accessed data
 3. **Load Balancing**: Multiple instances behind load balancer
 4. **Horizontal Scaling**: Stateless design for easy replication
+# Historical architecture
+
+This document describes the pre-module application layout. The current modular design, Go host assembly, module manifests, and migration status are documented in [frontend-modular-refactor.md](frontend-modular-refactor.md) and [module-contract.md](module-contract.md). The host implementation now lives in `internal/host/`; reusable features live in `modules/<feature>/`.
