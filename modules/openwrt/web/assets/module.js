@@ -2,9 +2,7 @@ import { defineModule } from '@panel/shared/module.js';
 import { createAPI } from './api.js';
 
 export default defineModule({
-  id: 'openwrt', title: 'OpenWrt', icon: '⌁', group: '设备与 IoT', createAPI,
-  entry: '/routers',
-  navigation: [{ label: '路由器', path: '/routers' }],
+  id: 'openwrt', createAPI,
   routes: [
     { path: '/routers', load: () => import('./pages/routers.js') },
     { path: '/routers/new', load: () => import('./pages/router-form.js') },

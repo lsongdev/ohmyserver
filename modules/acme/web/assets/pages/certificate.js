@@ -28,12 +28,12 @@ export default function Certificate({ api, params, navigate }) {
     try {
       const selectedChallengeType = wildcard ? 'dns-01' : challengeType;
       const result = await api.renewCertificate(item.id, { account_id: Number(accountID), challenge_type: selectedChallengeType, dns_target: selectedChallengeType === 'dns-01' ? dnsTarget : '' });
-      navigate(`/acme/issuances/${result.id}`);
+      navigate(`/issuances/${result.id}`);
     } catch (err) { setError(err.message || '续签请求失败'); }
     finally { setBusy(false); }
   };
   const eligibleAccounts = accounts.filter(account => account.status === 'valid');
-  return html`<div><div class="page-toolbar"><h2>证书详情</h2><button class="button" onclick=${() => navigate('/acme/certificates')}>返回证书</button></div>
+  return html`<div><div class="page-toolbar"><h2>证书详情</h2><button class="button" onclick=${() => navigate('/certificates')}>返回证书</button></div>
     ${error ? html`<div class="notice-card error" role="alert"><p>${error}</p></div>` : null}
     ${item ? html`<section class="section"><dl><dt>ID</dt><dd>${item.id}</dd><dt>域名</dt><dd>${item.domains.join(', ')}</dd><dt>状态</dt><dd>${item.status}</dd><dt>到期时间</dt><dd>${item.expires_at ? new Date(item.expires_at).toLocaleString() : '未知'}</dd></dl>
       ${item.cert_pem ? html`<h3>证书 PEM</h3><textarea class="input mono" readonly rows="12" value=${item.cert_pem}></textarea>` : html`<p>证书尚未签发。</p>`}

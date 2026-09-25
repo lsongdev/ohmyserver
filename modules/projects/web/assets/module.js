@@ -2,7 +2,7 @@ import { defineModule } from '@panel/shared/module.js';
 import { createAPI } from './api.js';
 
 export default defineModule({
-  id: 'projects', title: '项目部署', icon: '▣', group: '容器与部署', entry: '/', navigation: [{ label: '项目', path: '/' }],
+  id: 'projects', navigation: [{ label: '项目', path: '/' }],
   createAPI,
   routes: [
     { path: '/', load: () => import('./pages/list.js') },

@@ -5,7 +5,7 @@ export default function ProjectDeployments({api,params,navigate}){
   const id=Number(params.id),[project,setProject]=useState(null),[items,setItems]=useState([]),[runtime,setRuntime]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[secret,setSecret]=useState('');
   const load=async()=>{setError('');try{const [p,d,r]=await Promise.all([api.get(id),api.deployments(id),api.runtime(id)]);setProject(p);setItems(d);setRuntime(r);}catch(e){setError(e.message);}};
   useEffect(()=>{load();},[id,api]);
-  const start=async()=>{setBusy(true);setError('');try{const item=await api.start(id);navigate(`/projects/${id}/deployments/${item.id}`);}catch(e){setError(e.message);}finally{setBusy(false);}};
+  const start=async()=>{setBusy(true);setError('');try{const item=await api.start(id);navigate(`/${id}/deployments/${item.id}`);}catch(e){setError(e.message);}finally{setBusy(false);}};
   const rotate=async()=>{if(!confirm('轮换 Webhook Secret？GitHub 中配置的旧 Secret 将立即失效。'))return;setBusy(true);try{const result=await api.rotateSecret(id);setSecret(result.webhook_secret_once);}catch(e){setError(e.message);}finally{setBusy(false);}};
   return html`<div class="projects-page">
     <a href="#/projects">← 项目列表</a>${error&&html`<div class="notice-card error" role="alert">${error}</div>`}

@@ -18,7 +18,7 @@ export default function RouterForm({ api, params, navigate }) {
       const payload = { ...form, port: Number(form.port) };
       if (editing && !payload.password) delete payload.password;
       const result = editing ? await api.updateRouter(params.id, payload) : await api.createRouter(payload);
-      navigate(`/openwrt/routers/${result.id}`);
+      navigate(`/routers/${result.id}`);
     } catch (e) { setError(e.message); }
   };
   return html`<form class="card" onSubmit=${submit}><div class="page-toolbar"><h2>${editing ? '编辑路由器' : '添加 OpenWrt 路由器'}</h2></div>
