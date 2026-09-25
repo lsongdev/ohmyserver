@@ -15,7 +15,7 @@ export default function Hosts({ api, href }) {
   }, [api]);
   return html`<div class="page-toolbar"><h2>主机状态</h2><span class="muted">每 10 秒刷新</span></div>
     ${error ? html`<div class="notice-card error">${error}</div>` : null}
-    ${hosts.length ? html`<div class="monitor-grid">${hosts.map(s => html`<a class="card monitor-card" href=${href(`/monitor/hosts/${encodeURIComponent(s.hostname)}`)} key=${s.hostname}>
+    ${hosts.length ? html`<div class="monitor-grid">${hosts.map(s => html`<a class="card monitor-card" href=${href(`/hosts/${encodeURIComponent(s.hostname)}`)} key=${s.hostname}>
       <div class="monitor-card-head"><h3>${s.hostname}</h3><time>${new Date(s.timestamp).toLocaleString()}</time></div>
       <${Meter} label="CPU" value=${s.cpu_usage} tone="cpu"/><${Meter} label="内存" value=${s.memory_usage} tone="memory"/>${s.disk_total ? html`<${Meter} label="磁盘" value=${s.disk_usage} tone="disk"/>` : null}
       <div class="monitor-facts"><span>负载 ${Number(s.load_1).toFixed(2)} / ${Number(s.load_5).toFixed(2)} / ${Number(s.load_15).toFixed(2)}</span><span>↑ ${bytes(s.net_bytes_sent)}　↓ ${bytes(s.net_bytes_recv)}</span><span>运行 ${uptime(s.uptime)}</span></div>

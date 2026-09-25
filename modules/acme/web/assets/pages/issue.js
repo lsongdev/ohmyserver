@@ -21,7 +21,7 @@ export default function IssueCertificate({ api, navigate }) {
     event.preventDefault(); setBusy(true); setError('');
     try {
       const issuance = await api.startIssuance({ domains, account_id: Number(accountID), challenge_type: challengeType, dns_target: challengeType === 'dns-01' ? dnsTarget : '' });
-      navigate(`/acme/issuances/${issuance.id}`);
+      navigate(`/issuances/${issuance.id}`);
     } catch (err) { setError(err.message || '无法开始证书签发'); } finally { setBusy(false); }
   };
   return html`<div><h2>申请证书</h2>
@@ -31,7 +31,7 @@ export default function IssueCertificate({ api, navigate }) {
       <div class="form-group"><label for="account">ACME 账户</label><select class="input" id="account" value=${accountID} onChange=${e => setAccountID(e.currentTarget.value)} required><option value="">选择有效账户</option>${accounts.filter(item => item.status === 'valid').map(item => html`<option value=${item.id}>${item.provider_name} · ${item.email}</option>`)}</select></div>
       <div class="form-group"><label for="challenge">验证方式</label><select class="input" id="challenge" value=${challengeType} onChange=${e => setChallengeType(e.currentTarget.value)}><option value="http-01">HTTP-01</option><option value="dns-01">DNS-01（支持通配符）</option></select></div>
       ${challengeType === 'dns-01' ? html`<div class="form-group"><label for="dns-target">DNS 区域</label><select class="input" id="dns-target" value=${dnsTarget} onChange=${e => setDNSTarget(e.currentTarget.value)} required><option value="">选择 DNS 区域</option>${targets.map(target => html`<option value=${target.value}>${target.label} (${target.zone_name})</option>`)}</select></div>` : null}
-      <div class="form-actions"><button class="button button-primary" type="submit" disabled=${busy || !accounts.some(item => item.status === 'valid')}>${busy ? '正在提交…' : '开始签发'}</button><button class="button" type="button" onclick=${() => navigate('/acme/certificates')}>取消</button></div>
+      <div class="form-actions"><button class="button button-primary" type="submit" disabled=${busy || !accounts.some(item => item.status === 'valid')}>${busy ? '正在提交…' : '开始签发'}</button><button class="button" type="button" onclick=${() => navigate('/certificates')}>取消</button></div>
     </form>
   </div>`;
 }

@@ -2,9 +2,7 @@ import { defineModule } from '@panel/shared/module.js';
 import { createAPI } from './api.js';
 
 export default defineModule({
-  id: 'acme', title: '证书管理', icon: '◇', group: '网络服务', 
-  entry: '/certificates', createAPI,
-  navigation: [{ label: '证书', path: '/certificates' }, { label: '账户', path: '/accounts' }, { label: '服务商', path: '/providers' }, { label: '订单', path: '/orders' }, { label: '签发记录', path: '/issuances' }],
+  id: 'acme', createAPI,
   routes: [
     { path: '/certificates', load: () => import('./pages/certificates.js') },
     { path: '/certificates/:id', load: () => import('./pages/certificate.js') },

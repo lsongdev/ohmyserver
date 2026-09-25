@@ -7,7 +7,7 @@ export default function NewListener({ api, navigate }) {
   const set = (key, value) => setDraft(current => ({ ...current, [key]: value }));
   const submit = async event => {
     event.preventDefault(); setBusy(true); setError('');
-    try { await api.create({ ...draft, listen_port: Number(draft.listen_port), forward_port: Number(draft.forward_port) }); navigate('/forward'); }
+    try { await api.create({ ...draft, listen_port: Number(draft.listen_port), forward_port: Number(draft.forward_port) }); navigate('/'); }
     catch (e) { setError(e.message || '创建转发失败'); } finally { setBusy(false); }
   };
   return html`<section><h2>添加转发</h2>${error ? html`<div class="notice-card error" role="alert">${error}</div>` : null}
@@ -17,6 +17,6 @@ export default function NewListener({ api, navigate }) {
       <label class="form-field">监听端口<input class="input" type="number" min="1" max="65535" required value=${draft.listen_port} onInput=${e => set('listen_port', e.currentTarget.value)} /></label>
       <label class="form-field">目标主机<input class="input" required value=${draft.forward_host} onInput=${e => set('forward_host', e.currentTarget.value)} /></label>
       <label class="form-field">目标端口<input class="input" type="number" min="1" max="65535" required value=${draft.forward_port} onInput=${e => set('forward_port', e.currentTarget.value)} /></label>
-      <div class="form-actions"><button class="button button-primary" disabled=${busy}>${busy ? '创建中…' : '创建转发'}</button><button class="button" type="button" onClick=${() => navigate('/forward')}>取消</button></div>
+      <div class="form-actions"><button class="button button-primary" disabled=${busy}>${busy ? '创建中…' : '创建转发'}</button><button class="button" type="button" onClick=${() => navigate('/')}>取消</button></div>
     </form></section>`;
 }
