@@ -114,7 +114,10 @@ func TestFeatureModulesHavePublishableLayout(t *testing.T) {
 			}
 			entry, err := os.ReadFile(filepath.Join(assetsRoot, "index.js"))
 			if err == nil && !strings.Contains(string(entry), "lsong.org/scripts/react/index.js") {
-				t.Error("standalone entry must use the shared Preact/HTM ESM runtime")
+				adapter, adapterErr := os.ReadFile(filepath.Join(assetsRoot, "standalone-ui.js"))
+				if adapterErr != nil || !strings.Contains(string(adapter), "lsong.org/scripts/react/index.js") || !strings.Contains(string(entry), "./module.js") {
+					t.Error("standalone entry must either use the shared Preact/HTM runtime directly or load module.js through a shared runtime adapter")
+				}
 			}
 		})
 	}

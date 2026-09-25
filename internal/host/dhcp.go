@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	dhcpmodule "github.com/lsongdev/ohmyserver/modules/dhcp"
 	dhcpweb "github.com/lsongdev/ohmyserver/modules/dhcp/web"
@@ -94,124 +93,34 @@ func (s *Server) applyDHCPPolicy(ctx context.Context, item dhcpmodule.Settings) 
 	}
 	return nil
 }
-func (s *Server) SaveReservation(ctx context.Context, id int64, item dhcpmodule.StaticLease) error {
-	if err := s.dhcpModuleService().SaveReservation(ctx, id, item); err != nil {
-		return err
-	}
-	if s.serviceDesiredEnabled("dhcp", false) {
-		return s.reloadDHCPContext(ctx)
-	}
-	return nil
-}
-func (s *Server) DeleteReservation(ctx context.Context, id int64) error {
-	if err := s.dhcpModuleService().DeleteReservation(ctx, id); err != nil {
-		return err
-	}
-	if s.serviceDesiredEnabled("dhcp", false) {
-		return s.reloadDHCPContext(ctx)
-	}
-	return nil
-}
-func (s *Server) DeleteDHCPLease(ctx context.Context, id int64) error {
-	if err := s.dhcpModuleService().DeleteDHCPLease(ctx, id); err != nil {
-		return err
-	}
-	if s.serviceDesiredEnabled("dhcp", false) {
-		return s.reloadDHCPContext(ctx)
-	}
-	return nil
-}
-
 type dhcpServiceAdapter struct{ server *Server }
 
 func (a dhcpServiceAdapter) UpdateDHCPConfiguration(ctx context.Context, item dhcpweb.Settings) error {
-	err := a.server.dhcpModuleService().UpdateDHCPConfiguration(ctx, item)
-	a.server.setServiceError("dhcp", err)
-	return err
+  err := a.server.dhcpModuleService().UpdateDHCPConfiguration(ctx, item)
+  a.server.setServiceError("dhcp", err)
+  return err
 }
 func (a dhcpServiceAdapter) SaveReservation(ctx context.Context, id int64, item dhcpweb.StaticLease) error {
-	return a.server.SaveReservation(ctx, id, item)
+  return a.server.dhcpModuleService().SaveReservation(ctx, id, item)
 }
 func (a dhcpServiceAdapter) DeleteReservation(ctx context.Context, id int64) error {
-	return a.server.DeleteReservation(ctx, id)
+  return a.server.dhcpModuleService().DeleteReservation(ctx, id)
 }
 func (a dhcpServiceAdapter) DeleteDHCPLease(ctx context.Context, id int64) error {
-	return a.server.DeleteDHCPLease(ctx, id)
+  return a.server.dhcpModuleService().DeleteDHCPLease(ctx, id)
 }
 func (a dhcpServiceAdapter) DHCPRuntimeStatus(ctx context.Context) (any, error) {
-	return a.server.DHCPRuntimeStatus(ctx)
+  return a.server.dhcpModuleService().DHCPRuntimeStatus(ctx)
 }
 func (a dhcpServiceAdapter) DHCPAction(ctx context.Context, action string) error {
-	return a.server.DHCPAction(ctx, action)
-}
-func (s *Server) DHCPModuleService() dhcpweb.Service { return dhcpServiceAdapter{server: s} }
-func (s *Server) DHCPRuntimeStatus(ctx context.Context) (any, error) {
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-	status := s.dhcpModuleService().Runtime().Status()
-	preference, err := s.getServicePreferenceContext(ctx, "dhcp", false)
-	if err != nil {
-		return nil, err
-	}
-	return map[string]any{"runtime": status, "enabled": preference.Enabled, "last_error": preference.LastError}, nil
-}
-func (s *Server) DHCPAction(ctx context.Context, action string) error {
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
-	defer cancel()
-	var err error
-	switch strings.ToLower(action) {
-	case "start":
-		if err = s.validateServiceStart("dhcp"); err == nil {
-			err = s.setServiceDesired("dhcp", true)
-		}
-		if err == nil {
-			err = s.startService(ctx, "dhcp")
-		}
-	case "stop":
-		if err = s.setServiceDesired("dhcp", false); err == nil {
-			err = s.stopService(ctx, "dhcp")
-		}
-	case "reload":
-		if err = s.validateServiceStart("dhcp"); err == nil {
-			err = s.reloadService(ctx, "dhcp")
-		}
-	default:
-		err = fmt.Errorf("unknown DHCP service action %q", action)
-	}
-	s.setServiceError("dhcp", err)
-	return err
-}
-func (s *Server) reloadDHCP() error { return s.reloadDHCPContext(s.dhcpLifecycleContext()) }
-func (s *Server) dhcpLifecycleContext() context.Context {
-	if s.monitorContext != nil {
-		return s.monitorContext
-	}
-	return context.Background()
-}
-func (s *Server) reloadDHCPContext(ctx context.Context) error {
-	settings, err := s.dhcpRepository().Settings(ctx)
-	if err != nil {
-		return err
-	}
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	return s.dhcpModuleService().Runtime().Start(s.dhcpLifecycleContext(), s.dhcpRepository(), *settings)
-}
-func (s *Server) startDHCPService() error {
-	_ = s.dhcpModuleService()
-	if !s.serviceDesiredEnabled("dhcp", false) {
-		return nil
-	}
-	err := s.reloadDHCP()
-	s.setServiceError("dhcp", err)
-	return err
+  err := a.server.dhcpModuleService().DHCPAction(ctx, action)
+  a.server.setServiceError("dhcp", err)
+  return err
 }
 
-func (s *Server) stopDHCPService() error {
-	if s.dhcpModule == nil {
-		return nil
-	}
-	return s.dhcpModule.Close()
+func (s *Server) dhcpLifecycleContext() context.Context {
+  if s.monitorContext != nil {
+    return s.monitorContext
+  }
+  return context.Background()
 }

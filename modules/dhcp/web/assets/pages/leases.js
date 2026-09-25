@@ -1,5 +1,4 @@
-import { html } from '@panel/shared/ui.js';
-import { useEffect, useState } from 'preact/hooks';
+import { html, useEffect, useState } from '@panel/shared/ui.js';
 
 export default function Leases({ api, staticOnly = false, navigate }) {
   const [items, setItems] = useState([]); const [error, setError] = useState('');

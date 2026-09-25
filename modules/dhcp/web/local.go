@@ -25,6 +25,7 @@ func NewLocalModule(ctx context.Context, db *sql.DB, policy ApplyPolicy, apiServ
 }
 
 func (m *LocalModule) Initialize(ctx context.Context) error { return m.repository.Initialize(ctx) }
+func (m *LocalModule) Start(ctx context.Context) error      { return m.service.Start(ctx) }
 func (m *LocalModule) Repository() *Repository              { return m.repository }
 func (m *LocalModule) Service() *LocalService               { return m.service }
 func (m *LocalModule) Close() error                         { return m.service.Close() }

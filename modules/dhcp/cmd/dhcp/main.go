@@ -34,6 +34,9 @@ func main() {
 	if err := module.Initialize(ctx); err != nil {
 		log.Fatal(err)
 	}
+	if err := module.Start(ctx); err != nil {
+		log.Fatal(err)
+	}
 	defer module.Close()
 	srv := &http.Server{Addr: *listen, Handler: module.StandaloneHandler()}
 	go func() { <-ctx.Done(); _ = srv.Shutdown(context.Background()) }()

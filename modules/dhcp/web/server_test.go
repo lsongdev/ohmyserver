@@ -178,8 +178,9 @@ func TestStandaloneServesPageManifestAssetsAndSettingsAPI(t *testing.T) {
 	for _, test := range []struct{ path, contains string }{
 		{"/", `name="api-base"`},
 		{"/v1/dhcp/manifest.json", `assets/module.js`},
-		{"/v1/dhcp/assets/module.js", `defineModule`},
-		{"/v1/dhcp/assets/index.js", `lsong.org/scripts/react/index.js`},
+		{"/v1/dhcp/assets/module.js", `createAPI`},
+		{"/v1/dhcp/assets/index.js", `runtime.createAPI`},
+		{"/v1/dhcp/assets/standalone-ui.js", `lsong.org/scripts/react/index.js`},
 		{"/v1/dhcp/settings", `"listen_addr"`},
 	} {
 		response := httptest.NewRecorder()
@@ -234,5 +235,21 @@ func TestStandaloneServiceOwnsDHCPRuntimeLifecycle(t *testing.T) {
 	state = status.(map[string]any)
 	if state["enabled"] != false || state["runtime"].(RuntimeStatus).Running {
 		t.Fatalf("runtime did not stop: %#v", status)
+	}
+}
+
+func TestStandaloneEntryReusesModulePages(t *testing.T) {
+	index, err := moduleWeb.ReadFile("assets/index.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	source := string(index)
+	if strings.Contains(source, "getSettings(") || strings.Contains(source, "<form") || strings.Contains(source, "staticLeases.map") {
+		t.Fatalf("standalone entry must not reimplement DHCP business pages")
+	}
+	for _, want := range []string{"runtime.createAPI", "matched.route.load()", "manifest.navigation"} {
+		if !strings.Contains(source, want) {
+			t.Fatalf("standalone entry missing shared runtime behavior %q", want)
+		}
 	}
 }

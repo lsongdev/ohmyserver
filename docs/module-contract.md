@@ -22,7 +22,7 @@ clash/
   cmd/clash/main.go         # clash web serve
 ```
 
-其他模块沿用相同职责：模块根是独立 Go module；公共领域库放 `<id>/` 包；HTTP/API 与静态托管放 `web/`；浏览器代码、清单和样式放 `web/assets/`；独立可执行程序放 `cmd/<id>/`。`index.html` 是模块独立页面，引用 `https://lsong.org/stylesheets/index.css`；`index.js` 从 `https://lsong.org/scripts/react/index.js` 导入共享 Preact/HTM 启动独立 UI；manifest 指向 `module.js` 作为壳可导入的模块对象。`web` 调用公共库并组合本模块 repository/服务接口，不能让 `cmd` 成为壳应用的依赖。壳只导入模块的 `web` 包并调用其构造器；独立命令与壳应用复用同一个 Web 服务实现。
+其他模块沿用相同职责：模块根是独立 Go module；公共领域库放 `<id>/` 包；HTTP/API 与静态托管放 `web/`；浏览器代码、清单和样式放 `web/assets/`；独立可执行程序放 `cmd/<id>/`。`index.html` 是模块独立页面并引用 `https://lsong.org/stylesheets/index.css`；standalone `index.js` 只是一个很薄的宿主，加载与 OhMyServer 相同的 `module.js`、`pages/*` 和 `api.js`。Standalone 可以通过本地 adapter 映射到 `https://lsong.org/scripts/react/index.js`，但不得重新实现模块业务页面。manifest 指向 `module.js` 作为壳可导入的模块对象。`web` 调用公共库并组合本模块 repository/服务接口，不能让 `cmd` 成为壳应用的依赖。壳只导入模块的 `web` 包并调用其构造器；独立命令与壳应用复用同一个 Web 服务实现。
 
 `<id>/client.go` 封装外部服务协议，避免 `web`、壳或消费者各自直接依赖供应商客户端。若模块对外提供的是领域库而非外部 API 客户端，则在同一个公共 Go 包中提供领域 API。独立命令负责独立配置、数据库/存储初始化和 HTTP 监听；只有在 `GOWORK=off` 下通过 `go test ./...`、`go build ./...` 并实际启动服务后，才算具备独立运行条件。当前模块中的扁平包可作为迁移过渡，不能作为目标结构完成的证据。
 
@@ -62,6 +62,6 @@ if err := registry.Register(module); err != nil { return err }
 
 1. 宿主从已注册的 Go 模块生成公开模块索引 `GET /v1/modules`，只含已注册模块的 `id`、`apiBase`、`manifestURL` 和 Hash 页面根路径。这里的索引由代码注册表生成，不是另一份需要维护的配置。
 2. 浏览器壳从索引中取得已挂载模块，并向每个模块请求 `GET <模块根>/manifest.json`，校验 ID 和契约版本。壳用模块清单绘制顶级菜单、分组及可选子菜单；单个清单失败会为该模块显示错误态，其他模块继续加载。
-3. 进入模块时，壳按已校验的相对 `entry` 构造同源 URL，调用原生 `import(url)` 并读取默认导出的模块对象。对象提供相对页面路由和 `createAPI(transport)`；宿主传入已绑定模块 API 根的 `request`、`fetchImpl`、`apiURL` 和 `websocketURL`，模块代码不接触 API 挂载前缀。
+3. 进入模块时，壳按已校验的相对 `entry` 构造同源 URL，调用原生 `import(url)` 并读取默认导出的模块对象。对象只提供 `id`、相对页面 `routes` 和 `createAPI(transport)`；`title`、`icon`、`group`、`home`、`navigation`、`styles`、`entry` 只允许出现在 `manifest.json`。宿主传入已绑定模块 API 根的 `request`、`fetchImpl`、`apiURL` 和 `websocketURL`，模块代码不接触 API 挂载前缀。页面收到的 `navigate()` / `href()` 同样只接受模块根内的绝对相对路径（例如 `/leases`），不得写 `/dhcp/leases` 这样的宿主页面前缀。
 
 链路是 `Go 注册 → 模块 http.Handler → /v1/modules → 模块 manifest.json → 浏览器 import()`。模块 JS 不读取宿主全局配置，也不自行向壳注册。宿主只加载已注册模块的同源清单和入口，不执行任意外部 JS URL。壳将挂载前缀封装在 `transport` 闭包中，通过模块的 `createAPI(transport)` 启动点注入请求、流式 fetch、资源 URL 和 WebSocket URL 能力；模块 API client 只提供模块内相对路径。
