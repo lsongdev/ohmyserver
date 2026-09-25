@@ -55,7 +55,7 @@ export default function TerminalSession({ api, kind, params = {}, hrefTo }) {
   const clear = () => termRef.current?.clear();
   const reconnect = () => { setError(''); setStatus('正在重新连接…'); setSessionVersion(value => value + 1); };
   const title = labels[kind] || '终端';
-  const backHref = kind === 'local' || !hrefTo ? null : hrefTo(kind, kind === 'ssh' ? '/servers' : '/containers');
+  const backHref = kind === 'local' ? null : hrefTo?.(kind, kind === 'ssh' ? '/servers' : '/containers');
   return html`<section class="terminal-page card">
     <div class="page-toolbar"><div><h2>${title}${id ? ` · ${id}` : ''}</h2><span class="muted" role="status">${status}</span></div>
       <div class="button-group"><button class="button" onClick=${clear}>清屏</button><button class="button" onClick=${reconnect}>重新连接</button>${backHref ? html`<a class="button" href=${backHref}>返回</a>` : null}</div>
