@@ -1,7 +1,7 @@
 import { html } from '@panel/shared/ui.js';
 import { useEffect, useState } from 'preact/hooks';
 
-export default function RouterForm({ api, params, navigate }) {
+export default function RouterForm({ api, params, navigate, href }) {
   const editing = Boolean(params.id);
   const [form, setForm] = useState({ name: '', host: '', port: 80, username: 'root', password: '', protocol: 'http', description: '' });
   const [error, setError] = useState('');
@@ -25,5 +25,5 @@ export default function RouterForm({ api, params, navigate }) {
     ${error ? html`<div class="notice-card error">${error}</div>` : null}
     ${field('name', '名称')}${field('host', '主机地址')}${field('port', '端口', 'number')}${field('username', '用户名')}${field('password', editing ? '新密码（留空保持不变）' : '密码', 'password')}
     <label class="form-field"><span>协议</span><select class="input" value=${form.protocol} onChange=${e => setForm({ ...form, protocol: e.currentTarget.value })}><option value="http">HTTP</option><option value="https">HTTPS</option></select></label>
-    ${field('description', '描述')}<div class="form-actions"><button class="button" type="submit">保存</button><a class="button button-secondary" href="#/openwrt">取消</a></div></form>`;
+    ${field('description', '描述')}<div class="form-actions"><button class="button" type="submit">保存</button><a class="button button-secondary" href=${href("/")}>取消</a></div></form>`;
 }

@@ -43,6 +43,10 @@ export function Shell() {
   const moduleHref = useMemo(() => activeModule
     ? path => href(scopeModulePath(activeModule.pageBase, path))
     : null, [activeModule]);
+  const crossModuleHref = useMemo(() => (moduleID, path) => {
+    const target = modules.find(item => item.id === moduleID);
+    return target ? href(scopeModulePath(target.pageBase, path)) : null;
+  }, [modules]);
 
   useEffect(() => {
     let active = true;
@@ -131,7 +135,7 @@ export function Shell() {
         ${current.module && activeModule?.routes && !current.page ? html`<div class="notice-card"><h2>模块中没有此页面</h2><p>选择上方的模块页面继续操作。</p></div>` : null}
         ${loadError ? html`<div class="notice-card error"><h2>页面加载失败</h2><p>${loadError}</p><button class="button" onclick=${() => setRetryVersion(value => value + 1)}>重试</button></div>` : null}
         ${current.page && !Page && !loadError ? html`<div class="loading-state" role="status">正在加载${title}…</div>` : null}
-        ${Page ? html`<${Page} api=${api} params=${current.params} search=${current.location.search} navigate=${moduleNavigate} href=${moduleHref} ...${current.page?.props || {}} />` : null}
+        ${Page ? html`<${Page} api=${api} params=${current.params} search=${current.location.search} navigate=${moduleNavigate} href=${moduleHref} moduleHref=${crossModuleHref} ...${current.page?.props || {}} />` : null}
       </section>
     </main>
   </div>`;
