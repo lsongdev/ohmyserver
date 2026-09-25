@@ -1,7 +1,7 @@
 import { createAPI } from './api.js';
 
 export default {
-  id: 'projects', navigation: [{ label: '项目', path: '/' }],
+  id: 'projects',
   createAPI,
   routes: [
     { path: '/', load: () => import('./pages/list.js') },
