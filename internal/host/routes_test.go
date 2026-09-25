@@ -166,7 +166,7 @@ func TestHTTPBasePathMountsShellAssetsAndFeatureAPIs(t *testing.T) {
 		{path: "/panel/frontend/app/modules.js", want: "discoverModules"},
 		{path: "/panel/v1/modules", want: `"modules"`},
 		{path: "/panel/v1/docker/manifest.json", want: `"id": "docker"`},
-		{path: "/panel/v1/docker/assets/module.js", want: "defineModule"},
+		{path: "/panel/v1/docker/assets/module.js", want: "createAPI"},
 		{path: "/panel/v1/widgets/widgets", want: `"data":[]`},
 	} {
 		response := httptest.NewRecorder()
