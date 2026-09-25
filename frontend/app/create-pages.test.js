@@ -71,6 +71,8 @@ test('module pages never embed their host page prefix in navigation', () => {
       if (!page.isFile() || !page.name.endsWith('.js')) continue;
       const source = readFileSync(resolve(pagesDir, page.name), 'utf8');
       assert.doesNotMatch(source, hostPath, moduleEntry.name + '/' + page.name + ' must navigate relative to its module root');
+      const rawHash = new RegExp("#/" + escaped + "(?:/|['\"`])");
+      assert.doesNotMatch(source, rawHash, moduleEntry.name + '/' + page.name + ' must not hard-code the host hash prefix');
     }
   }
 });

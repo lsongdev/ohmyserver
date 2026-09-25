@@ -14,7 +14,7 @@ function Chart({ label, values, keyName, fixedMax, suffix = '' }) {
 }
 const prettyBytes = n => { const units = ['B', 'KB', 'MB', 'GB', 'TB']; let i = 0, x = Number(n || 0); while (x >= 1024 && i < units.length - 1) { x /= 1024; i++; } return `${x.toFixed(i ? 1 : 0)} ${units[i]}`; };
 
-export default function Host({ api, params, search, navigate }) {
+export default function Host({ api, params, search, navigate, href }) {
   const hostname = params.hostname; const [duration, setDuration] = useState(search.get('duration') || '1h'); const [result, setResult] = useState(null); const [error, setError] = useState('');
   useEffect(() => { setDuration(search.get('duration') || '1h'); }, [search.toString()]);
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function Host({ api, params, search, navigate }) {
   }, [api, hostname, duration]);
   const current = result?.current; const history = result?.history || [];
   const chooseDuration = value => { setDuration(value); navigate(`/hosts/${encodeURIComponent(hostname)}?duration=${encodeURIComponent(value)}`); };
-  return html`<div class="page-toolbar"><div><h2>${hostname}</h2><span class="muted">${current ? new Date(current.timestamp).toLocaleString() : ''}</span></div><a class="button button-secondary" href="#/monitor/hosts">返回主机列表</a></div>
+  return html`<div class="page-toolbar"><div><h2>${hostname}</h2><span class="muted">${current ? new Date(current.timestamp).toLocaleString() : ''}</span></div><a class="button button-secondary" href=${href("/hosts")}>返回主机列表</a></div>
     ${error ? html`<div class="notice-card error">${error}</div>` : null}
     ${current ? html`<div class="monitor-stats"><div class="card"><span>CPU</span><b>${current.cpu_usage.toFixed(1)}%</b><small>${current.cpu_cores} cores</small></div><div class="card"><span>内存</span><b>${current.memory_usage.toFixed(1)}%</b><small>${prettyBytes(current.memory_used)} / ${prettyBytes(current.memory_total)}</small></div><div class="card"><span>磁盘</span><b>${current.disk_usage.toFixed(1)}%</b><small>${prettyBytes(current.disk_used)} / ${prettyBytes(current.disk_total)}</small></div><div class="card"><span>网络累计</span><b>${prettyBytes(current.net_bytes_sent + current.net_bytes_recv)}</b><small>发送 ${prettyBytes(current.net_bytes_sent)} · 接收 ${prettyBytes(current.net_bytes_recv)}</small></div><div class="card"><span>系统负载</span><b>${current.load_1.toFixed(2)}</b><small>1 / 5 / 15 分钟：${current.load_1.toFixed(2)} / ${current.load_5.toFixed(2)} / ${current.load_15.toFixed(2)}</small></div><div class="card"><span>运行时间</span><b>${Math.floor(current.uptime / 3600)} 小时</b><small>${current.timestamp}</small></div></div>` : null}
     <div class="monitor-duration">${[['1h','1 小时'],['6h','6 小时'],['24h','24 小时'],['168h','7 天']].map(([value,label]) => html`<button class=${`button ${duration === value ? '' : 'button-secondary'}`} onClick=${() => chooseDuration(value)}>${label}</button>`)}</div>

@@ -62,6 +62,6 @@ if err := registry.Register(module); err != nil { return err }
 
 1. 宿主从已注册的 Go 模块生成公开模块索引 `GET /v1/modules`，只含已注册模块的 `id`、`apiBase`、`manifestURL` 和 Hash 页面根路径。这里的索引由代码注册表生成，不是另一份需要维护的配置。
 2. 浏览器壳从索引中取得已挂载模块，并向每个模块请求 `GET <模块根>/manifest.json`，校验 ID 和契约版本。壳用模块清单绘制顶级菜单、分组及可选子菜单；单个清单失败会为该模块显示错误态，其他模块继续加载。
-3. 进入模块时，壳按已校验的相对 `entry` 构造同源 URL，调用原生 `import(url)` 并读取默认导出的模块对象。对象只提供 `id`、相对页面 `routes` 和 `createAPI(transport)`；`title`、`icon`、`group`、`home`、`navigation`、`styles`、`entry` 只允许出现在 `manifest.json`。宿主传入已绑定模块 API 根的 `request`、`fetchImpl`、`apiURL` 和 `websocketURL`，模块代码不接触 API 挂载前缀。页面收到的 `navigate()` / `href()` 同样只接受模块根内的绝对相对路径（例如 `/leases`），不得写 `/dhcp/leases` 这样的宿主页面前缀。
+3. 进入模块时，壳按已校验的相对 `entry` 构造同源 URL，调用原生 `import(url)` 并读取默认导出的模块对象。对象只提供 `id`、相对页面 `routes` 和 `createAPI(transport)`；`title`、`icon`、`group`、`home`、`navigation`、`styles`、`entry` 只允许出现在 `manifest.json`。宿主传入已绑定模块 API 根的 `request`、`fetchImpl`、`apiURL` 和 `websocketURL`，模块代码不接触 API 挂载前缀。页面收到的 `navigate()` / `href()` 同样只接受模块根内的绝对相对路径（例如 `/leases`），不得写 `/dhcp/leases` 或 `#/dhcp/leases` 这样的宿主页面前缀。跨模块链接使用宿主注入的 `moduleHref(moduleID, path)`，例如 `moduleHref("docker", "/containers/abc")`；模块只声明目标模块 ID 与目标模块内路径，不自行拼接 Hash 或页面挂载前缀。
 
 链路是 `Go 注册 → 模块 http.Handler → /v1/modules → 模块 manifest.json → 浏览器 import()`。模块 JS 不读取宿主全局配置，也不自行向壳注册。宿主只加载已注册模块的同源清单和入口，不执行任意外部 JS URL。壳将挂载前缀封装在 `transport` 闭包中，通过模块的 `createAPI(transport)` 启动点注入请求、流式 fetch、资源 URL 和 WebSocket URL 能力；模块 API client 只提供模块内相对路径。

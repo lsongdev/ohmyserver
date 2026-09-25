@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'preact/hooks';
 
 function displayName(names = []) { return names[0]?.replace(/^\//, '') || '(unnamed)'; }
 
-export default function Containers({ api, navigate }) {
+export default function Containers({ api, navigate, href }) {
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
@@ -30,7 +30,7 @@ export default function Containers({ api, navigate }) {
     ${error ? html`<div class="notice-card error" role="alert"><p>${error}</p></div>` : null}
     <div class="data-table-wrap"><table class="data-table"><thead><tr><th>名称</th><th>镜像</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
       <tbody>${items.map(item => html`<tr key=${item.id}>
-        <td><a class="resource-link" href=${`#/docker/containers/${encodeURIComponent(item.id)}`}>${displayName(item.names)}</a><div class="muted mono">${item.id.slice(0, 12)}</div></td>
+        <td><a class="resource-link" href=${href(`/containers/${encodeURIComponent(item.id)}`)}>${displayName(item.names)}</a><div class="muted mono">${item.id.slice(0, 12)}</div></td>
         <td>${item.image}</td><td><span class=${`status-pill ${item.state}`}>${item.status || item.state}</span></td>
         <td>${item.created ? new Date(item.created * 1000).toLocaleString() : '—'}</td>
         <td class="table-actions">${item.state === 'running'
