@@ -172,13 +172,13 @@ export default {
 
 壳创建按模块作用域的 `transport`：`request('/containers')` 使用宿主 `mount` 拼接 URL，并统一处理认证、CSRF、JSON 错误和取消。SSE、WebSocket、下载及图片也通过壳提供的相对路径 URL/连接能力取得地址；模块 JS 不自行拼全局前缀。壳还提供相对导航与跨模块链接能力，页面只使用注入的接口。`mount` 与 `page` 可在不同宿主下配置，包括子路径部署；模块源码保持不变。
 
-`frontend/app/modules.js` 从已验证的模块清单取得同源入口 URL，再用原生 `import()` 加载；该 URL 由模块自己的 handler 提供。页面继续相对于模块 `index.js` 懒加载。`frontend/shared` 使用 import map 别名 `@panel/`，模块内部文件用相对 import，跨到共享 UI 时用 `@panel/shared/...`。模块不得 import `app/` 或其他模块的前端文件。独立运行 Docker 时只需模块自身目录和一个实现同一装配/注入契约的最小宿主。同源部署为默认值。
+`frontend/app/modules.js` 从已验证的模块清单取得同源入口 URL，再用原生 `import()` 加载；该 URL 由模块自己的 handler 提供。页面继续相对于模块 `module.js` 懒加载。`frontend/shared` 使用 import map 别名 `@panel/`，模块内部文件用相对 import，跨到共享 UI 时用 `@panel/shared/...`。模块不得 import `app/` 或其他模块的前端文件。独立运行 Docker 时只需模块自身目录和一个实现同一装配/注入契约的最小宿主。同源部署为默认值。
 
 壳从模块清单加载已注册模块的 CSS，`frontend/index.html` 只引用壳层与 vendor 样式。模块样式与页面一起迁移，不能在壳的 HTML 中长期维护模块 CSS 清单。清单 ID 必须与 Go 注册 ID 匹配，入口/样式必须在模块自己的挂载根内；清单请求或入口加载失败时只影响该模块。
 
 Hash 路由由外壳唯一管理：URL 形如 `/#/docker/containers`，监听 `hashchange` 并提供 `navigate()`。查询参数位于 hash 内，例如 `#/docker/containers?state=running`，用 URLSearchParams 解析；刷新和浏览器前进/后退由浏览器原生 hash 历史支持，不要求服务端为每个页面路径配置 SPA fallback。静态段优先于参数段，按路径段匹配避免 `/docker-other` 命中 `/docker`，未知路径显示 404。拦截仅限无修饰键的站内导航，保留下载、外链、新标签页和 `method="delete"` 的语义。
 
-页面导出默认组件，接收 `{ api, params, search, navigate, href }`。`useEffect` 中的请求使用 AbortController，卸载关闭轮询/SSE/WebSocket/终端实例；快速切页时旧响应不得覆盖新页面。列表筛选、分页进入 URL；表单和短期加载状态留在组件，应用 Context 只放会话、模块挂载信息和少量全局 UI 状态。
+页面导出默认组件，接收 `{ api, params, search, navigate, href, hrefTo }`。其中 `navigate`/`href` 只处理本模块路由，`hrefTo(moduleID, path)` 仅用于显式跨模块链接。`useEffect` 中的请求使用 AbortController，卸载关闭轮询/SSE/WebSocket/终端实例；快速切页时旧响应不得覆盖新页面。列表筛选、分页进入 URL；表单和短期加载状态留在组件，应用 Context 只放会话、模块挂载信息和少量全局 UI 状态。
 
 壳层处理模块加载中、模块加载失败、未知路由和 Error Boundary。侧边栏分组、模块名称/图标与可选子导航来自模块清单；未注册模块不显示，单模块清单或入口失败不影响其他模块并显示该模块错误态。切页更新标题与主区域焦点，移动端收起菜单；复用小窗口/全视口布局，内容区必须可独立滚动。
 
