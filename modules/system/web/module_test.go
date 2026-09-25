@@ -61,7 +61,7 @@ func TestStandaloneServesPageManifestAssetsAndAPI(t *testing.T) {
 	for _, test := range []struct{ path, contains string }{
 		{"/", `name="api-base"`},
 		{"/v1/system/manifest.json", `assets/module.js`},
-		{"/v1/system/assets/module.js", `defineModule`},
+		{"/v1/system/assets/module.js", `createAPI`},
 		{"/v1/system/assets/index.js", `lsong.org/scripts/react/index.js`},
 		{"/v1/system/info", `"program_name":"Test"`},
 	} {
