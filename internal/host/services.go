@@ -234,7 +234,7 @@ func (s *Server) configuredServiceConflicts(includeDisabled string) ([]ServiceCo
 		}
 		add("NTP Server", "udp", settings.ListenAddr)
 	}
-	if s.dhcpModule != nil {
+	if s.dhcpInitialized {
 		dhcpSettings, err := s.dhcpRepository().Settings(context.Background())
 		if err != nil {
 			return nil, err

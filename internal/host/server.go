@@ -54,6 +54,7 @@ type Server struct {
 	sshModuleOnce                sync.Once
 	dhcpModule                   *dhcpweb.LocalModule
 	dhcpModuleOnce               sync.Once
+	dhcpInitialized              bool
 	esxiModule                   *esxiweb.LocalModule
 	esxiModuleOnce               sync.Once
 	idracModule                  *idracweb.LocalModule
