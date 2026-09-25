@@ -257,6 +257,11 @@ func TestDHCPSettingsRemainAuthoritativeForHostState(t *testing.T) {
 	if err := s.setServiceDesired("dhcp", false); err != nil {
 		t.Fatal(err)
 	}
+	for _, id := range []string{"web", "forward", "dns", "ntp"} {
+		if err := s.setServiceDesired(id, false); err != nil {
+			t.Fatal(err)
+		}
+	}
 
 	conflicts, err := s.configuredServiceConflicts("")
 	if err != nil {
