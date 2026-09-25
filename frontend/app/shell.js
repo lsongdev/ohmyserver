@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { discoverModules, loadModuleRuntime } from './modules.js';
 import { pageForRoute, pageKey } from './page-state.js';
 import { createModuleTransport, createRequest } from '../shared/http.js';
-import { href, matchModuleRoute, navigate, readLocation } from './router.js';
+import { href, matchModuleRoute, navigate, readLocation, scopeModulePath } from './router.js';
 
 const groupOrder = ['概览', '容器与部署', '网络服务', '基础设施', '存储与系统', '设备与 IoT'];
 
@@ -37,6 +37,12 @@ export function Shell() {
   const api = useMemo(() => activeModule?.createAPI && transport
     ? activeModule.createAPI(transport)
     : null, [activeModule, transport]);
+  const moduleNavigate = useMemo(() => activeModule
+    ? (path, options) => navigate(scopeModulePath(activeModule.pageBase, path), options)
+    : null, [activeModule]);
+  const moduleHref = useMemo(() => activeModule
+    ? path => href(scopeModulePath(activeModule.pageBase, path))
+    : null, [activeModule]);
 
   useEffect(() => {
     let active = true;
@@ -102,7 +108,7 @@ export function Shell() {
       <nav class="module-groups" aria-label="功能模块">
         ${groups.map(group => html`<section class="module-group" key=${group.title}>
           <h2>${group.title}</h2>
-          ${group.items.map(item => html`<a class=${`module-link ${item.id === current.module?.id ? 'active' : ''}`} href=${href(`${item.pageBase === '/' ? '' : item.pageBase}${item.home || '/'}` || '/')} title=${item.title} key=${item.id}>
+          ${group.items.map(item => html`<a class=${`module-link ${item.id === current.module?.id ? 'active' : ''}`} href=${href(scopeModulePath(item.pageBase, item.home || '/'))} title=${item.title} key=${item.id}>
             <span class="module-icon">${item.icon}</span><span class="module-label">${item.title}</span>
           </a>`)}
         </section>`)}
@@ -114,7 +120,7 @@ export function Shell() {
         ${current.module && current.module.id !== 'dashboard' ? html`<span class="module-chip"><span>${current.module.icon}</span>${current.module.id}</span>` : null}
       </header>
       ${current.module && localLinks.length ? html`<nav class="module-nav" aria-label=${`${title} 页面`}>
-        ${localLinks.map(link => { const target = `${current.module.pageBase === '/' ? '' : current.module.pageBase}${link.path}` || '/'; return html`<a class=${currentPath === target ? 'active' : ''} href=${href(target)} key=${link.path}>${link.title || link.label}</a>`; })}
+        ${localLinks.map(link => { const target = scopeModulePath(current.module.pageBase, link.path); return html`<a class=${currentPath === target ? 'active' : ''} href=${href(target)} key=${link.path}>${link.title || link.label}</a>`; })}
       </nav>` : null}
       <section class="page-content" key=${currentPath}>
         ${discoveryError ? html`<div class="notice-card error"><h2>模块发现失败</h2><p>${discoveryError}</p></div>` : null}
@@ -125,7 +131,7 @@ export function Shell() {
         ${current.module && activeModule?.routes && !current.page ? html`<div class="notice-card"><h2>模块中没有此页面</h2><p>选择上方的模块页面继续操作。</p></div>` : null}
         ${loadError ? html`<div class="notice-card error"><h2>页面加载失败</h2><p>${loadError}</p><button class="button" onclick=${() => setRetryVersion(value => value + 1)}>重试</button></div>` : null}
         ${current.page && !Page && !loadError ? html`<div class="loading-state" role="status">正在加载${title}…</div>` : null}
-        ${Page ? html`<${Page} api=${api} params=${current.params} search=${current.location.search} navigate=${navigate} href=${href} ...${current.page?.props || {}} />` : null}
+        ${Page ? html`<${Page} api=${api} params=${current.params} search=${current.location.search} navigate=${moduleNavigate} href=${moduleHref} ...${current.page?.props || {}} />` : null}
       </section>
     </main>
   </div>`;

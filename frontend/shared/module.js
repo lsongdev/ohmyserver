@@ -1,20 +1,10 @@
-import { requestPlaceholder } from './placeholder-page.js';
-
 export function defineModule(config) {
-  const entry = config.entry || '/';
-  const navigation = config.navigation || [];
-  const routes = [...(config.routes || [])];
-  for (const item of navigation) {
-    if (!routes.some(route => route.path === item.path)) {
-      routes.push({ path: item.path, load: () => Promise.resolve({ default: requestPlaceholder }) });
-    }
+  for (const key of ['title', 'icon', 'group', 'entry', 'home', 'navigation', 'styles']) {
+    if (Object.hasOwn(config, key)) throw new TypeError(`module metadata ${key} belongs in manifest.json`);
   }
-  if (!routes.length) routes.push({ path: entry, load: () => Promise.resolve({ default: requestPlaceholder }) });
   return {
-    ...config,
-    entry,
-    navigation,
-    routes,
+    id: config.id,
+    routes: [...(config.routes || [])],
     createAPI: config.createAPI || (({ request }) => ({ request })),
   };
 }

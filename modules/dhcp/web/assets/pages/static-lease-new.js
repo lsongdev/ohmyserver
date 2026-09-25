@@ -1,5 +1,4 @@
-import { html } from '@panel/shared/ui.js';
-import { useState } from 'preact/hooks';
+import { html, useState } from '@panel/shared/ui.js';
 
 const blank = { mac: '', ip: '', hostname: '', description: '' };
 export default function NewStaticLease({ api, navigate }) {

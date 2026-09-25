@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -52,5 +52,25 @@ test('mixed edit/list pages do not create resources inline', () => {
     const source = readFileSync(resolve(modulesDir, relative), 'utf8');
     assert.doesNotMatch(source, /api\.create\(/, `${relative} must not call create from its list/edit page`);
     assert.match(source, /navigate\([^)]*\/new['"]?\)/, `${relative} must link to a standalone create page`);
+  }
+});
+
+test('module pages never embed their host page prefix in navigation', () => {
+  for (const moduleEntry of readdirSync(modulesDir, { withFileTypes: true })) {
+    if (!moduleEntry.isDirectory()) continue;
+    const pagesDir = resolve(modulesDir, moduleEntry.name, 'web/assets/pages');
+    let pages;
+    try {
+      pages = readdirSync(pagesDir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    const escaped = moduleEntry.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const hostPath = new RegExp("\\b(?:navigate|href)\\(\\s*['\"`]\\/" + escaped + "(?:/|['\"`])");
+    for (const page of pages) {
+      if (!page.isFile() || !page.name.endsWith('.js')) continue;
+      const source = readFileSync(resolve(pagesDir, page.name), 'utf8');
+      assert.doesNotMatch(source, hostPath, moduleEntry.name + '/' + page.name + ' must navigate relative to its module root');
+    }
   }
 });

@@ -111,7 +111,7 @@ func TestDHCPConfigurationHonorsCancelledContext(t *testing.T) {
 	cancel()
 	updated := *before
 	updated.ListenAddr = ":1067"
-	if err := s.DHCPModuleService().UpdateDHCPConfiguration(ctx, updated); !errors.Is(err, context.Canceled) {
+	if err := (dhcpServiceAdapter{server: s}).UpdateDHCPConfiguration(ctx, updated); !errors.Is(err, context.Canceled) {
 		t.Fatalf("update error=%v", err)
 	}
 	after, err := s.dhcpRepository().Settings(t.Context())
@@ -185,14 +185,14 @@ func TestDHCPStaticLeaseAndLeaseLifecycle(t *testing.T) {
 	if err := s.dhcpRepository().UpdateSettings(t.Context(), *settings); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.reloadDHCP(); err != nil {
+	if err := s.localDHCPModule().Start(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	status := s.dhcpModuleService().Runtime().Status()
 	if !status.Running || status.ListenAddr == "" {
 		t.Fatalf("unexpected DHCP status: %#v", status)
 	}
-	if err := s.dhcpModuleService().Runtime().Stop(); err != nil {
+	if err := s.localDHCPModule().Close(); err != nil {
 		t.Fatal(err)
 	}
 }

@@ -26,6 +26,17 @@ export function navigate(path, { replace = false } = {}) {
   }
 }
 
+export function scopeModulePath(pageBase, path) {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) {
+    throw new TypeError('module navigation path must start with a single /');
+  }
+  const base = pageBase === '/' ? '' : pageBase.replace(/\/+$/, '');
+  if (base && (path === base || path.startsWith(`${base}/`))) {
+    throw new TypeError('module navigation path must be relative to the module root');
+  }
+  return `${base}${path}` || '/';
+}
+
 export function matchRoute(route, pathname) {
   const expected = route.split('/').filter(Boolean);
   const actual = pathname.split('/').filter(Boolean);

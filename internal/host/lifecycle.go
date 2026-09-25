@@ -62,7 +62,11 @@ func (s *Server) startServices() {
 		run  func() error
 	}{
 		{"logger", s.InitSlog},
-		{"dhcp", s.startDHCPService},
+		{"dhcp", func() error {
+			err := s.localDHCPModule().Start(s.dhcpLifecycleContext())
+			s.setServiceError("dhcp", err)
+			return err
+		}},
 		{"dns", s.startDNSService},
 		{"docker app catalog", s.syncDockerAppCatalog},
 		{"monitor", s.startMonitorCollection},
@@ -84,7 +88,12 @@ func (s *Server) stopServices() error {
 		func() error { return wrapCloseError("forward", s.stopForwardService()) },
 		func() error { return wrapCloseError("ntp", s.stopNTPService()) },
 		func() error { return wrapCloseError("dns", s.stopDNSService()) },
-		func() error { return wrapCloseError("dhcp", s.stopDHCPService()) },
+		func() error {
+			if s.dhcpModule == nil {
+				return nil
+			}
+			return wrapCloseError("dhcp", s.dhcpModule.Close())
+		},
 	)
 	if closeErr != nil {
 		log.Printf("Close hook error: %v", closeErr)

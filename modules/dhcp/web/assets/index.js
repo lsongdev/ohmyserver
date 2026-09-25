@@ -1,68 +1,138 @@
-import { html, render, useEffect, useState } from 'https://lsong.org/scripts/react/index.js';
+import { html, render, useEffect, useState } from '@panel/shared/ui.js';
+import runtime from './module.js';
 
-const base = document.querySelector('meta[name="api-base"]')?.content || '/v1/dhcp';
+const apiBase = document.querySelector('meta[name="api-base"]')?.content || '/v1/dhcp';
+const moduleRoot = new URL(`${apiBase.replace(/\/$/, '')}/`, location.origin);
+
+function resolveAPI(path) {
+  if (typeof path !== 'string' || /^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith('//')) throw new TypeError('module request path must be relative');
+  const url = new URL(path.replace(/^\/+/, ''), moduleRoot);
+  if (url.origin !== moduleRoot.origin || !url.pathname.startsWith(moduleRoot.pathname)) throw new TypeError('module request escaped its API mount');
+  return url;
+}
+
 async function request(path, options = {}) {
-  const response = await fetch(`${base}${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
-  const body = response.status === 204 ? {} : await response.json();
-  if (!response.ok) throw new Error(body.error?.message || `HTTP ${response.status}`);
-  return body.data;
+  const headers = new Headers(options.headers || {});
+  let body = options.body;
+  if (body != null && !(body instanceof FormData) && typeof body !== 'string') {
+    headers.set('Content-Type', 'application/json');
+    body = JSON.stringify(body);
+  }
+  headers.set('Accept', 'application/json');
+  const response = await fetch(resolveAPI(path), { ...options, body, headers, credentials: 'same-origin' });
+  if (response.status === 204) return null;
+  const type = response.headers.get('content-type') || '';
+  const payload = type.includes('application/json') ? await response.json() : null;
+  if (!response.ok) throw new Error(payload?.error?.message || response.statusText || `HTTP ${response.status}`);
+  return payload?.data ?? payload;
+}
+
+const transport = {
+  request,
+  fetchImpl: (path, options = {}) => fetch(resolveAPI(path), { credentials: 'same-origin', ...options }),
+  apiURL: path => resolveAPI(path).href,
+  websocketURL: path => {
+    const url = resolveAPI(path);
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    return url.href;
+  },
+};
+const api = runtime.createAPI(transport);
+
+function href(path) {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) throw new TypeError('module navigation path must start with a single /');
+  return `#${path}`;
+}
+
+function navigate(path, { replace = false } = {}) {
+  const target = href(path);
+  if (replace) {
+    history.replaceState(null, '', target);
+    dispatchEvent(new Event('hashchange'));
+  } else {
+    location.hash = target.slice(1);
+  }
+}
+
+function readLocation() {
+  const source = location.hash.startsWith('#') ? location.hash.slice(1) : location.hash;
+  const url = new URL(source || '/', location.origin);
+  return { pathname: url.pathname, search: url.searchParams };
+}
+
+function matchRoute(route, pathname) {
+  const expected = route.split('/').filter(Boolean);
+  const actual = pathname.split('/').filter(Boolean);
+  if (expected.length !== actual.length) return null;
+  const params = {};
+  for (let i = 0; i < expected.length; i += 1) {
+    let segment;
+    try { segment = decodeURIComponent(actual[i]); } catch { return null; }
+    if (expected[i].startsWith(':')) params[expected[i].slice(1)] = segment;
+    else if (expected[i] !== segment) return null;
+  }
+  return params;
+}
+
+function findRoute(pathname) {
+  let best = null;
+  let score = -1;
+  for (const route of runtime.routes) {
+    const params = matchRoute(route.path, pathname);
+    if (params === null) continue;
+    const next = route.path.split('/').filter(Boolean).filter(segment => !segment.startsWith(':')).length;
+    if (next > score) { best = { route, params }; score = next; }
+  }
+  return best;
 }
 
 function App() {
-  const [tab, setTab] = useState('settings');
-  const [settings, setSettings] = useState(null);
-  const [status, setStatus] = useState(null);
-  const [leases, setLeases] = useState([]);
-  const [staticLeases, setStaticLeases] = useState([]);
-  const [draft, setDraft] = useState({ mac: '', ip: '', hostname: '', description: '' });
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  async function load() {
-    try {
-      const [config, runtime, dynamic, fixed] = await Promise.all([
-        request('/settings'), request('/status'), request('/leases'), request('/static-leases'),
-      ]);
-      setSettings(config); setStatus(runtime); setLeases(dynamic); setStaticLeases(fixed); setError('');
-    } catch (err) { setError(err.message || '读取 DHCP 数据失败'); }
-  }
-  useEffect(() => { load(); }, []);
-  const set = (key, value) => setSettings(current => ({ ...current, [key]: value }));
-  async function save(event) {
-    event.preventDefault(); setBusy(true); setError('');
-    try { await request('/settings', { method: 'PUT', body: JSON.stringify(settings) }); await load(); }
-    catch (err) { setError(err.message || '保存配置失败'); } finally { setBusy(false); }
-  }
-  async function action(name) {
-    setBusy(true); setError('');
-    try { await request('/action', { method: 'POST', body: JSON.stringify({ action: name }) }); await load(); }
-    catch (err) { setError(err.message || '服务操作失败'); } finally { setBusy(false); }
-  }
-  async function saveLease(event) {
-    event.preventDefault(); setBusy(true); setError('');
-    try { await request('/static-leases', { method: 'POST', body: JSON.stringify(draft) }); setDraft({ mac: '', ip: '', hostname: '', description: '' }); await load(); }
-    catch (err) { setError(err.message || '添加静态租约失败'); } finally { setBusy(false); }
-  }
-  async function remove(path) {
-    setBusy(true); setError('');
-    try { await request(path, { method: 'DELETE' }); await load(); }
-    catch (err) { setError(err.message || '删除失败'); } finally { setBusy(false); }
-  }
-  const field = (label, key, type = 'text') => html`<label class="form-group">${label}<input class="input" type=${type} value=${settings?.[key] ?? ''} onInput=${event => set(key, type === 'number' ? Number(event.currentTarget.value) : event.currentTarget.value)} /></label>`;
-  return html`<section class="section">
-    <h1>DHCP 服务</h1>
-    ${error && html`<p role="alert">${error}</p>`}
-    <nav class="form-actions">${[['settings','配置'],['leases','动态租约'],['static','静态租约']].map(([id,label]) => html`<button class="button" onClick=${() => setTab(id)}>${label}</button>`)}</nav>
-    ${status && html`<p>运行状态：${status.runtime?.running ? '运行中' : '已停止'} · ${status.runtime?.listen_addr || '未监听'} ${status.last_error || ''}</p>`}
-    ${tab === 'settings' && settings && html`<form onSubmit=${save}>
-      <label class="form-group"><input class="input" type="checkbox" checked=${settings.enabled} onChange=${event => set('enabled', event.currentTarget.checked)} />启用 DHCP</label>
-      ${field('监听地址', 'listen_addr')}${field('服务器 IPv4', 'server_ip')}${field('子网掩码', 'subnet_mask')}
-      ${field('地址池起始', 'pool_start')}${field('地址池结束', 'pool_end')}${field('网关', 'router')}
-      ${field('DNS 服务器', 'dns_servers')}${field('NTP 服务器', 'ntp_servers')}${field('域名', 'domain_name')}
-      ${field('租约秒数', 'lease_seconds', 'number')}${field('续租秒数', 'renewal_seconds', 'number')}${field('重绑定秒数', 'rebinding_seconds', 'number')}
-      <div class="form-actions"><button class="button button-primary" disabled=${busy}>保存配置</button><button class="button" type="button" disabled=${busy} onClick=${() => action('start')}>启动</button><button class="button" type="button" disabled=${busy} onClick=${() => action('stop')}>停止</button><button class="button" type="button" disabled=${busy} onClick=${() => action('reload')}>重载</button></div>
-    </form>`}
-    ${tab === 'leases' && html`<table class="table"><thead><tr><th>IP</th><th>MAC</th><th>主机名</th><th>状态</th><th>过期时间</th><th></th></tr></thead><tbody>${leases.map(item => html`<tr><td>${item.ip}</td><td>${item.mac}</td><td>${item.hostname}</td><td>${item.state}</td><td>${item.expires_at}</td><td><button class="button button-danger" onClick=${() => remove(`/leases/${item.id}`)}>删除</button></td></tr>`)}</tbody></table>`}
-    ${tab === 'static' && html`<form onSubmit=${saveLease}><h2>添加静态租约</h2><input class="input" placeholder="MAC 地址" value=${draft.mac} onInput=${event => setDraft({...draft,mac:event.currentTarget.value})} required /><input class="input" placeholder="IPv4 地址" value=${draft.ip} onInput=${event => setDraft({...draft,ip:event.currentTarget.value})} required /><input class="input" placeholder="主机名" value=${draft.hostname} onInput=${event => setDraft({...draft,hostname:event.currentTarget.value})} /><input class="input" placeholder="描述" value=${draft.description} onInput=${event => setDraft({...draft,description:event.currentTarget.value})} /><button class="button button-primary" disabled=${busy}>添加租约</button></form><table class="table"><thead><tr><th>IP</th><th>MAC</th><th>主机名</th><th>描述</th><th></th></tr></thead><tbody>${staticLeases.map(item => html`<tr><td>${item.ip}</td><td>${item.mac}</td><td>${item.hostname}</td><td>${item.description}</td><td><button class="button button-danger" onClick=${() => remove(`/static-leases/${item.id}`)}>删除</button></td></tr>`)}</tbody></table>`}
-  </section>`;
+  const [manifest, setManifest] = useState(null);
+  const [manifestError, setManifestError] = useState('');
+  const [locationKey, setLocationKey] = useState(location.hash);
+  const [loaded, setLoaded] = useState(null);
+  const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    fetch(new URL('manifest.json', moduleRoot), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(response => response.ok ? response.json() : Promise.reject(new Error(`模块清单加载失败 (${response.status})`)))
+      .then(value => { if (active) setManifest(value); })
+      .catch(error => { if (active) setManifestError(error.message || '模块清单加载失败'); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    const update = () => setLocationKey(location.hash);
+    addEventListener('hashchange', update);
+    return () => removeEventListener('hashchange', update);
+  }, []);
+
+  const current = readLocation();
+  const pathname = current.pathname === '/' ? (manifest?.home || '/') : current.pathname;
+  const matched = findRoute(pathname);
+  const routeKey = matched ? `${matched.route.path}:${pathname}` : '';
+
+  useEffect(() => {
+    let active = true;
+    setLoaded(null);
+    setLoadError('');
+    if (!matched) return () => { active = false; };
+    matched.route.load().then(value => { if (active) setLoaded({ key: routeKey, Page: value.default }); })
+      .catch(error => { if (active) setLoadError(error.message || '页面加载失败'); });
+    return () => { active = false; };
+  }, [routeKey, locationKey]);
+
+  const Page = loaded?.key === routeKey ? loaded.Page : null;
+  return html`<div class="dhcp-standalone">
+    <header class="page-toolbar"><h1>${manifest?.title || 'DHCP'}</h1></header>
+    ${manifest?.navigation?.length ? html`<nav class="form-actions">${manifest.navigation.map(item => html`<a class="button" href=${href(item.path)}>${item.title}</a>`)}</nav>` : null}
+    ${manifestError ? html`<div class="notice-card error">${manifestError}</div>` : null}
+    ${!matched && manifest ? html`<div class="notice-card">页面不存在</div>` : null}
+    ${loadError ? html`<div class="notice-card error">${loadError}</div>` : null}
+    ${matched && !Page && !loadError ? html`<div class="loading-state">加载中…</div>` : null}
+    ${Page ? html`<${Page} api=${api} params=${matched.params} search=${current.search} navigate=${navigate} href=${href} ...${matched.route.props || {}} />` : null}
+  </div>`;
 }
+
 render(html`<${App} />`, document.getElementById('app'));

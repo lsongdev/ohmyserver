@@ -131,9 +131,6 @@ func (s *Server) Close() error {
 		if s.ntpModule != nil {
 			_ = s.ntpModule.Close()
 		}
-		if s.dhcpModule != nil {
-			_ = s.dhcpModule.Close()
-		}
 		if s.monitorCancel != nil {
 			s.monitorCancel()
 		}

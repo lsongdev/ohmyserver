@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { matchModuleRoute, readLocation } from './router.js';
+import { matchModuleRoute, readLocation, scopeModulePath } from './router.js';
 
 globalThis.location = { origin: 'http://localhost', hash: '' };
 
@@ -23,5 +23,17 @@ describe('hash router matching', () => {
     assert.deepEqual(location.rawSegments, ['items', 'a%2Fb']);
     assert.deepEqual(location.segments, ['items', 'a/b']);
     assert.equal(location.search.get('tab'), 'details');
+  });
+});
+
+describe('module-scoped navigation', () => {
+  it('maps module-relative paths into the host page mount', () => {
+    assert.equal(scopeModulePath('/dhcp', '/leases'), '/dhcp/leases');
+    assert.equal(scopeModulePath('/', '/'), '/');
+  });
+
+  it('rejects host-prefixed module paths instead of supporting compatibility mode', () => {
+    assert.throws(() => scopeModulePath('/dhcp', '/dhcp/leases'), /relative to the module root/);
+    assert.throws(() => scopeModulePath('/dhcp', 'leases'), /single \\//);
   });
 });
