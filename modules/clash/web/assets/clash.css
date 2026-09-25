@@ -1,0 +1,12 @@
+.clash-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px}
+.clash-groups .button-group{display:flex;flex-wrap:wrap;gap:7px}
+.clash-groups .button{margin:2px}
+.clash-detail pre,.clash-config pre{max-width:100%;overflow:auto;padding:12px;background:#f6f8fb;border:1px solid var(--line);border-radius:8px;font-size:12px}
+.clash-standalone-header{min-height:56px;padding:0 20px;display:flex;align-items:center;background:var(--color-surface,#fff);border-bottom:1px solid var(--color-border,#d8dee8);font-weight:600}
+.clash-standalone-main{max-width:1200px;margin:0 auto;padding:24px 20px}
+.clash-standalone-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:16px}
+.clash-standalone-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.clash-standalone-notice{margin:12px 0;color:var(--color-danger,#b42318)}
+.clash-standalone-empty{padding:28px;text-align:center;color:var(--color-text-muted,#657084)}
+@media(max-width:640px){.clash-table{min-width:680px}}
+@media(max-width:600px){.clash-standalone-main{padding:16px 12px}}

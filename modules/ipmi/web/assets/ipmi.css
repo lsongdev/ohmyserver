@@ -1,0 +1,5 @@
+.ipmi-inventory dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0 22px}
+.ipmi-inventory dt{color:var(--muted);font-size:11px}
+.ipmi-inventory dd{margin:3px 0 0;font-size:13px;overflow-wrap:anywhere}
+.ipmi-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 22px}
+@media(max-width:640px){.ipmi-table{min-width:720px}}

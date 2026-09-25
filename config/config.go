@@ -17,6 +17,7 @@ type LogConfig struct {
 // yaml config
 type Config struct {
 	Listen    string `json:"listen" yaml:"listen"`
+	BasePath  string `json:"base_path" yaml:"base_path"`
 	AccessKey string `json:"access_key" yaml:"access_key"`
 	Database  struct {
 		Driver string `json:"driver" yaml:"driver"`

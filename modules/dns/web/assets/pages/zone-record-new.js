@@ -1,0 +1,11 @@
+import { html } from '@panel/shared/ui.js';
+import { useEffect, useState } from 'preact/hooks';
+
+const empty = { name: '@', type: 'A', ttl: 300, value: '', priority: 0, weight: 0, port: 0, enabled: true };
+export default function NewZoneRecord({ api, params, navigate }) {
+  const [zone, setZone] = useState(null), [form, setForm] = useState(empty), [error, setError] = useState(''), [busy, setBusy] = useState(false);
+  useEffect(() => { const controller = new AbortController(); api.getZone(params.id, { signal: controller.signal }).then(setZone).catch(e => { if (e.name !== 'AbortError') setError(e.message || '区域读取失败'); }); return () => controller.abort(); }, [api, params.id]);
+  const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
+  const submit = async event => { event.preventDefault(); setBusy(true); setError(''); try { await api.createRecord(params.id, { ...form, ttl: Number(form.ttl) }); navigate(`/zones/${params.id}`); } catch (e) { setError(e.message || '添加记录失败'); } finally { setBusy(false); } };
+  return html`<section class="card"><div class="page-toolbar"><h2>添加 ${zone?.name || 'DNS'} 记录</h2><button class="button" onClick=${() => navigate(`/zones/${params.id}`)}>返回区域</button></div>${error ? html`<div class="notice-card error" role="alert">${error}</div>` : null}<form class="dns-record-form" onSubmit=${submit}><label class="form-field">名称<input class="input" value=${form.name} onInput=${e => set('name', e.currentTarget.value)} required /></label><label class="form-field">类型<select class="input" value=${form.type} onChange=${e => set('type', e.currentTarget.value)}>${['A','AAAA','CNAME','TXT','MX','SRV','NS','PTR'].map(type => html`<option value=${type}>${type}</option>`)}</select></label><label class="form-field">TTL<input class="input" type="number" min="1" value=${form.ttl} onInput=${e => set('ttl', Number(e.currentTarget.value))} /></label><label class="form-field">值<input class="input" value=${form.value} onInput=${e => set('value', e.currentTarget.value)} required /></label><div class="form-actions"><button class="button button-primary" disabled=${busy}>${busy ? '添加中…' : '添加记录'}</button><button class="button" type="button" onClick=${() => navigate(`/zones/${params.id}`)}>取消</button></div></form></section>`;
+}

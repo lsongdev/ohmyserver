@@ -1,0 +1,18 @@
+{
+  "contractVersion": 1,
+  "id": "ntp",
+  "title": "NTP 服务",
+  "icon": "◷",
+  "group": "网络服务",
+  "entry": "assets/module.js",
+  "styles": [
+    "assets/ntp.css"
+  ],
+  "home": "/",
+  "navigation": [
+    {
+      "title": "服务状态与配置",
+      "path": "/"
+    }
+  ]
+}

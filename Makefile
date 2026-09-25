@@ -9,11 +9,11 @@ LDFLAGS = -s -w \
 
 build:
 	mkdir -p bin
-	CGO_ENABLED=0 GOARCH=arm64 GOOS=darwin go build -ldflags="$(LDFLAGS)" -o ${BINARY_NAME}-darwin-arm64
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=darwin go build -ldflags="$(LDFLAGS)" -o ${BINARY_NAME}-darwin-amd64
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags="$(LDFLAGS)" -o ${BINARY_NAME}-linux-amd64
-	CGO_ENABLED=0 GOARCH=arm64 GOOS=linux go build -ldflags="$(LDFLAGS)" -o ${BINARY_NAME}-linux-arm64
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=windows go build -ldflags="$(LDFLAGS)" -o ${BINARY_NAME}-windows-amd64.exe
+	CGO_ENABLED=0 GOARCH=arm64 GOOS=darwin go build -ldflags="$(LDFLAGS)" -o ${BINARY_NAME}-darwin-arm64 ./cmd/ohmyserver
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=darwin go build -ldflags="$(LDFLAGS)" -o ${BINARY_NAME}-darwin-amd64 ./cmd/ohmyserver
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags="$(LDFLAGS)" -o ${BINARY_NAME}-linux-amd64 ./cmd/ohmyserver
+	CGO_ENABLED=0 GOARCH=arm64 GOOS=linux go build -ldflags="$(LDFLAGS)" -o ${BINARY_NAME}-linux-arm64 ./cmd/ohmyserver
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=windows go build -ldflags="$(LDFLAGS)" -o ${BINARY_NAME}-windows-amd64.exe ./cmd/ohmyserver
 	cd bin && if command -v sha256sum >/dev/null 2>&1; then sha256sum ohmyserver-*; else shasum -a 256 ohmyserver-*; fi > checksums.txt
 
 docker:

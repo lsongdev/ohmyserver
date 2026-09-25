@@ -1,0 +1,18 @@
+{
+  "contractVersion": 1,
+  "id": "yeelight",
+  "title": "Yeelight",
+  "icon": "☼",
+  "group": "设备与 IoT",
+  "entry": "assets/module.js",
+  "styles": [
+    "assets/yeelight.css"
+  ],
+  "home": "/",
+  "navigation": [
+    {
+      "title": "智能灯具",
+      "path": "/"
+    }
+  ]
+}

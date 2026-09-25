@@ -1,6 +1,27 @@
 # AGENTS.md - OhMyServer 开发规范
 
-## 创建新页面的完整流程
+## 模块化应用规范（新功能默认）
+
+- 完整功能模块放在 `modules/<feature>/`，并按职责分层：`<feature>/` 是公共 Go 库（例如 `clash/client.go` 封装外部 API），`web/` 提供模块 API、业务服务和 `http.Handler`，`web/assets/` 存放清单及浏览器 ESM/CSS，`cmd/<feature>/` 提供独立启动命令（例如 `clash web serve`）。模块的数据库 schema、repository、迁移和测试也由该模块拥有。独立命令与壳应用复用同一个 `web` 实现；壳只依赖模块的 `web` 包，不依赖 `cmd` 或模块内部实现。
+- 模块 `web/` 通过 `go:embed` 自行托管相对 API 路由、`/assets/` 和 `/manifest.json`，不硬编码宿主挂载前缀。前端使用 Preact + HTM + 浏览器原生 ESM，不使用 JSX、打包器或运行时转译。所有模块先编译进主程序并由 Go 组合根显式注册；浏览器壳从模块清单发现 JS 入口、样式、侧边栏分组及可选子导航。宿主决定模块 HTTP 根路径、API 前缀和 Hash 页面前缀，并通过模块启动函数注入已作用域化的 transport；模块 JS 只使用相对 API 路径和相对页面路由，不读取或拼接宿主前缀，且应支持相对根路由 `/`。`frontend/` 只保留壳层、共享 UI 和 vendor。
+- 模块独立 UI 的 `web/assets/index.js` 直接从 `https://lsong.org/scripts/react/index.js` 导入 `html`、`render` 和 hooks；通过 HTML 的 `api-base` 配置独立服务挂载前缀。不要把 Preact/HTM/shared runtime 复制进每个模块。给壳加载的 `module.js` 仍由宿主注入 transport，模块 API 客户端保持相对路径。
+- 模块独立页面直接引用公共组件样式表 `https://lsong.org/stylesheets/index.css`；模块 CSS 只补充功能特有的布局和样式，不重复定义公共按钮、输入框、表格等组件。
+- 模块之间不查询对方数据表、不导入对方仓储。跨模块协作用消费者定义的窄接口，并由应用装配层注入实现；共享 SQLite 连接池不代表共享表所有权。
+- 数据库 schema、迁移和 repository 由拥有该数据的 `modules/<feature>` 管理。应用层只负责模块组装、跨模块 adapter 与生命周期协调。
+- 模块以未来独立仓库和版本发布为目标：Go 代码、`web/`、契约、迁移和测试一起交付；模块不得依赖宿主 `internal/`、`server/`、组合根或其他功能模块的实现。跨模块能力和共享库须通过明确的版本化公共契约依赖，不能靠同仓相对路径才能构建。
+- API 使用 JSON envelope、明确 HTTP 方法与状态码；密钥/密码不得进入 DTO；写入请求限制 body、校验 Content-Type 与未知字段。文件下载、SSE、WebSocket 等流式/二进制响应保留各自协议语义。
+- 页面通过注入的 `api`、`params`、`search`、`navigate` 工作；副作用在组件生命周期内清理，列表/筛选状态需要可分享时写入 hash URL。
+- 所有持久化资源的创建表单必须在独立页面/路由中；列表页右上角 toolbar 提供创建入口，不内嵌、折叠或 inline-create。子资源也采用父资源上下文下的独立创建路由。安装、拉取、部署、检查等操作表单不属于资源创建；编辑表单可另行规划。
+- 表单页的返回操作不得在标题上方单独占一行：优先放在标题 toolbar 右侧；表单底部的“取消”应与提交/保存按钮并列，已有底部取消时避免顶部重复返回。详情页返回入口也应合并到标题 toolbar 右侧。
+- 每个 `<input>` 必须包含 `class="input"`，每个 `<button>` 必须包含 `class="button"`；使用变体时保留基础类。删除操作通过 `<a method="delete">` 语义触发 DELETE，不使用隐藏 `_method` 表单。
+- 使用原生 CSS 和现有公共组件样式，保持简洁，不重复定义 `.input`、`.button` 等通用类，不给表单添加不必要的 max-width。
+- 每次修改同步验证：根模块执行 `go test ./...`、`go build ./...`；有独立 `go.mod` 的模块还要在模块目录以 `GOWORK=off` 执行 `go test ./...`、`go build ./...` 并验证独立命令；对 `frontend/` 和 `modules/*/web/assets/` 下 JavaScript 执行 `node --check`，以及 `git diff --check`；涉及流式功能时补模块级 HTTP 契约测试。
+
+## 旧模板页面流程（仅限尚未迁移模块）
+
+以下规范只用于仍挂载在旧 HTML router 的页面。模块一旦迁入 `modules/<feature>/web` 并由自身 handler 托管 API 与前端，新增和修改必须遵循上面的模块化规范，并删除已退役的旧 handler、模板和路由。
+
+### 创建旧模板页面流程
 
 ### 1. 数据库层
 

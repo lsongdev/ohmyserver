@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,6 +26,37 @@ jobs:
       run: |
         echo "version=nightly-$(date -u +'%Y%m%d')-${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
         echo "build_time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+    - name: Test host
+      run: go test ./...
+    - name: Test frontend contracts
+      run: node --test frontend/app/*.test.js frontend/shared/*.test.js modules/*/web/assets/*.test.js
+    - name: Test all feature modules independently
+      run: |
+        set -e
+        for module in modules/*; do
+          test -f "$module/go.mod"
+          (cd "$module" && GOWORK=off go test ./... && GOWORK=off go build ./...)
+        done
+    - name: Test shared Go packages independently
+      run: |
+        set -e
+        for module in pkg/*; do
+          test -f "$module/go.mod"
+          (cd "$module" && GOWORK=off go test ./... && GOWORK=off go build ./...)
+        done
+    - name: Test release-format minimal hosts
+      run: |
+        tests/module-smoke/run-release-smoke.sh docker
+        tests/module-smoke/run-release-smoke.sh cron
+        tests/module-smoke/run-release-smoke.sh acme
+        tests/module-smoke/run-release-smoke.sh dns
+        tests/module-smoke/run-release-smoke.sh ipmi
+        tests/module-smoke/run-release-smoke.sh idrac
+        tests/module-smoke/run-release-smoke.sh settings
+        tests/module-smoke/run-release-smoke.sh widgets
+        tests/module-smoke/run-release-smoke.sh uptime
+        tests/module-smoke/run-release-smoke.sh terminal
+        tests/module-smoke/run-release-smoke.sh webserver
     - name: Build
       run: make build VERSION="${{ env.version }}" COMMIT="${GITHUB_SHA}" BUILD_TIME="${{ env.build_time }}"
     - name: Upload Release
