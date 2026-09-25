@@ -135,7 +135,7 @@ root.Handle("/v1/docker/", http.StripPrefix("/v1/docker", dockerModule))
   "title": "Docker",
   "icon": "◧",
   "group": "容器与部署",
-  "entry": "assets/index.js",
+  "entry": "assets/module.js",
   "styles": ["assets/style.css"],
   "navigation": [{ "title": "容器", "path": "/containers" }]
 }
@@ -157,15 +157,15 @@ export function createAPI({ request }) {
 }
 
 // modules/docker/web/index.js：壳加载的模块入口
-import { defineModule } from '@panel/shared/module.js';
 import { createAPI } from './api.js';
-export default defineModule({
-  id: 'docker', createAPI, entry: '/containers',
+export default {
+  id: 'docker',
+  createAPI,
   routes: [
     { path: '/containers', load: () => import('./pages/containers.js') },
     { path: '/containers/:id', load: () => import('./pages/container.js') },
   ],
-});
+};
 ```
 
 服务端壳从 Go 注册表创建并挂载模块的 handler，向浏览器提供只含已注册模块的公开索引。浏览器壳向每个索引中的同源模块根请求 `/manifest.json`，核对 ID 和契约版本，用清单绘制顶级菜单及可选子导航；当前模块第一次打开时，懒加载清单中的 JS 入口并读取其默认导出的模块对象，再把相对路由挂到宿主分配的页面根下。模块 JS import 时不请求数据、不建立连接，运行时行为在模块和页面生命周期内发生。

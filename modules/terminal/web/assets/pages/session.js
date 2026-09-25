@@ -55,9 +55,10 @@ export default function TerminalSession({ api, kind, params = {}, hrefTo }) {
   const clear = () => termRef.current?.clear();
   const reconnect = () => { setError(''); setStatus('正在重新连接…'); setSessionVersion(value => value + 1); };
   const title = labels[kind] || '终端';
+  const backHref = kind === 'local' || !hrefTo ? null : hrefTo(kind, kind === 'ssh' ? '/servers' : '/containers');
   return html`<section class="terminal-page card">
     <div class="page-toolbar"><div><h2>${title}${id ? ` · ${id}` : ''}</h2><span class="muted" role="status">${status}</span></div>
-      <div class="button-group"><button class="button" onClick=${clear}>清屏</button><button class="button" onClick=${reconnect}>重新连接</button>${kind !== 'local' && hrefTo ? html`<a class="button" href=${hrefTo(kind, kind === 'ssh' ? '/servers' : '/containers')}>返回</a>` : null}</div>
+      <div class="button-group"><button class="button" onClick=${clear}>清屏</button><button class="button" onClick=${reconnect}>重新连接</button>${backHref ? html`<a class="button" href=${backHref}>返回</a>` : null}</div>
     </div>
     ${error ? html`<div class="notice-card error" role="alert">${error}</div>` : null}
     <div class="terminal-viewport" ref=${host} onClick=${() => termRef.current?.focus()}></div>
