@@ -24,6 +24,10 @@ jobs:
         echo "build_time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
     - name: Build
       run: make build VERSION="${{ env.version }}" COMMIT="${GITHUB_SHA}" BUILD_TIME="${{ env.build_time }}"
+    - name: Test host
+      run: go test ./...
+    - name: Test frontend contracts
+      run: node --test frontend/app/*.test.js frontend/shared/*.test.js modules/*/web/assets/*.test.js
     - name: Test all feature modules independently
       run: |
         set -e
