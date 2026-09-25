@@ -139,3 +139,18 @@ test('module runtimes expose only executable contract fields', async () => {
     assert.ok(Array.isArray(runtime.routes));
   }
 });
+
+
+test('manifest navigation points only to real runtime routes', async () => {
+  const moduleDirs = readdirSync(resolve(repositoryRoot, 'modules'), { withFileTypes: true }).filter(entry => entry.isDirectory());
+  for (const dir of moduleDirs) {
+    const { assetRoot } = moduleWebLayout(dir.name);
+    const manifest = JSON.parse(readFileSync(resolve(assetRoot, 'manifest.json'), 'utf8'));
+    const runtime = (await import(pathToFileURL(resolve(assetRoot, 'module.js')))).default;
+    const routes = new Set(runtime.routes.map(route => route.path));
+    assert.ok(routes.has(manifest.home || '/'), dir.name + ' home must be a real runtime route');
+    for (const item of manifest.navigation || []) {
+      assert.ok(routes.has(item.path), dir.name + ' navigation ' + item.path + ' must be a real runtime route');
+    }
+  }
+});
