@@ -17,7 +17,7 @@ func TestStandaloneServesPageManifestModuleAndAPI(t *testing.T) {
 		t.Fatal(err)
 	}
 	h := New(repo, testCollector{}).StandaloneHandler()
-	for _, tc := range []struct{ path, contains string }{{"/", "/v1/monitor/assets/index.js"}, {"/v1/monitor/manifest.json", "assets/module.js"}, {"/v1/monitor/assets/module.js", "defineModule"}, {"/v1/monitor/assets/index.js", "lsong.org/scripts/react/index.js"}, {"/v1/monitor/hosts", `"data":[]`}} {
+	for _, tc := range []struct{ path, contains string }{{"/", "/v1/monitor/assets/index.js"}, {"/v1/monitor/manifest.json", "assets/module.js"}, {"/v1/monitor/assets/module.js", "createAPI"}, {"/v1/monitor/assets/index.js", "lsong.org/scripts/react/index.js"}, {"/v1/monitor/hosts", `"data":[]`}} {
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, tc.path, nil))
 		if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), tc.contains) {

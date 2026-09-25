@@ -26,7 +26,7 @@ func TestStandaloneHandlerServesPageModuleAssetsAndProjectAPI(t *testing.T) {
 		"/":                                "api-base",
 		"/v1/projects/manifest.json":       "assets/module.js",
 		"/v1/projects/assets/index.js":     "lsong.org/scripts/react/index.js",
-		"/v1/projects/assets/module.js":    "@panel/shared/module.js",
+		"/v1/projects/assets/module.js":    "createAPI",
 		"/v1/projects/assets/projects.css": ".projects-page",
 		"/v1/projects/projects":            `"data":[]`,
 	} {
