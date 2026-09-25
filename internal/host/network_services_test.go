@@ -254,10 +254,22 @@ func TestDHCPSettingsRemainAuthoritativeForHostState(t *testing.T) {
 	if err := s.dhcpRepository().UpdateSettings(t.Context(), *settings); err != nil {
 		t.Fatal(err)
 	}
+	ntpSettings, err := s.NTPRepository().Get(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ntpSettings.Enabled = true
+	ntpSettings.ListenAddr = "127.0.0.1:9000"
+	if err := s.NTPRepository().Update(t.Context(), *ntpSettings); err != nil {
+		t.Fatal(err)
+	}
 	if err := s.setServiceDesired("dhcp", false); err != nil {
 		t.Fatal(err)
 	}
-	for _, id := range []string{"web", "forward", "dns", "ntp"} {
+	if err := s.setServiceDesired("ntp", true); err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{"web", "forward", "dns"} {
 		if err := s.setServiceDesired(id, false); err != nil {
 			t.Fatal(err)
 		}

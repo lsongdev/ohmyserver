@@ -20,6 +20,7 @@ func (s *Server) initDHCPSchema() error {
 		return err
 	}
 	if !legacyExists {
+		s.dhcpInitialized = true
 		return nil
 	}
 	rows, err := s.db.QueryContext(ctx, `SELECT id,mac,ip,hostname,description FROM dhcp_reservations`)
@@ -45,8 +46,11 @@ func (s *Server) initDHCPSchema() error {
 	if err := repository.ImportStaticLeases(ctx, leases); err != nil {
 		return fmt.Errorf("migrate DHCP static leases: %w", err)
 	}
-	_, err = s.db.ExecContext(ctx, `DROP TABLE dhcp_reservations`)
-	return err
+	if _, err = s.db.ExecContext(ctx, `DROP TABLE dhcp_reservations`); err != nil {
+		return err
+	}
+	s.dhcpInitialized = true
+	return nil
 }
 func (s *Server) localDHCPModule() *dhcpweb.LocalModule {
 	s.dhcpModuleOnce.Do(func() {
