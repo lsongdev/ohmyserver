@@ -126,3 +126,16 @@ test('standalone modules use one thin host and keep feature UI in pages', () => 
     assert.match(source, /runtime\.routes/);
   }
 });
+
+
+test('module runtimes expose only executable contract fields', async () => {
+  const moduleDirs = readdirSync(resolve(repositoryRoot, 'modules'), { withFileTypes: true }).filter(entry => entry.isDirectory());
+  for (const dir of moduleDirs) {
+    const { assetRoot } = moduleWebLayout(dir.name);
+    const runtime = (await import(pathToFileURL(resolve(assetRoot, 'module.js')))).default;
+    assert.deepEqual(Object.keys(runtime).sort(), ['createAPI', 'id', 'routes'], dir.name + ' runtime must keep presentation metadata in manifest.json');
+    assert.equal(runtime.id, dir.name);
+    assert.equal(typeof runtime.createAPI, 'function');
+    assert.ok(Array.isArray(runtime.routes));
+  }
+});
