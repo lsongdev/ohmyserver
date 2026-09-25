@@ -234,12 +234,14 @@ func (s *Server) configuredServiceConflicts(includeDisabled string) ([]ServiceCo
 		}
 		add("NTP Server", "udp", settings.ListenAddr)
 	}
-	dhcpSettings, err := s.dhcpRepository().Settings(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	if includeDisabled == "dhcp" || dhcpSettings.Enabled {
-		add("DHCP Server", "udp", dhcpSettings.ListenAddr)
+	if s.dhcpModule != nil {
+		dhcpSettings, err := s.dhcpRepository().Settings(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		if includeDisabled == "dhcp" || dhcpSettings.Enabled {
+			add("DHCP Server", "udp", dhcpSettings.ListenAddr)
+		}
 	}
 	if enabled("web", true) {
 		listeners, err := s.WebServerRepository().ListListeners(context.Background())
