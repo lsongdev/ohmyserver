@@ -1,7 +1,6 @@
-import { defineModule } from '@panel/shared/module.js';
 import { createAPI } from './api.js';
 
-export default defineModule({
+export default {
   id: 'acme', createAPI,
   routes: [
     { path: '/certificates', load: () => import('./pages/certificates.js') },
@@ -16,4 +15,4 @@ export default defineModule({
     { path: '/issuances', load: () => import('./pages/issuances.js') },
     { path: '/issuances/:id', load: () => import('./pages/issuance.js') },
   ],
-});
+};

@@ -1,7 +1,6 @@
-import { defineModule } from '@panel/shared/module.js';
 import { createAPI } from './api.js';
 
-export default defineModule({
+export default {
   id: 'docker', createAPI,
   routes: [
     { path: '/containers', load: () => import('./pages/containers.js') },
@@ -13,4 +12,4 @@ export default defineModule({
     { path: '/apps', load: () => import('./pages/apps.js') },
     { path: '/apps/:id', load: () => import('./pages/app.js') },
   ],
-});
+};
