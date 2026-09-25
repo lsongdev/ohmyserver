@@ -4,11 +4,22 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="api-base" content="/v1/packages">
-    <title>软件包</title>
+    <title>packages</title>
     <link rel="stylesheet" href="https://lsong.org/stylesheets/index.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "@panel/shared/ui.js": "https://lsong.org/scripts/react/index.js",
+          "preact/hooks": "https://lsong.org/scripts/react/index.js",
+          "@xterm/xterm": "https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm",
+          "@xterm/addon-fit": "https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm"
+        }
+      }
+    </script>
   </head>
   <body>
-    <main id="app">加载中…</main>
+    <div id="app"></div>
     <script type="module" src="/v1/packages/assets/index.js"></script>
   </body>
 </html>

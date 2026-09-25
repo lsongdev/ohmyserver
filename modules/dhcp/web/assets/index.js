@@ -1,13 +1,29 @@
-import { html, render, useEffect, useState } from '@panel/shared/ui.js';
-import runtime from './module.js';
+import { html, render, useEffect, useState } from 'https://lsong.org/scripts/react/index.js';
 
-const apiBase = document.querySelector('meta[name="api-base"]')?.content || '/v1/dhcp';
-const moduleRoot = new URL(`${apiBase.replace(/\/$/, '')}/`, location.origin);
+const apiBase = document.querySelector('meta[name="api-base"]')?.content;
+if (!apiBase) throw new Error('missing module api-base');
+const moduleRoot = new URL(`${apiBase.replace(/\/+$/, '')}/`, location.origin);
+const moduleID = moduleRoot.pathname.split('/').filter(Boolean).at(-1);
 
-function resolveAPI(path) {
-  if (typeof path !== 'string' || /^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith('//')) throw new TypeError('module request path must be relative');
-  const url = new URL(path.replace(/^\/+/, ''), moduleRoot);
-  if (url.origin !== moduleRoot.origin || !url.pathname.startsWith(moduleRoot.pathname)) throw new TypeError('module request escaped its API mount');
+function scopedURL(path) {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) {
+    throw new TypeError('module API path must start with a single /');
+  }
+  const url = new URL(path.slice(1), moduleRoot);
+  if (url.origin !== moduleRoot.origin || !url.pathname.startsWith(moduleRoot.pathname)) {
+    throw new TypeError('module API path escaped its mount');
+  }
+  return url;
+}
+
+function assetURL(path) {
+  if (typeof path !== 'string' || path.startsWith('/') || /(^|\/)\.\.?($|\/)|[?#\\]/.test(path) || /^[a-z][a-z0-9+.-]*:/i.test(path)) {
+    throw new TypeError('invalid module asset path');
+  }
+  const url = new URL(path, moduleRoot);
+  if (url.origin !== moduleRoot.origin || !url.pathname.startsWith(`${moduleRoot.pathname}assets/`)) {
+    throw new TypeError('module asset must stay inside its assets directory');
+  }
   return url;
 }
 
@@ -19,28 +35,35 @@ async function request(path, options = {}) {
     body = JSON.stringify(body);
   }
   headers.set('Accept', 'application/json');
-  const response = await fetch(resolveAPI(path), { ...options, body, headers, credentials: 'same-origin' });
+  const response = await fetch(scopedURL(path), { ...options, body, headers, credentials: 'same-origin' });
   if (response.status === 204) return null;
   const type = response.headers.get('content-type') || '';
   const payload = type.includes('application/json') ? await response.json() : null;
-  if (!response.ok) throw new Error(payload?.error?.message || response.statusText || `HTTP ${response.status}`);
+  if (!response.ok) {
+    const error = payload?.error || {};
+    const failure = new Error(error.message || response.statusText || `HTTP ${response.status}`);
+    failure.status = response.status;
+    failure.code = error.code;
+    throw failure;
+  }
   return payload?.data ?? payload;
 }
 
 const transport = {
   request,
-  fetchImpl: (path, options = {}) => fetch(resolveAPI(path), { credentials: 'same-origin', ...options }),
-  apiURL: path => resolveAPI(path).href,
+  fetchImpl: (path, options = {}) => fetch(scopedURL(path), { credentials: 'same-origin', ...options }),
+  apiURL: path => scopedURL(path).href,
   websocketURL: path => {
-    const url = resolveAPI(path);
+    const url = scopedURL(path);
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
     return url.href;
   },
 };
-const api = runtime.createAPI(transport);
 
 function href(path) {
-  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) throw new TypeError('module navigation path must start with a single /');
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) {
+    throw new TypeError('module navigation path must start with a single /');
+  }
   return `#${path}`;
 }
 
@@ -74,31 +97,67 @@ function matchRoute(route, pathname) {
   return params;
 }
 
-function findRoute(pathname) {
+function findRoute(routes, pathname) {
   let best = null;
   let score = -1;
-  for (const route of runtime.routes) {
+  for (const route of routes) {
     const params = matchRoute(route.path, pathname);
     if (params === null) continue;
     const next = route.path.split('/').filter(Boolean).filter(segment => !segment.startsWith(':')).length;
-    if (next > score) { best = { route, params }; score = next; }
+    if (next > score) {
+      best = { route, params };
+      score = next;
+    }
   }
   return best;
 }
 
+function loadStyles(styles = []) {
+  for (const path of styles) {
+    const url = assetURL(path);
+    if ([...document.querySelectorAll('link[data-module-style]')].some(link => link.href === url.href)) continue;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = url.href;
+    link.dataset.moduleStyle = moduleID;
+    document.head.append(link);
+  }
+}
+
+async function loadDefinition() {
+  const response = await fetch(new URL('manifest.json', moduleRoot), {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) throw new Error(`module manifest failed (${response.status})`);
+  const manifest = await response.json();
+  if (manifest.contractVersion !== 1 || manifest.id !== moduleID || typeof manifest.entry !== 'string') {
+    throw new Error('invalid module manifest');
+  }
+  loadStyles(manifest.styles);
+  document.title = manifest.title || manifest.id;
+  const runtime = (await import(assetURL(manifest.entry).href)).default;
+  if (!runtime || runtime.id !== manifest.id || !Array.isArray(runtime.routes) || typeof runtime.createAPI !== 'function') {
+    throw new Error('invalid module runtime');
+  }
+  for (const key of ['title', 'icon', 'group', 'entry', 'home', 'navigation', 'styles']) {
+    if (Object.hasOwn(runtime, key)) throw new Error(`module metadata ${key} belongs in manifest.json`);
+  }
+  return { manifest, runtime, api: runtime.createAPI(transport) };
+}
+
 function App() {
-  const [manifest, setManifest] = useState(null);
-  const [manifestError, setManifestError] = useState('');
+  const [definition, setDefinition] = useState(null);
+  const [definitionError, setDefinitionError] = useState('');
   const [locationKey, setLocationKey] = useState(location.hash);
   const [loaded, setLoaded] = useState(null);
   const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     let active = true;
-    fetch(new URL('manifest.json', moduleRoot), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-      .then(response => response.ok ? response.json() : Promise.reject(new Error(`模块清单加载失败 (${response.status})`)))
-      .then(value => { if (active) setManifest(value); })
-      .catch(error => { if (active) setManifestError(error.message || '模块清单加载失败'); });
+    loadDefinition()
+      .then(value => { if (active) setDefinition(value); })
+      .catch(error => { if (active) setDefinitionError(error.message || 'module failed to load'); });
     return () => { active = false; };
   }, []);
 
@@ -109,8 +168,8 @@ function App() {
   }, []);
 
   const current = readLocation();
-  const pathname = current.pathname === '/' ? (manifest?.home || '/') : current.pathname;
-  const matched = findRoute(pathname);
+  const pathname = current.pathname === '/' ? (definition?.manifest.home || '/') : current.pathname;
+  const matched = definition ? findRoute(definition.runtime.routes, pathname) : null;
   const routeKey = matched ? `${matched.route.path}:${pathname}` : '';
 
   useEffect(() => {
@@ -118,21 +177,23 @@ function App() {
     setLoaded(null);
     setLoadError('');
     if (!matched) return () => { active = false; };
-    matched.route.load().then(value => { if (active) setLoaded({ key: routeKey, Page: value.default }); })
-      .catch(error => { if (active) setLoadError(error.message || '页面加载失败'); });
+    matched.route.load()
+      .then(value => { if (active) setLoaded({ key: routeKey, Page: value.default }); })
+      .catch(error => { if (active) setLoadError(error.message || 'page failed to load'); });
     return () => { active = false; };
   }, [routeKey, locationKey]);
 
   const Page = loaded?.key === routeKey ? loaded.Page : null;
-  return html`<div class="dhcp-standalone">
-    <header class="page-toolbar"><h1>${manifest?.title || 'DHCP'}</h1></header>
-    ${manifest?.navigation?.length ? html`<nav class="form-actions">${manifest.navigation.map(item => html`<a class="button" href=${href(item.path)}>${item.title}</a>`)}</nav>` : null}
-    ${manifestError ? html`<div class="notice-card error">${manifestError}</div>` : null}
-    ${!matched && manifest ? html`<div class="notice-card">页面不存在</div>` : null}
-    ${loadError ? html`<div class="notice-card error">${loadError}</div>` : null}
-    ${matched && !Page && !loadError ? html`<div class="loading-state">加载中…</div>` : null}
-    ${Page ? html`<${Page} api=${api} params=${matched.params} search=${current.search} navigate=${navigate} href=${href} ...${matched.route.props || {}} />` : null}
-  </div>`;
+  const manifest = definition?.manifest;
+  return html`<main class="module-standalone">
+    <header class="page-toolbar"><h1>${manifest?.title || moduleID}</h1></header>
+    ${manifest?.navigation?.length ? html`<nav class="button-group">${manifest.navigation.map(item => html`<a class="button" href=${href(item.path)}>${item.title}</a>`)}</nav>` : null}
+    ${definitionError ? html`<div class="notice-card error" role="alert">${definitionError}</div>` : null}
+    ${definition && !matched ? html`<div class="notice-card">页面不存在</div>` : null}
+    ${loadError ? html`<div class="notice-card error" role="alert">${loadError}</div>` : null}
+    ${definition && matched && !Page && !loadError ? html`<div class="loading-state">加载中…</div>` : null}
+    ${Page ? html`<${Page} api=${definition.api} params=${matched.params} search=${current.search} navigate=${navigate} href=${href} ...${matched.route.props || {}} />` : null}
+  </main>`;
 }
 
 render(html`<${App} />`, document.getElementById('app'));

@@ -1,102 +1,199 @@
 import { html, render, useEffect, useState } from 'https://lsong.org/scripts/react/index.js';
-import { createAPI } from './api.js';
 
-const apiBase = document.querySelector('meta[name="api-base"]')?.content || '/v1/acme';
-const api = createAPI({
-  apiURL: path => `${apiBase}${path}`,
-  request: async (path, options = {}) => {
-    const response = await fetch(`${apiBase}${path}`, {
-      ...options,
-      body: options.body == null ? undefined : JSON.stringify(options.body),
-      headers: options.body ? { 'Content-Type': 'application/json', ...options.headers } : options.headers,
-    });
-    const body = response.status === 204 ? null : await response.json();
-    if (!response.ok) throw new Error(body?.error?.message || `HTTP ${response.status}`);
-    return body?.data ?? body;
+const apiBase = document.querySelector('meta[name="api-base"]')?.content;
+if (!apiBase) throw new Error('missing module api-base');
+const moduleRoot = new URL(`${apiBase.replace(/\/+$/, '')}/`, location.origin);
+const moduleID = moduleRoot.pathname.split('/').filter(Boolean).at(-1);
+
+function scopedURL(path) {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) {
+    throw new TypeError('module API path must start with a single /');
+  }
+  const url = new URL(path.slice(1), moduleRoot);
+  if (url.origin !== moduleRoot.origin || !url.pathname.startsWith(moduleRoot.pathname)) {
+    throw new TypeError('module API path escaped its mount');
+  }
+  return url;
+}
+
+function assetURL(path) {
+  if (typeof path !== 'string' || path.startsWith('/') || /(^|\/)\.\.?($|\/)|[?#\\]/.test(path) || /^[a-z][a-z0-9+.-]*:/i.test(path)) {
+    throw new TypeError('invalid module asset path');
+  }
+  const url = new URL(path, moduleRoot);
+  if (url.origin !== moduleRoot.origin || !url.pathname.startsWith(`${moduleRoot.pathname}assets/`)) {
+    throw new TypeError('module asset must stay inside its assets directory');
+  }
+  return url;
+}
+
+async function request(path, options = {}) {
+  const headers = new Headers(options.headers || {});
+  let body = options.body;
+  if (body != null && !(body instanceof FormData) && typeof body !== 'string') {
+    headers.set('Content-Type', 'application/json');
+    body = JSON.stringify(body);
+  }
+  headers.set('Accept', 'application/json');
+  const response = await fetch(scopedURL(path), { ...options, body, headers, credentials: 'same-origin' });
+  if (response.status === 204) return null;
+  const type = response.headers.get('content-type') || '';
+  const payload = type.includes('application/json') ? await response.json() : null;
+  if (!response.ok) {
+    const error = payload?.error || {};
+    const failure = new Error(error.message || response.statusText || `HTTP ${response.status}`);
+    failure.status = response.status;
+    failure.code = error.code;
+    throw failure;
+  }
+  return payload?.data ?? payload;
+}
+
+const transport = {
+  request,
+  fetchImpl: (path, options = {}) => fetch(scopedURL(path), { credentials: 'same-origin', ...options }),
+  apiURL: path => scopedURL(path).href,
+  websocketURL: path => {
+    const url = scopedURL(path);
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    return url.href;
   },
-});
+};
 
-const sections = [
-  { id: 'certificates', title: '证书', load: () => api.listCertificates() },
-  { id: 'issuances', title: '签发记录', load: () => api.listIssuances() },
-  { id: 'orders', title: '订单', load: () => api.listOrders() },
-  { id: 'accounts', title: '账户', load: () => api.listAccounts() },
-  { id: 'providers', title: '服务商', load: () => api.listProviders() },
-];
+function href(path) {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) {
+    throw new TypeError('module navigation path must start with a single /');
+  }
+  return `#${path}`;
+}
+
+function navigate(path, { replace = false } = {}) {
+  const target = href(path);
+  if (replace) {
+    history.replaceState(null, '', target);
+    dispatchEvent(new Event('hashchange'));
+  } else {
+    location.hash = target.slice(1);
+  }
+}
+
+function readLocation() {
+  const source = location.hash.startsWith('#') ? location.hash.slice(1) : location.hash;
+  const url = new URL(source || '/', location.origin);
+  return { pathname: url.pathname, search: url.searchParams };
+}
+
+function matchRoute(route, pathname) {
+  const expected = route.split('/').filter(Boolean);
+  const actual = pathname.split('/').filter(Boolean);
+  if (expected.length !== actual.length) return null;
+  const params = {};
+  for (let i = 0; i < expected.length; i += 1) {
+    let segment;
+    try { segment = decodeURIComponent(actual[i]); } catch { return null; }
+    if (expected[i].startsWith(':')) params[expected[i].slice(1)] = segment;
+    else if (expected[i] !== segment) return null;
+  }
+  return params;
+}
+
+function findRoute(routes, pathname) {
+  let best = null;
+  let score = -1;
+  for (const route of routes) {
+    const params = matchRoute(route.path, pathname);
+    if (params === null) continue;
+    const next = route.path.split('/').filter(Boolean).filter(segment => !segment.startsWith(':')).length;
+    if (next > score) {
+      best = { route, params };
+      score = next;
+    }
+  }
+  return best;
+}
+
+function loadStyles(styles = []) {
+  for (const path of styles) {
+    const url = assetURL(path);
+    if ([...document.querySelectorAll('link[data-module-style]')].some(link => link.href === url.href)) continue;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = url.href;
+    link.dataset.moduleStyle = moduleID;
+    document.head.append(link);
+  }
+}
+
+async function loadDefinition() {
+  const response = await fetch(new URL('manifest.json', moduleRoot), {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) throw new Error(`module manifest failed (${response.status})`);
+  const manifest = await response.json();
+  if (manifest.contractVersion !== 1 || manifest.id !== moduleID || typeof manifest.entry !== 'string') {
+    throw new Error('invalid module manifest');
+  }
+  loadStyles(manifest.styles);
+  document.title = manifest.title || manifest.id;
+  const runtime = (await import(assetURL(manifest.entry).href)).default;
+  if (!runtime || runtime.id !== manifest.id || !Array.isArray(runtime.routes) || typeof runtime.createAPI !== 'function') {
+    throw new Error('invalid module runtime');
+  }
+  for (const key of ['title', 'icon', 'group', 'entry', 'home', 'navigation', 'styles']) {
+    if (Object.hasOwn(runtime, key)) throw new Error(`module metadata ${key} belongs in manifest.json`);
+  }
+  return { manifest, runtime, api: runtime.createAPI(transport) };
+}
 
 function App() {
-  const [section, setSection] = useState(location.hash.slice(1) || 'certificates');
-  const [items, setItems] = useState([]);
-  const [error, setError] = useState('');
-  const [result, setResult] = useState('');
-  const [busy, setBusy] = useState(false);
-  const current = sections.find(item => item.id === section) || sections[0];
-
-  useEffect(() => {
-    const onHashChange = () => setSection(location.hash.slice(1) || 'certificates');
-    addEventListener('hashchange', onHashChange);
-    return () => removeEventListener('hashchange', onHashChange);
-  }, []);
+  const [definition, setDefinition] = useState(null);
+  const [definitionError, setDefinitionError] = useState('');
+  const [locationKey, setLocationKey] = useState(location.hash);
+  const [loaded, setLoaded] = useState(null);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     let active = true;
-    setError('');
-    current.load().then(value => { if (active) setItems(Array.isArray(value) ? value : []); })
-      .catch(reason => { if (active) setError(reason.message); });
+    loadDefinition()
+      .then(value => { if (active) setDefinition(value); })
+      .catch(error => { if (active) setDefinitionError(error.message || 'module failed to load'); });
     return () => { active = false; };
-  }, [section]);
+  }, []);
 
-  const perform = async (event, action) => {
-    event.preventDefault();
-    const element = event.currentTarget;
-    const form = new FormData(element);
-    setBusy(true); setError(''); setResult('');
-    try {
-      const value = await action(form);
-      setResult(value == null ? '操作完成' : JSON.stringify(value, null, 2));
-      element.reset();
-      const latest = await current.load();
-      setItems(Array.isArray(latest) ? latest : []);
-    } catch (reason) { setError(reason.message); }
-    finally { setBusy(false); }
-  };
+  useEffect(() => {
+    const update = () => setLocationKey(location.hash);
+    addEventListener('hashchange', update);
+    return () => removeEventListener('hashchange', update);
+  }, []);
 
-  const field = (name, label, placeholder = '') => html`
-    <label>${label}<input class="input" name=${name} placeholder=${placeholder} required /></label>`;
-  const columns = current.id === 'certificates'
-    ? ['id', 'domains', 'status', 'expires_at']
-    : current.id === 'issuances' ? ['id', 'domains', 'status', 'step', 'error']
-      : current.id === 'orders' ? ['id', 'account_id', 'domains', 'order_url']
-        : current.id === 'accounts' ? ['id', 'provider_name', 'email', 'status', 'account_url']
-          : ['id', 'name', 'directory_url', 'status'];
+  const current = readLocation();
+  const pathname = current.pathname === '/' ? (definition?.manifest.home || '/') : current.pathname;
+  const matched = definition ? findRoute(definition.runtime.routes, pathname) : null;
+  const routeKey = matched ? `${matched.route.path}:${pathname}` : '';
 
-  return html`<>
-    <nav class="acme-nav">${sections.map(item => html`
-      <a href=${`#${item.id}`} aria-current=${section === item.id ? 'page' : null}>${item.title}</a>`)}</nav>
-    <h1>${current.title}</h1>
-    ${error && html`<p class="acme-message acme-error" role="alert">${error}</p>`}
-    ${result && html`<pre class="acme-message acme-result">${result}</pre>`}
-    <div class="acme-grid">
-      <section class="acme-card"><h2>${current.title}</h2>
-        ${items.length ? html`<div class="table-container"><table class="table"><thead><tr>${columns.map(key => html`<th>${key}</th>`)}</tr></thead>
-          <tbody>${items.map(item => html`<tr>${columns.map(key => html`<td>${Array.isArray(item[key]) ? item[key].join(', ') : (item[key] ?? '')}</td>`)}</tr>`)}</tbody></table></div>` : html`<p>暂无${current.title}</p>`}
-      </section>
-      <section class="acme-card"><h2>操作</h2>
-        ${section === 'providers' && html`<form class="acme-form" onSubmit=${event => perform(event, form => api.createProvider({ name: form.get('name'), directory_url: form.get('directory_url') }))}>
-          ${field('name', '名称')}${field('directory_url', 'ACME Directory URL', 'https://example.test/acme/directory')}
-          <button class="button" disabled=${busy}>添加服务商</button></form>`}
-        ${section === 'accounts' && html`<form class="acme-form" onSubmit=${event => perform(event, form => api.registerAccount(form.get('provider_id'), { email: form.get('email'), agreed_terms: form.get('agreed_terms') === 'on' }))}>
-          ${field('provider_id', '服务商 ID')}${field('email', '邮箱', 'admin@example.com')}
-          <label><input class="input" type="checkbox" name="agreed_terms" />同意服务条款</label><button class="button" disabled=${busy}>注册账户</button></form>`}
-        ${section === 'certificates' && html`<form class="acme-form" onSubmit=${event => perform(event, form => api.generateCSR({ domains: form.get('domains') }))}>
-          ${field('domains', '域名（逗号分隔）', 'example.com, www.example.com')}<button class="button" disabled=${busy}>生成 CSR</button></form>`}
-        ${section === 'issuances' && html`<form class="acme-form" onSubmit=${event => perform(event, form => api.startIssuance({ account_id: Number(form.get('account_id')), domains: form.get('domains'), challenge_type: form.get('challenge_type'), dns_target: form.get('dns_target') }))}>
-          ${field('account_id', '账户 ID')}${field('domains', '域名（逗号分隔）')}
-          <label>验证方式<select class="input" name="challenge_type"><option value="http-01">HTTP-01</option><option value="dns-01">DNS-01</option></select></label>
-          <label>DNS 目标（DNS-01）<input class="input" name="dns_target" /></label><button class="button" disabled=${busy}>开始签发</button></form>`}
-      </section>
-    </div>
-  </>`;
+  useEffect(() => {
+    let active = true;
+    setLoaded(null);
+    setLoadError('');
+    if (!matched) return () => { active = false; };
+    matched.route.load()
+      .then(value => { if (active) setLoaded({ key: routeKey, Page: value.default }); })
+      .catch(error => { if (active) setLoadError(error.message || 'page failed to load'); });
+    return () => { active = false; };
+  }, [routeKey, locationKey]);
+
+  const Page = loaded?.key === routeKey ? loaded.Page : null;
+  const manifest = definition?.manifest;
+  return html`<main class="module-standalone">
+    <header class="page-toolbar"><h1>${manifest?.title || moduleID}</h1></header>
+    ${manifest?.navigation?.length ? html`<nav class="button-group">${manifest.navigation.map(item => html`<a class="button" href=${href(item.path)}>${item.title}</a>`)}</nav>` : null}
+    ${definitionError ? html`<div class="notice-card error" role="alert">${definitionError}</div>` : null}
+    ${definition && !matched ? html`<div class="notice-card">页面不存在</div>` : null}
+    ${loadError ? html`<div class="notice-card error" role="alert">${loadError}</div>` : null}
+    ${definition && matched && !Page && !loadError ? html`<div class="loading-state">加载中…</div>` : null}
+    ${Page ? html`<${Page} api=${definition.api} params=${matched.params} search=${current.search} navigate=${navigate} href=${href} ...${matched.route.props || {}} />` : null}
+  </main>`;
 }
 
 render(html`<${App} />`, document.getElementById('app'));

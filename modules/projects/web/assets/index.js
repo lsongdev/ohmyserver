@@ -1,88 +1,199 @@
 import { html, render, useEffect, useState } from 'https://lsong.org/scripts/react/index.js';
-import { createAPI } from './api.js';
 
-const apiBase = document.querySelector('meta[name="api-base"]')?.content || '';
-const request = async (path, options = {}) => {
+const apiBase = document.querySelector('meta[name="api-base"]')?.content;
+if (!apiBase) throw new Error('missing module api-base');
+const moduleRoot = new URL(`${apiBase.replace(/\/+$/, '')}/`, location.origin);
+const moduleID = moduleRoot.pathname.split('/').filter(Boolean).at(-1);
+
+function scopedURL(path) {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) {
+    throw new TypeError('module API path must start with a single /');
+  }
+  const url = new URL(path.slice(1), moduleRoot);
+  if (url.origin !== moduleRoot.origin || !url.pathname.startsWith(moduleRoot.pathname)) {
+    throw new TypeError('module API path escaped its mount');
+  }
+  return url;
+}
+
+function assetURL(path) {
+  if (typeof path !== 'string' || path.startsWith('/') || /(^|\/)\.\.?($|\/)|[?#\\]/.test(path) || /^[a-z][a-z0-9+.-]*:/i.test(path)) {
+    throw new TypeError('invalid module asset path');
+  }
+  const url = new URL(path, moduleRoot);
+  if (url.origin !== moduleRoot.origin || !url.pathname.startsWith(`${moduleRoot.pathname}assets/`)) {
+    throw new TypeError('module asset must stay inside its assets directory');
+  }
+  return url;
+}
+
+async function request(path, options = {}) {
   const headers = new Headers(options.headers || {});
-  if (options.body !== undefined) headers.set('Content-Type', 'application/json');
-  const response = await fetch(`${apiBase}${path}`, {
-    ...options,
-    headers,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
-  });
+  let body = options.body;
+  if (body != null && !(body instanceof FormData) && typeof body !== 'string') {
+    headers.set('Content-Type', 'application/json');
+    body = JSON.stringify(body);
+  }
+  headers.set('Accept', 'application/json');
+  const response = await fetch(scopedURL(path), { ...options, body, headers, credentials: 'same-origin' });
   if (response.status === 204) return null;
-  const envelope = await response.json();
-  if (!response.ok) throw new Error(envelope.error?.message || `HTTP ${response.status}`);
-  return envelope.data;
+  const type = response.headers.get('content-type') || '';
+  const payload = type.includes('application/json') ? await response.json() : null;
+  if (!response.ok) {
+    const error = payload?.error || {};
+    const failure = new Error(error.message || response.statusText || `HTTP ${response.status}`);
+    failure.status = response.status;
+    failure.code = error.code;
+    throw failure;
+  }
+  return payload?.data ?? payload;
+}
+
+const transport = {
+  request,
+  fetchImpl: (path, options = {}) => fetch(scopedURL(path), { credentials: 'same-origin', ...options }),
+  apiURL: path => scopedURL(path).href,
+  websocketURL: path => {
+    const url = scopedURL(path);
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    return url.href;
+  },
 };
-const api = createAPI({ request, apiURL: path => `${apiBase}${path}` });
+
+function href(path) {
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) {
+    throw new TypeError('module navigation path must start with a single /');
+  }
+  return `#${path}`;
+}
+
+function navigate(path, { replace = false } = {}) {
+  const target = href(path);
+  if (replace) {
+    history.replaceState(null, '', target);
+    dispatchEvent(new Event('hashchange'));
+  } else {
+    location.hash = target.slice(1);
+  }
+}
+
+function readLocation() {
+  const source = location.hash.startsWith('#') ? location.hash.slice(1) : location.hash;
+  const url = new URL(source || '/', location.origin);
+  return { pathname: url.pathname, search: url.searchParams };
+}
+
+function matchRoute(route, pathname) {
+  const expected = route.split('/').filter(Boolean);
+  const actual = pathname.split('/').filter(Boolean);
+  if (expected.length !== actual.length) return null;
+  const params = {};
+  for (let i = 0; i < expected.length; i += 1) {
+    let segment;
+    try { segment = decodeURIComponent(actual[i]); } catch { return null; }
+    if (expected[i].startsWith(':')) params[expected[i].slice(1)] = segment;
+    else if (expected[i] !== segment) return null;
+  }
+  return params;
+}
+
+function findRoute(routes, pathname) {
+  let best = null;
+  let score = -1;
+  for (const route of routes) {
+    const params = matchRoute(route.path, pathname);
+    if (params === null) continue;
+    const next = route.path.split('/').filter(Boolean).filter(segment => !segment.startsWith(':')).length;
+    if (next > score) {
+      best = { route, params };
+      score = next;
+    }
+  }
+  return best;
+}
+
+function loadStyles(styles = []) {
+  for (const path of styles) {
+    const url = assetURL(path);
+    if ([...document.querySelectorAll('link[data-module-style]')].some(link => link.href === url.href)) continue;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = url.href;
+    link.dataset.moduleStyle = moduleID;
+    document.head.append(link);
+  }
+}
+
+async function loadDefinition() {
+  const response = await fetch(new URL('manifest.json', moduleRoot), {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  });
+  if (!response.ok) throw new Error(`module manifest failed (${response.status})`);
+  const manifest = await response.json();
+  if (manifest.contractVersion !== 1 || manifest.id !== moduleID || typeof manifest.entry !== 'string') {
+    throw new Error('invalid module manifest');
+  }
+  loadStyles(manifest.styles);
+  document.title = manifest.title || manifest.id;
+  const runtime = (await import(assetURL(manifest.entry).href)).default;
+  if (!runtime || runtime.id !== manifest.id || !Array.isArray(runtime.routes) || typeof runtime.createAPI !== 'function') {
+    throw new Error('invalid module runtime');
+  }
+  for (const key of ['title', 'icon', 'group', 'entry', 'home', 'navigation', 'styles']) {
+    if (Object.hasOwn(runtime, key)) throw new Error(`module metadata ${key} belongs in manifest.json`);
+  }
+  return { manifest, runtime, api: runtime.createAPI(transport) };
+}
 
 function App() {
-  const [projects, setProjects] = useState([]);
-  const [error, setError] = useState('');
-  const [name, setName] = useState('');
-  const [repo, setRepo] = useState('');
-  const [selected, setSelected] = useState(null);
-  const [deployments, setDeployments] = useState([]);
-  const [secret, setSecret] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [definition, setDefinition] = useState(null);
+  const [definitionError, setDefinitionError] = useState('');
+  const [locationKey, setLocationKey] = useState(location.hash);
+  const [loaded, setLoaded] = useState(null);
+  const [loadError, setLoadError] = useState('');
 
-  const load = async () => {
-    try { setProjects(await api.list()); setError(''); }
-    catch (cause) { setError(cause.message); }
-  };
-  useEffect(() => { load(); }, []);
-  const selectProject = async project => {
-    setSelected(project);
-    setSecret('');
-    try { setDeployments(await api.deployments(project.id)); }
-    catch (cause) { setError(cause.message); }
-  };
-  const create = async event => {
-    event.preventDefault(); setBusy(true);
-    try {
-      const result = await api.create({ name, repo, webhook_branch: 'main' });
-      setName(''); setRepo('');
-      if (result.webhook_secret_once) setSecret(result.webhook_secret_once);
-      await load();
-    } catch (cause) { setError(cause.message); }
-    finally { setBusy(false); }
-  };
-  const start = async () => {
-    if (!selected) return;
-    setBusy(true);
-    try { await api.start(selected.id); await selectProject(selected); }
-    catch (cause) { setError(cause.message); }
-    finally { setBusy(false); }
-  };
-  const remove = async project => {
-    if (!confirm(`删除项目“${project.name}”及其部署记录？`)) return;
-    try { await api.remove(project.id); if (selected?.id === project.id) setSelected(null); await load(); }
-    catch (cause) { setError(cause.message); }
-  };
+  useEffect(() => {
+    let active = true;
+    loadDefinition()
+      .then(value => { if (active) setDefinition(value); })
+      .catch(error => { if (active) setDefinitionError(error.message || 'module failed to load'); });
+    return () => { active = false; };
+  }, []);
 
-  return html`<div>
-    <header><h1>项目部署</h1><p>管理 Git 仓库并查看部署状态。</p></header>
-    ${error && html`<p class="error" role="alert">${error}</p>`}
-    ${secret && html`<section class="notice-card"><strong>Webhook Secret（仅显示一次）</strong><pre>${secret}</pre></section>`}
-    <section class="section">
-      <h2>新建项目</h2>
-      <form onSubmit=${create}>
-        <div class="form-group"><label>项目名称</label><input class="input" required value=${name} onInput=${event => setName(event.currentTarget.value)} /></div>
-        <div class="form-group"><label>Git 仓库</label><input class="input" required value=${repo} onInput=${event => setRepo(event.currentTarget.value)} placeholder="https://github.com/owner/repo.git" /></div>
-        <button class="button button-primary" disabled=${busy}>创建项目</button>
-      </form>
-    </section>
-    <section class="section">
-      <h2>项目</h2>
-      ${projects.length ? html`<div class="table-wrap"><table class="table"><thead><tr><th>名称</th><th>仓库</th><th>操作</th></tr></thead><tbody>
-        ${projects.map(project => html`<tr key=${project.id}><td>${project.name}</td><td>${project.repo}</td><td><button class="button" onclick=${() => selectProject(project)}>部署详情</button> <button class="button button-danger" onclick=${() => remove(project)}>删除</button></td></tr>`)}
-      </tbody></table></div>` : html`<p>还没有项目。</p>`}
-    </section>
-    ${selected && html`<section class="section"><h2>${selected.name} 的部署</h2><button class="button button-primary" disabled=${busy} onclick=${start}>立即部署</button>
-      ${deployments.length ? html`<ul>${deployments.map(item => html`<li key=${item.id}>#${item.id} · ${item.status} · ${item.commit_msg || item.commit || item.triggered_by}</li>`)}</ul>` : html`<p>暂无部署记录。</p>`}
-    </section>`}
-  </div>`;
+  useEffect(() => {
+    const update = () => setLocationKey(location.hash);
+    addEventListener('hashchange', update);
+    return () => removeEventListener('hashchange', update);
+  }, []);
+
+  const current = readLocation();
+  const pathname = current.pathname === '/' ? (definition?.manifest.home || '/') : current.pathname;
+  const matched = definition ? findRoute(definition.runtime.routes, pathname) : null;
+  const routeKey = matched ? `${matched.route.path}:${pathname}` : '';
+
+  useEffect(() => {
+    let active = true;
+    setLoaded(null);
+    setLoadError('');
+    if (!matched) return () => { active = false; };
+    matched.route.load()
+      .then(value => { if (active) setLoaded({ key: routeKey, Page: value.default }); })
+      .catch(error => { if (active) setLoadError(error.message || 'page failed to load'); });
+    return () => { active = false; };
+  }, [routeKey, locationKey]);
+
+  const Page = loaded?.key === routeKey ? loaded.Page : null;
+  const manifest = definition?.manifest;
+  return html`<main class="module-standalone">
+    <header class="page-toolbar"><h1>${manifest?.title || moduleID}</h1></header>
+    ${manifest?.navigation?.length ? html`<nav class="button-group">${manifest.navigation.map(item => html`<a class="button" href=${href(item.path)}>${item.title}</a>`)}</nav>` : null}
+    ${definitionError ? html`<div class="notice-card error" role="alert">${definitionError}</div>` : null}
+    ${definition && !matched ? html`<div class="notice-card">页面不存在</div>` : null}
+    ${loadError ? html`<div class="notice-card error" role="alert">${loadError}</div>` : null}
+    ${definition && matched && !Page && !loadError ? html`<div class="loading-state">加载中…</div>` : null}
+    ${Page ? html`<${Page} api=${definition.api} params=${matched.params} search=${current.search} navigate=${navigate} href=${href} ...${matched.route.props || {}} />` : null}
+  </main>`;
 }
 
 render(html`<${App} />`, document.getElementById('app'));
