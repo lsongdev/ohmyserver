@@ -241,3 +241,39 @@ func TestDHCPReservationTableMigratesToStaticLeases(t *testing.T) {
 		t.Fatal("legacy reservations table was not removed")
 	}
 }
+
+
+func TestDHCPSettingsRemainAuthoritativeForHostState(t *testing.T) {
+	s := newNetworkServicesTestServer(t)
+	settings, err := s.dhcpRepository().Settings(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings.Enabled = true
+	settings.ListenAddr = "127.0.0.1:9000"
+	if err := s.dhcpRepository().UpdateSettings(t.Context(), *settings); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.setServiceDesired("dhcp", false); err != nil {
+		t.Fatal(err)
+	}
+
+	conflicts, err := s.configuredServiceConflicts("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(conflicts) == 0 {
+		t.Fatal("enabled DHCP settings were ignored because the host preference mirror was stale")
+	}
+
+	if err := s.ensureServicePreferences(); err != nil {
+		t.Fatal(err)
+	}
+	preference, err := s.getServicePreference("dhcp", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !preference.Enabled {
+		t.Fatal("DHCP host preference mirror was not synchronized from module settings")
+	}
+}
