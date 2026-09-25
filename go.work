@@ -1,0 +1,36 @@
+go 1.26.1
+
+use (
+	.
+	./modules/acme
+	./modules/clash
+	./modules/cron
+	./modules/dashboard
+	./modules/dhcp
+	./modules/disks
+	./modules/dns
+	./modules/docker
+	./modules/esxi
+	./modules/files
+	./modules/forward
+	./modules/idrac
+	./modules/ipmi
+	./modules/monitor
+	./modules/ntp
+	./modules/openwrt
+	./modules/packages
+	./modules/projects
+	./modules/pve
+	./modules/settings
+	./modules/speedtest
+	./modules/ssh
+	./modules/system
+	./modules/terminal
+	./modules/uptime
+	./modules/webserver
+	./modules/widgets
+	./modules/yeelight
+	./pkg/moduleweb
+	./pkg/terminal
+	./tests/module-smoke/docker-host
+)

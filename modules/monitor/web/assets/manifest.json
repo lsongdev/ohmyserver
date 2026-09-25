@@ -1,0 +1,18 @@
+{
+  "contractVersion": 1,
+  "id": "monitor",
+  "title": "主机监控",
+  "icon": "⌁",
+  "group": "概览",
+  "entry": "assets/module.js",
+  "styles": [
+    "assets/monitor.css"
+  ],
+  "home": "/hosts",
+  "navigation": [
+    {
+      "title": "主机",
+      "path": "/hosts"
+    }
+  ]
+}

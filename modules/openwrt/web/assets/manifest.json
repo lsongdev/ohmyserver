@@ -1,0 +1,18 @@
+{
+  "contractVersion": 1,
+  "id": "openwrt",
+  "title": "OpenWrt",
+  "icon": "⌁",
+  "group": "设备与 IoT",
+  "entry": "assets/module.js",
+  "styles": [
+    "assets/openwrt.css"
+  ],
+  "home": "/routers",
+  "navigation": [
+    {
+      "title": "路由器",
+      "path": "/routers"
+    }
+  ]
+}

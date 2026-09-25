@@ -1,0 +1,18 @@
+.button.button-link{min-height:0;padding:0;color:#2760b7;background:transparent;border:0;border-radius:0;font-size:inherit}
+.button.button-link:hover{color:#1748a4;background:transparent;text-decoration:underline}
+.button.button-link.button-danger{color:#b42318}
+.button.button-link:disabled{color:#98a2b3;cursor:wait;text-decoration:none}
+.button.icon-button{display:grid;width:34px;height:34px;min-height:34px;padding:0;color:#526176;background:transparent;border:0;border-radius:8px}
+.button.icon-button:hover{color:#26364e;background:#f0f3f8}
+.back-link{margin-bottom:16px}
+.table-actions{white-space:nowrap}
+.table-actions .button+.button{margin-left:8px}
+.toolbar-actions{display:flex;align-items:center;gap:8px}
+.button.button-secondary{color:#394b63;background:#fff;border-color:#cfd6e0}
+.button.button-secondary:hover{background:#f4f6f9}
+.form-actions{display:flex;gap:8px;margin-top:16px}
+.inline-form{display:flex;gap:8px;margin-bottom:14px}
+.inline-form .input{flex:1;min-width:0}
+.operation-log{max-height:180px;overflow:auto;padding:12px;background:#17212f;color:#d8e2f0;border-radius:8px;font-size:11px;white-space:pre-wrap}
+.container-log{max-height:420px;min-height:80px}
+.error-text{color:#b42318;font-size:12px}

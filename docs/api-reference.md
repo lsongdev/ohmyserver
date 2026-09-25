@@ -1,4 +1,8 @@
-# API Reference
+# Legacy API Reference (Pre-v1)
+
+> This document describes the former template-era API and is retained only as historical material. Those routes are no longer mounted. Use [API v1 Reference](api-v1.md) for the current API.
+
+## Historical content
 
 This document provides comprehensive documentation for the OhMyServer REST API.
 

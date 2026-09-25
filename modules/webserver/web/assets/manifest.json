@@ -1,0 +1,26 @@
+{
+  "contractVersion": 1,
+  "id": "webserver",
+  "title": "Web Server",
+  "icon": "⇥",
+  "group": "网络服务",
+  "entry": "assets/module.js",
+  "styles": [
+    "assets/webserver.css"
+  ],
+  "home": "/listeners",
+  "navigation": [
+    {
+      "title": "Listeners",
+      "path": "/listeners"
+    },
+    {
+      "title": "Policies",
+      "path": "/policies"
+    },
+    {
+      "title": "Virtual Hosts",
+      "path": "/hosts"
+    }
+  ]
+}
