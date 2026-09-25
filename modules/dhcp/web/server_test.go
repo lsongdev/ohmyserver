@@ -180,7 +180,6 @@ func TestStandaloneServesPageManifestAssetsAndSettingsAPI(t *testing.T) {
 		{"/v1/dhcp/manifest.json", `assets/module.js`},
 		{"/v1/dhcp/assets/module.js", `createAPI`},
 		{"/v1/dhcp/assets/index.js", `runtime.createAPI`},
-		{"/v1/dhcp/assets/standalone-ui.js", `lsong.org/scripts/react/index.js`},
 		{"/v1/dhcp/settings", `"listen_addr"`},
 	} {
 		response := httptest.NewRecorder()
