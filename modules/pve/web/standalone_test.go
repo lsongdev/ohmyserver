@@ -30,7 +30,7 @@ func TestStandaloneServesPageManifestModuleAndAPI(t *testing.T) {
 		t.Fatal(e)
 	}
 	h := New(NewLocalService(repo)).StandaloneHandler()
-	for _, tc := range []struct{ path, contains string }{{"/", "/v1/pve/assets/index.js"}, {"/v1/pve/manifest.json", "assets/module.js"}, {"/v1/pve/assets/module.js", "defineModule"}, {"/v1/pve/assets/index.js", "lsong.org/scripts/react/index.js"}, {"/v1/pve/servers", `"data":[]`}} {
+	for _, tc := range []struct{ path, contains string }{{"/", "/v1/pve/assets/index.js"}, {"/v1/pve/manifest.json", "assets/module.js"}, {"/v1/pve/assets/module.js", "createAPI"}, {"/v1/pve/assets/index.js", "lsong.org/scripts/react/index.js"}, {"/v1/pve/servers", `"data":[]`}} {
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, httptest.NewRequest(http.MethodGet, tc.path, nil))
 		if w.Code != 200 || !strings.Contains(w.Body.String(), tc.contains) {
