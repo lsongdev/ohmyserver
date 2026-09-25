@@ -70,7 +70,10 @@ func (s *Server) ensureServicePreferences() error {
 			return err
 		}
 	}
-	return nil
+	// DHCP owns its enabled state. Keep the host preference row as a mirror
+	// for status/error presentation, never as an independent source of truth.
+	_, err := s.db.Exec(`UPDATE service_preferences SET enabled=?, updated_at=? WHERE service_id='dhcp'`, dhcpEnabled, time.Now())
+	return err
 }
 
 func (s *Server) getServicePreference(id string, fallback bool) (ServicePreference, error) {
@@ -231,12 +234,12 @@ func (s *Server) configuredServiceConflicts(includeDisabled string) ([]ServiceCo
 		}
 		add("NTP Server", "udp", settings.ListenAddr)
 	}
-	if enabled("dhcp", false) {
-		settings, err := s.dhcpRepository().Settings(context.Background())
-		if err != nil {
-			return nil, err
-		}
-		add("DHCP Server", "udp", settings.ListenAddr)
+	dhcpSettings, err := s.dhcpRepository().Settings(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	if includeDisabled == "dhcp" || dhcpSettings.Enabled {
+		add("DHCP Server", "udp", dhcpSettings.ListenAddr)
 	}
 	if enabled("web", true) {
 		listeners, err := s.WebServerRepository().ListListeners(context.Background())
