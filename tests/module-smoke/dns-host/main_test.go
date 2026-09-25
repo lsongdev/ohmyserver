@@ -38,7 +38,7 @@ func TestExternalHostLoadsDNSReleaseAndServesModuleResources(t *testing.T) {
 
 	for _, test := range []struct{ path, body string }{
 		{"/v1/dns/manifest.json", `"id": "dns"`},
-		{"/v1/dns/assets/module.js", "defineModule"},
+		{"/v1/dns/assets/module.js", "createAPI"},
 		{"/v1/dns/zones", `"data":[]`},
 	} {
 		response, err := http.Get(host.URL + test.path)

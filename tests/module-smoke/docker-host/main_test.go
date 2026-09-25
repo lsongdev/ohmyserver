@@ -30,7 +30,7 @@ func TestStandaloneHostServesModuleManifestAssetsAndAPI(t *testing.T) {
 		body string
 	}{
 		{path: "/v1/docker/manifest.json", body: `"id": "docker"`},
-		{path: "/v1/docker/assets/module.js", body: "defineModule"},
+		{path: "/v1/docker/assets/module.js", body: "createAPI"},
 		{path: "/v1/docker/containers", body: `"data":[]`},
 	} {
 		t.Run(test.path, func(t *testing.T) {

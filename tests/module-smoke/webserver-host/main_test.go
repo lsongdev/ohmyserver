@@ -37,7 +37,7 @@ func TestExternalHostLoadsWebServerReleaseAndServesResources(t *testing.T) {
 
 	for _, test := range []struct{ path, body string }{
 		{"/v1/webserver/manifest.json", `"id": "webserver"`},
-		{"/v1/webserver/assets/module.js", "defineModule"},
+		{"/v1/webserver/assets/module.js", "createAPI"},
 		{"/v1/webserver/listeners", `"data":[]`},
 		{"/v1/webserver/policies", `"data":[]`},
 	} {

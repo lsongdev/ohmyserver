@@ -33,7 +33,7 @@ func TestExternalHostLoadsIDRACReleaseAndServesModuleResources(t *testing.T) {
 
 	for _, test := range []struct{ path, body string }{
 		{"/v1/idrac/manifest.json", `"id": "idrac"`},
-		{"/v1/idrac/assets/module.js", "defineModule"},
+		{"/v1/idrac/assets/module.js", "createAPI"},
 		{"/v1/idrac/servers", `"data":[]`},
 	} {
 		response, err := http.Get(host.URL + test.path)

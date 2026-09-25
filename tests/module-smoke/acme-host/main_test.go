@@ -38,7 +38,7 @@ func TestExternalHostLoadsACMEReleaseAndServesModuleResources(t *testing.T) {
 
 	for _, test := range []struct{ path, body string }{
 		{"/v1/acme/manifest.json", `"id": "acme"`},
-		{"/v1/acme/assets/module.js", "defineModule"},
+		{"/v1/acme/assets/module.js", "createAPI"},
 		{"/v1/acme/certificates", `"data":[]`},
 	} {
 		response, err := http.Get(host.URL + test.path)
