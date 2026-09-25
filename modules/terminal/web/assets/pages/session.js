@@ -5,7 +5,7 @@ import { html } from '@panel/shared/ui.js';
 
 const labels = { local: '本机终端', ssh: 'SSH 终端', docker: '容器终端' };
 
-export default function TerminalSession({ api, kind, params = {}, navigate }) {
+export default function TerminalSession({ api, kind, params = {}, hrefTo }) {
   const host = useRef(null), termRef = useRef(null), fitRef = useRef(null), socketRef = useRef(null);
   const [status, setStatus] = useState('正在连接…'), [error, setError] = useState(''), [sessionVersion, setSessionVersion] = useState(0);
   const id = params.id || '';
@@ -57,7 +57,7 @@ export default function TerminalSession({ api, kind, params = {}, navigate }) {
   const title = labels[kind] || '终端';
   return html`<section class="terminal-page card">
     <div class="page-toolbar"><div><h2>${title}${id ? ` · ${id}` : ''}</h2><span class="muted" role="status">${status}</span></div>
-      <div class="button-group"><button class="button" onClick=${clear}>清屏</button><button class="button" onClick=${reconnect}>重新连接</button>${kind !== 'local' ? html`<button class="button" onClick=${() => navigate(kind === 'ssh' ? '/ssh/servers' : '/docker/containers')}>返回</button>` : null}</div>
+      <div class="button-group"><button class="button" onClick=${clear}>清屏</button><button class="button" onClick=${reconnect}>重新连接</button>${kind !== 'local' && hrefTo ? html`<a class="button" href=${hrefTo(kind, kind === 'ssh' ? '/servers' : '/containers')}>返回</a>` : null}</div>
     </div>
     ${error ? html`<div class="notice-card error" role="alert">${error}</div>` : null}
     <div class="terminal-viewport" ref=${host} onClick=${() => termRef.current?.focus()}></div>

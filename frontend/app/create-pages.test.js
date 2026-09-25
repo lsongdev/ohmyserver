@@ -76,3 +76,26 @@ test('module pages never embed their host page prefix in navigation', () => {
     }
   }
 });
+
+
+test('cross-module links use the explicit host capability', () => {
+  const moduleNames = readdirSync(modulesDir, { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name);
+  for (const moduleEntry of readdirSync(modulesDir, { withFileTypes: true })) {
+    if (!moduleEntry.isDirectory()) continue;
+    const pagesDir = resolve(modulesDir, moduleEntry.name, 'web/assets/pages');
+    let pages;
+    try { pages = readdirSync(pagesDir, { withFileTypes: true }); } catch { continue; }
+    for (const page of pages) {
+      if (!page.isFile() || !page.name.endsWith('.js')) continue;
+      const source = readFileSync(resolve(pagesDir, page.name), 'utf8');
+      for (const target of moduleNames) {
+        if (target === moduleEntry.name) continue;
+        for (const fn of ['navigate', 'href']) {
+          for (const quote of ["'", '"', '`']) {
+            assert.equal(source.includes(fn + '(' + quote + '/' + target + '/'), false, moduleEntry.name + '/' + page.name + ' must use hrefTo() for cross-module navigation');
+          }
+        }
+      }
+    }
+  }
+});

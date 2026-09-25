@@ -112,3 +112,17 @@ test('every module API client starts with host-scoped transport capabilities', a
     assert.ok(createAPI(transport), `${dir.name} accepts the host transport`);
   }
 });
+
+
+test('standalone modules use one thin host and keep feature UI in pages', () => {
+  const moduleDirs = readdirSync(resolve(repositoryRoot, 'modules'), { withFileTypes: true }).filter(entry => entry.isDirectory());
+  let baseline = null;
+  for (const dir of moduleDirs) {
+    const { assetRoot } = moduleWebLayout(dir.name);
+    const source = readFileSync(resolve(assetRoot, 'index.js'), 'utf8');
+    if (baseline === null) baseline = source;
+    assert.equal(source, baseline, dir.name + ' must use the common standalone host source');
+    assert.match(source, /manifest\.json/);
+    assert.match(source, /runtime\.routes/);
+  }
+});

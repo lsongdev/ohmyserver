@@ -1,5 +1,3 @@
-import { requestPlaceholder } from '../shared/placeholder-page.js';
-
 const hostConfig = globalThis.OhMyServerConfig || {};
 const apiRoot = (hostConfig.apiBase || '/v1').replace(/\/$/, '');
 const origin = globalThis.location?.origin || 'http://localhost';
@@ -46,20 +44,13 @@ function resolveAsset(path, moduleBase) {
 
 export async function loadModuleRuntime(module) {
   const runtime = (await import(module.moduleURL)).default;
-  if (!runtime || runtime.id !== module.id || !Array.isArray(runtime.routes)) throw new Error(`模块 ${module.id} JS 启动契约无效`);
+  if (!runtime || runtime.id !== module.id || !Array.isArray(runtime.routes) || typeof runtime.createAPI !== 'function') throw new Error(`模块 ${module.id} JS 启动契约无效`);
   for (const key of ['title', 'icon', 'group', 'entry', 'home', 'navigation', 'styles']) {
     if (Object.hasOwn(runtime, key)) throw new Error(`模块 ${module.id} 的 ${key} 元数据只能声明在 manifest.json`);
   }
-  const routes = [...runtime.routes];
-  for (const item of module.navigation || []) {
-    if (!routes.some(route => route.path === item.path)) {
-      routes.push({ path: item.path, load: () => Promise.resolve({ default: requestPlaceholder }) });
-    }
-  }
-  if (!routes.length) routes.push({ path: module.home || '/', load: () => Promise.resolve({ default: requestPlaceholder }) });
   return {
     ...module,
-    routes,
-    createAPI: runtime.createAPI || (({ request }) => ({ request })),
+    routes: [...runtime.routes],
+    createAPI: runtime.createAPI,
   };
 }
