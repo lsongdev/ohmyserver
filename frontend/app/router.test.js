@@ -34,6 +34,6 @@ describe('module-scoped navigation', () => {
 
   it('rejects host-prefixed module paths instead of supporting compatibility mode', () => {
     assert.throws(() => scopeModulePath('/dhcp', '/dhcp/leases'), /relative to the module root/);
-    assert.throws(() => scopeModulePath('/dhcp', 'leases'), /single \/);
+    assert.throws(() => scopeModulePath('/dhcp', 'leases'), /single \//);
   });
 });
