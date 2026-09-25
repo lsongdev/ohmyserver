@@ -1,7 +1,6 @@
-import { defineModule } from '@panel/shared/module.js';
 import { createAPI } from './api.js';
 
-export default defineModule({
+export default {
   id: 'openwrt', createAPI,
   routes: [
     { path: '/routers', load: () => import('./pages/routers.js') },
@@ -10,4 +9,4 @@ export default defineModule({
     { path: '/routers/:id', load: () => import('./pages/router-section.js') },
     ...['overview', 'network', 'dhcp', 'packages', 'firewall', 'services'].map(section => ({ path: `/routers/:id/${section}`, load: () => import('./pages/router-section.js'), props: { section } })),
   ],
-});
+};
