@@ -35,7 +35,7 @@ func TestExternalHostLoadsCronReleaseAndServesModuleResources(t *testing.T) {
 
 	for _, test := range []struct{ path, body string }{
 		{"/v1/cron/manifest.json", `"id": "cron"`},
-		{"/v1/cron/assets/module.js", "defineModule"},
+		{"/v1/cron/assets/module.js", "createAPI"},
 		{"/v1/cron/jobs", `"data":[]`},
 	} {
 		response, err := http.Get(host.URL + test.path)

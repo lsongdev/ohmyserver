@@ -33,7 +33,7 @@ func TestExternalHostLoadsIPMIReleaseAndServesModuleResources(t *testing.T) {
 
 	for _, test := range []struct{ path, body string }{
 		{"/v1/ipmi/manifest.json", `"id": "ipmi"`},
-		{"/v1/ipmi/assets/module.js", "defineModule"},
+		{"/v1/ipmi/assets/module.js", "createAPI"},
 		{"/v1/ipmi/servers", `"data":[]`},
 	} {
 		response, err := http.Get(host.URL + test.path)

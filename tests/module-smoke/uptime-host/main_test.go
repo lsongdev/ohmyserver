@@ -34,7 +34,7 @@ func TestExternalHostLoadsUptimeReleaseAndServesResources(t *testing.T) {
 
 	for _, test := range []struct{ path, body string }{
 		{"/v1/uptime/manifest.json", `"id": "uptime"`},
-		{"/v1/uptime/assets/module.js", "defineModule"},
+		{"/v1/uptime/assets/module.js", "createAPI"},
 		{"/v1/uptime/monitors", `"data":[]`},
 	} {
 		response, err := http.Get(host.URL + test.path)

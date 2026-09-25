@@ -18,7 +18,7 @@ func TestExternalHostLoadsTerminalReleaseAndServesResources(t *testing.T) {
 
 	for _, test := range []struct{ path, body string }{
 		{"/v1/terminal/manifest.json", `"id": "terminal"`},
-		{"/v1/terminal/assets/module.js", "defineModule"},
+		{"/v1/terminal/assets/module.js", "createAPI"},
 	} {
 		response, err := http.Get(host.URL + test.path)
 		if err != nil {
