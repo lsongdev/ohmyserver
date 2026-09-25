@@ -22,8 +22,6 @@ jobs:
       run: |
         echo "version=nightly-$(date -u +'%Y%m%d')-${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
         echo "build_time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
-    - name: Build
-      run: make build VERSION="${{ env.version }}" COMMIT="${GITHUB_SHA}" BUILD_TIME="${{ env.build_time }}"
     - name: Test host
       run: go test ./...
     - name: Test frontend contracts
@@ -55,6 +53,8 @@ jobs:
         tests/module-smoke/run-release-smoke.sh uptime
         tests/module-smoke/run-release-smoke.sh terminal
         tests/module-smoke/run-release-smoke.sh webserver
+    - name: Build
+      run: make build VERSION="${{ env.version }}" COMMIT="${GITHUB_SHA}" BUILD_TIME="${{ env.build_time }}"
     - name: Upload Release
       if: github.event_name == 'push'
       uses: softprops/action-gh-release@v3
