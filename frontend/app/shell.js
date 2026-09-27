@@ -6,6 +6,35 @@ import { createModuleTransport, createRequest } from '../shared/http.js';
 import { href, matchModuleRoute, navigate, readLocation, scopeModulePath } from './router.js';
 
 const groupOrder = ['概览', '容器与部署', '网络服务', '基础设施', '存储与系统', '设备与 IoT'];
+const runtimeLoads = new Map();
+const pageLoads = new Map();
+const pageComponents = new Map();
+
+function getModuleRuntime(module) {
+  if (!runtimeLoads.has(module.id)) {
+    const pending = loadModuleRuntime(module).catch(error => {
+      runtimeLoads.delete(module.id);
+      throw error;
+    });
+    runtimeLoads.set(module.id, pending);
+  }
+  return runtimeLoads.get(module.id);
+}
+
+function getPageComponent(module, page) {
+  const key = pageKey(module, page);
+  if (!pageLoads.has(key)) {
+    const pending = page.load().then(loadedPage => {
+      pageComponents.set(key, loadedPage.default);
+      return loadedPage.default;
+    }).catch(error => {
+      pageLoads.delete(key);
+      throw error;
+    });
+    pageLoads.set(key, pending);
+  }
+  return pageLoads.get(key);
+}
 
 function resolve(hash, modules) {
   const location = readLocation(hash);
@@ -60,7 +89,7 @@ export function Shell() {
       return;
     }
     let active = true;
-    loadModuleRuntime(current.module).then(runtime => {
+    getModuleRuntime(current.module).then(runtime => {
       if (active) setModules(items => items.map(item => item.id === runtime.id ? runtime : item));
     }).catch(error => { if (active) setLoadError(error.message || '无法加载模块 JS'); });
     return () => { active = false; };
@@ -80,8 +109,8 @@ export function Shell() {
     setLoaded(null);
     setLoadError('');
     if (!activeModule || !current.page) return () => { active = false; };
-    current.page.load().then(component => {
-      if (active) setLoaded({ key: currentPageKey, component: component.default });
+    getPageComponent(activeModule, current.page).then(component => {
+      if (active) setLoaded({ key: currentPageKey, component });
     }).catch(error => {
       if (active) setLoadError(error.message || '无法加载模块页面');
     });
@@ -94,10 +123,22 @@ export function Shell() {
     .filter(group => group.items.length);
   const currentPath = current.location.pathname;
   const localLinks = current.module?.navigation || [];
-  const title = current.module?.title || '页面不存在';
+  const title = current.module?.title || (modules.length ? '页面不存在' : 'OhMyServer');
   // Route state changes render before effects run. Never pass the new module
   // API to the previous page component during that intermediate render.
-  const Page = pageForRoute(loaded, currentPageKey);
+  const Page = pageComponents.get(currentPageKey) || pageForRoute(loaded, currentPageKey);
+
+  const warmModule = module => {
+    if (!module || module.routes || module.manifestError) return;
+    getModuleRuntime(module).then(runtime => {
+      setModules(items => {
+        const current = items.find(item => item.id === runtime.id);
+        return current?.routes ? items : items.map(item => item.id === runtime.id ? runtime : item);
+      });
+      const home = matchModuleRoute(runtime.routes, module.home || '/');
+      if (home) getPageComponent(runtime, home.route).catch(() => {});
+    }).catch(() => {});
+  };
 
   const toggleSidebar = () => {
     if (matchMedia('(max-width: 800px)').matches) setMobileOpen(value => !value);
@@ -112,7 +153,7 @@ export function Shell() {
       <nav class="module-groups" aria-label="功能模块">
         ${groups.map(group => html`<section class="module-group" key=${group.title}>
           <h2>${group.title}</h2>
-          ${group.items.map(item => html`<a class=${`module-link ${item.id === current.module?.id ? 'active' : ''}`} href=${href(scopeModulePath(item.pageBase, item.home || '/'))} title=${item.title} key=${item.id}>
+          ${group.items.map(item => html`<a class=${`module-link ${item.id === current.module?.id ? 'active' : ''}`} href=${href(scopeModulePath(item.pageBase, item.home || '/'))} title=${item.title} key=${item.id} onMouseEnter=${() => warmModule(item)} onFocus=${() => warmModule(item)} onPointerDown=${() => warmModule(item)}>
             <span class="module-icon">${item.icon}</span><span class="module-label">${item.title}</span>
           </a>`)}
         </section>`)}
@@ -126,7 +167,7 @@ export function Shell() {
       ${current.module && localLinks.length ? html`<nav class="module-nav" aria-label=${`${title} 页面`}>
         ${localLinks.map(link => { const target = scopeModulePath(current.module.pageBase, link.path); return html`<a class=${currentPath === target ? 'active' : ''} href=${href(target)} key=${link.path}>${link.title || link.label}</a>`; })}
       </nav>` : null}
-      <section class="page-content" key=${currentPath}>
+      <section class="page-content">
         ${discoveryError ? html`<div class="notice-card error"><h2>模块发现失败</h2><p>${discoveryError}</p></div>` : null}
         ${!modules.length && !discoveryError ? html`<div class="loading-state" role="status">正在发现模块…</div>` : null}
         ${modules.length > 0 && !current.module ? html`<div class="notice-card"><h2>找不到这个页面</h2><p>请从左侧功能分组中选择一个模块。</p><a href="#/dashboard">返回概览</a></div>` : null}
@@ -135,7 +176,7 @@ export function Shell() {
         ${current.module && activeModule?.routes && !current.page ? html`<div class="notice-card"><h2>模块中没有此页面</h2><p>选择上方的模块页面继续操作。</p></div>` : null}
         ${loadError ? html`<div class="notice-card error"><h2>页面加载失败</h2><p>${loadError}</p><button class="button" onclick=${() => setRetryVersion(value => value + 1)}>重试</button></div>` : null}
         ${current.page && !Page && !loadError ? html`<div class="loading-state" role="status">正在加载${title}…</div>` : null}
-        ${Page ? html`<${Page} api=${api} params=${current.params} search=${current.location.search} navigate=${moduleNavigate} href=${moduleHref} hrefTo=${hrefTo} ...${current.page?.props || {}} />` : null}
+        ${Page ? html`<${Page} key=${currentPageKey} api=${api} params=${current.params} search=${current.location.search} navigate=${moduleNavigate} href=${moduleHref} hrefTo=${hrefTo} ...${current.page?.props || {}} />` : null}
       </section>
     </main>
   </div>`;
