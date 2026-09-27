@@ -1,8 +1,6 @@
 package host
 
 import (
-	"context"
-
 	"github.com/lsongdev/ohmyserver/buildinfo"
 	systemmodule "github.com/lsongdev/ohmyserver/modules/system"
 	systemweb "github.com/lsongdev/ohmyserver/modules/system/web"
@@ -30,14 +28,5 @@ func (s *Server) SystemModuleService() systemweb.Service {
 			},
 		},
 		StartedAt: s.startedAt,
-		Queue: func(ctx context.Context) error {
-			if err := ctx.Err(); err != nil {
-				return err
-			}
-			if s.scheduleUpdate == nil {
-				return systemmodule.ErrUpdateUnavailable
-			}
-			return s.scheduleUpdate()
-		},
 	})
 }

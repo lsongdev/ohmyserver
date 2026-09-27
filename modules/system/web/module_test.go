@@ -2,7 +2,6 @@ package web
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -10,37 +9,19 @@ import (
 )
 
 type testService struct {
-	info               Info
-	infoErr, updateErr error
-	check              bool
-	queued             bool
+	info    Info
+	infoErr error
 }
 
-func (s *testService) SystemInfo(_ context.Context, check bool) (Info, error) {
-	s.check = check
+func (s *testService) SystemInfo(_ context.Context) (Info, error) {
 	return s.info, s.infoErr
 }
-func (s *testService) QueueSystemUpdate(context.Context) error { s.queued = true; return s.updateErr }
 
 func TestInfoAPI(t *testing.T) {
 	service := &testService{info: Info{ProgramVersion: "v-test"}}
 	response := httptest.NewRecorder()
-	New(service).Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/info?check=1", nil))
-	if response.Code != http.StatusOK || !service.check {
-		t.Fatalf("status=%d check=%v", response.Code, service.check)
-	}
-}
-func TestUpdateAPIQueuesAndReportsErrors(t *testing.T) {
-	service := &testService{}
-	response := httptest.NewRecorder()
-	New(service).Handler().ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/update", nil))
-	if response.Code != http.StatusAccepted || !service.queued {
-		t.Fatalf("status=%d queued=%v", response.Code, service.queued)
-	}
-	service.updateErr = errors.New("unavailable")
-	response = httptest.NewRecorder()
-	New(service).Handler().ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/update", nil))
-	if response.Code != http.StatusInternalServerError {
+	New(service).Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/info", nil))
+	if response.Code != http.StatusOK {
 		t.Fatalf("status=%d", response.Code)
 	}
 }
