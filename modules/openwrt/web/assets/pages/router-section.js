@@ -5,7 +5,7 @@ const labels = { overview: '概览', network: '网络与 Wi-Fi', dhcp: 'DHCP 租
 function Value({ value }) {
   if (value == null) return html`<span class="muted">—</span>`;
   if (typeof value !== 'object') return String(value);
-  if (Array.isArray(value)) return value.length ? html`<div class="data-table-wrap"><table class="data-table"><thead><tr>${Object.keys(value[0] || {}).map(key => html`<th key=${key}>${key}</th>`)}</tr></thead><tbody>${value.map((row, index) => html`<tr key=${index}>${Object.keys(value[0] || {}).map(key => html`<td key=${key}><${Value} value=${row[key]} /></td>`)}</tr>`)}</tbody></table></div>` : html`<div class="empty-state">暂无数据</div>`;
+  if (Array.isArray(value)) return value.length ? html`<div class="table-wrap"><table class="table"><thead><tr>${Object.keys(value[0] || {}).map(key => html`<th key=${key}>${key}</th>`)}</tr></thead><tbody>${value.map((row, index) => html`<tr key=${index}>${Object.keys(value[0] || {}).map(key => html`<td key=${key}><${Value} value=${row[key]} /></td>`)}</tr>`)}</tbody></table></div>` : html`<div class="empty-state">暂无数据</div>`;
   return html`<dl class="openwrt-values">${Object.entries(value).map(([key, item]) => html`<div key=${key}><dt>${key.replaceAll('_', ' ')}</dt><dd><${Value} value=${item} /></dd></div>`)}</dl>`;
 }
 

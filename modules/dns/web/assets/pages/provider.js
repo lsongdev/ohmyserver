@@ -8,6 +8,6 @@ export default function Provider({api,params,href}){
   useEffect(()=>{const c=new AbortController();load(c.signal);return()=>c.abort()},[api,params.id]);
   const refresh=async()=>{setBusy(true);setError('');try{await load()}finally{setBusy(false)}};
   return html`<section><div class="page-toolbar"><div><a href=${href('/providers')}>DNS 服务商</a><h2>托管区域</h2></div><button class="button" disabled=${busy} onClick=${refresh}>刷新</button></div>${error?html`<div class="notice-card error" role="alert">${error}</div>`:null}
-    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>区域</th><th>区域 ID</th><th>创建时间</th><th></th></tr></thead><tbody>${zones.map(zone=>html`<tr key=${zone.id}><td>${zone.name}</td><td class="mono">${zone.id}</td><td>${zone.created_at||'—'}</td><td><a class="button" href=${href(`/providers/${params.id}/zones/${encodeProviderZone(zone.id)}`)}>管理记录</a></td></tr>`)}</tbody></table>${!zones.length&&!error?html`<div class="empty-state">没有可管理的托管区域</div>`:null}</div>
+    <div class="table-wrap"><table class="table"><thead><tr><th>区域</th><th>区域 ID</th><th>创建时间</th><th></th></tr></thead><tbody>${zones.map(zone=>html`<tr key=${zone.id}><td>${zone.name}</td><td class="mono">${zone.id}</td><td>${zone.created_at||'—'}</td><td><a class="button" href=${href(`/providers/${params.id}/zones/${encodeProviderZone(zone.id)}`)}>管理记录</a></td></tr>`)}</tbody></table>${!zones.length&&!error?html`<div class="empty-state">没有可管理的托管区域</div>`:null}</div>
   </section>`;
 }

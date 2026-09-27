@@ -6,6 +6,7 @@
   "group": "基础设施",
   "entry": "assets/module.js",
   "styles": [
+    "assets/standalone.css",
     "assets/terminal.css"
   ],
   "home": "/local",

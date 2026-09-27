@@ -6,6 +6,7 @@
   "group": "设备与 IoT",
   "entry": "assets/module.js",
   "styles": [
+    "assets/standalone.css",
     "assets/idrac.css"
   ],
   "home": "/",

@@ -28,7 +28,7 @@ export default function Containers({ api, navigate, href }) {
   return html`<div>
     <div class="page-toolbar"><h2>容器</h2><div class="toolbar-actions"><button class="button button-secondary" onclick=${() => navigate('/containers/new')}>创建容器</button><button class="button" onclick=${() => setRefresh(value => value + 1)}>刷新</button></div></div>
     ${error ? html`<div class="notice-card error" role="alert"><p>${error}</p></div>` : null}
-    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>名称</th><th>镜像</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+    <div class="table-wrap"><table class="table"><thead><tr><th>名称</th><th>镜像</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
       <tbody>${items.map(item => html`<tr key=${item.id}>
         <td><a class="resource-link" href=${href(`/containers/${encodeURIComponent(item.id)}`)}>${displayName(item.names)}</a><div class="muted mono">${item.id.slice(0, 12)}</div></td>
         <td>${item.image}</td><td><span class=${`status-pill ${item.state}`}>${item.status || item.state}</span></td>
