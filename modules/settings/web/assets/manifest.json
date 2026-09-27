@@ -5,7 +5,9 @@
   "icon": "⚙",
   "group": "存储与系统",
   "entry": "assets/module.js",
-  "styles": [],
+  "styles": [
+    "assets/standalone.css"
+  ],
   "home": "/",
   "navigation": [
     {

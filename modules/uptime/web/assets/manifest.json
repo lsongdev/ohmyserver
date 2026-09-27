@@ -6,6 +6,7 @@
   "group": "概览",
   "entry": "assets/module.js",
   "styles": [
+    "assets/standalone.css",
     "assets/uptime.css"
   ],
   "home": "/",

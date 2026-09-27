@@ -15,7 +15,7 @@ export default function Certificates({ api, navigate, href }) {
   return html`<div>
     <div class="page-toolbar"><h2>证书</h2><div class="button-group"><button class="button button-primary" onclick=${() => navigate('/certificates/new')}>申请证书</button><button class="button" onclick=${() => navigate('/certificates/csr')}>生成 CSR</button><button class="button" onclick=${() => setReload(value => value + 1)}>刷新</button></div></div>
     ${error ? html`<div class="notice-card error" role="alert"><p>${error}</p></div>` : null}
-    <div class="data-table-wrap"><table class="data-table"><thead><tr><th>域名</th><th>状态</th><th>有效期</th><th>创建时间</th></tr></thead>
+    <div class="table-wrap"><table class="table"><thead><tr><th>域名</th><th>状态</th><th>有效期</th><th>创建时间</th></tr></thead>
       <tbody>${items.map(item => html`<tr key=${item.id}>
         <td><a href=${href(`/certificates/${item.id}`)}>${item.common_name || item.domains?.[0] || `证书 #${item.id}`}</a><div class="muted">${(item.dns_names?.length ? item.dns_names : item.domains || []).join(', ')}</div></td>
         <td><span class=${`status-pill ${item.status === 'active' ? 'running' : ''}`}>${item.status}</span></td>
