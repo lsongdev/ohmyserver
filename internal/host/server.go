@@ -64,7 +64,6 @@ type Server struct {
 	projectDeployments           *projectsweb.DeploymentManager
 	projectDeploymentManagerOnce sync.Once
 	startedAt                    time.Time
-	scheduleUpdate               func() error
 	closeOnce                    sync.Once
 	closeErr                     error
 }

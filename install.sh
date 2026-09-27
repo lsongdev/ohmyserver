@@ -197,49 +197,14 @@ EOF
 install -m 0644 "$oms_unit_temp" "/etc/systemd/system/$oms_service_name.service"
 rm -f "$oms_unit_temp"
 
-oms_update_service_temp="$(mktemp)"
-cat >"$oms_update_service_temp" <<EOF
-[Unit]
-Description=Update OhMyServer from the latest verified GitHub release
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-User=root
-Group=root
-TimeoutStartSec=1h
-ExecStartPre=/usr/bin/rm -f /run/$oms_service_name/update
-ExecStart=$oms_install_path update apply
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectHome=true
-UMask=0027
-EOF
-install -m 0644 "$oms_update_service_temp" "/etc/systemd/system/$oms_service_name-update.service"
-rm -f "$oms_update_service_temp"
-
-oms_update_path_temp="$(mktemp)"
-cat >"$oms_update_path_temp" <<EOF
-[Unit]
-Description=Watch for OhMyServer update requests
-After=$oms_service_name.service
-
-[Path]
-PathExists=/run/$oms_service_name/update
-Unit=$oms_service_name-update.service
-
-[Install]
-WantedBy=multi-user.target
-EOF
-install -m 0644 "$oms_update_path_temp" "/etc/systemd/system/$oms_service_name-update.path"
-rm -f "$oms_update_path_temp"
+# Remove update units created by older installer versions.
+systemctl disable --now "$oms_service_name-update.path" "$oms_service_name-update.service" 2>/dev/null || true
+rm -f "/etc/systemd/system/$oms_service_name-update.path" "/etc/systemd/system/$oms_service_name-update.service"
 
 sudo -H -u "$oms_service_user" "$oms_install_path" --init-default-web
 
 systemctl daemon-reload
 systemctl enable "$oms_service_name.service"
-systemctl enable --now "$oms_service_name-update.path"
 systemctl restart "$oms_service_name.service"
 
 oms_attempt=0

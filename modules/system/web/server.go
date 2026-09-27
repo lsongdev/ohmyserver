@@ -11,7 +11,6 @@ import (
 type Service = system.Service
 type Info = system.Info
 type Credit = system.Credit
-type UpdateInfo = system.UpdateInfo
 type Module struct{ service Service }
 
 func New(service Service) *Module { return &Module{service: service} }
@@ -19,19 +18,12 @@ func (*Module) Name() string      { return "system" }
 func (m *Module) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /info", func(w http.ResponseWriter, r *http.Request) {
-		info, err := m.service.SystemInfo(r.Context(), r.URL.Query().Get("check") == "1")
+		info, err := m.service.SystemInfo(r.Context())
 		if err != nil {
 			systemProblem(w, err)
 			return
 		}
 		systemJSON(w, http.StatusOK, map[string]any{"data": info})
-	})
-	mux.HandleFunc("POST /update", func(w http.ResponseWriter, r *http.Request) {
-		if err := m.service.QueueSystemUpdate(r.Context()); err != nil {
-			systemProblem(w, err)
-			return
-		}
-		systemJSON(w, http.StatusAccepted, map[string]any{"data": map[string]string{"message": "update queued"}})
 	})
 	return wrapModuleWeb(mux)
 }
