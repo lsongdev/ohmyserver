@@ -26,7 +26,6 @@ import (
 	uptimemodule "github.com/lsongdev/ohmyserver/modules/uptime"
 	uptimeweb "github.com/lsongdev/ohmyserver/modules/uptime/web"
 	webmodule "github.com/lsongdev/ohmyserver/modules/webserver/web"
-	widgetsmodule "github.com/lsongdev/ohmyserver/modules/widgets/web"
 	yeelightweb "github.com/lsongdev/ohmyserver/modules/yeelight/web"
 )
 
@@ -49,7 +48,6 @@ func NewAPIModules(s *Server) (*app.Modules, error) {
 		dnsweb.New(s.DNSRepository(), s.DNSModuleService(), s.DNSListDirectory()),
 		uptimeweb.New(s.UptimeRepository(), uptimemodule.NewChecker(s.UptimeRepository())),
 		forwardmodule.New(s.ForwardRepository(), s.ForwardModuleService()),
-		widgetsmodule.New(s.WidgetsRepository()),
 		webmodule.New(s.WebServerModuleService()),
 		systemmodule.New(s.SystemModuleService()),
 		projectsweb.New(s.ProjectsRepository(), s.ProjectDeploymentManager()),

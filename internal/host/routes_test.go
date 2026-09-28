@@ -167,7 +167,6 @@ func TestHTTPBasePathMountsShellAssetsAndFeatureAPIs(t *testing.T) {
 		{path: "/panel/v1/modules", want: `"modules"`},
 		{path: "/panel/v1/docker/manifest.json", want: `"id": "docker"`},
 		{path: "/panel/v1/docker/assets/module.js", want: "createAPI"},
-		{path: "/panel/v1/widgets/widgets", want: `"data":[]`},
 	} {
 		response := httptest.NewRecorder()
 		request := httptest.NewRequest(http.MethodGet, test.path, nil)
@@ -249,7 +248,6 @@ func TestNewServerMountsFrontendAndFeatureAPIsWithIsolatedDatabase(t *testing.T)
 		{path: "/v1/modules", want: `"modules"`},
 		{path: "/v1/docker/manifest.json", want: `"id": "docker"`},
 		{path: "/v1/docker/assets/docker.css", want: ".app-card"},
-		{path: "/v1/widgets/widgets", want: `"data":[]`},
 		{path: "/v1/dashboard/overview", want: `"system":{"hostname"`},
 		{path: "/v1/acme/providers", want: `"data"`},
 		{path: "/v1/acme/certificates", want: `"data"`},
