@@ -24,7 +24,7 @@ export default function CreateDockerResource({ api, kind, title, navigate }) {
     <label for=${`docker-${key}`}>${label}</label>
     <input class="input" id=${`docker-${key}`} name=${key} value=${values[key]} placeholder=${placeholder} required=${required} onInput=${event => update(key, event)} />
   </div>`;
-  return html`<div class="card"><h2>${title}</h2>
+  return html`<div><h2>${title}</h2>
     ${error ? html`<div class="notice-card error" role="alert"><p>${error}</p></div>` : null}
     <form onSubmit=${submit}>
       ${field('name', '名称', '', true)}

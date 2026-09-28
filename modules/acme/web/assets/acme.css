@@ -10,3 +10,6 @@
 .acme-message { margin: .75rem 0; }
 .acme-error { color: #b42318; }
 .acme-result { white-space: pre-wrap; overflow-wrap: anywhere; }
+.acme-register-form .acme-terms{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.acme-terms-choice{display:inline-flex;align-items:center;gap:8px}
+.acme-terms-choice .input{display:inline-block;width:auto;margin:0}

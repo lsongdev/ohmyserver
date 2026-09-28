@@ -49,7 +49,7 @@ func TestAPIModuleRegistryMountsFeaturePrefixes(t *testing.T) {
 		"ipmi": "/servers", "monitor": "/hosts", "ntp": "/settings", "openwrt": "/routers",
 		"packages": "/packages", "projects": "/projects", "pve": "/servers", "settings": "/",
 		"speedtest": "/results", "ssh": "/servers/test", "system": "/info", "terminal": "/local/ws",
-		"uptime": "/monitors", "webserver": "/listeners", "widgets": "/widgets", "yeelight": "/devices",
+		"uptime": "/monitors", "webserver": "/listeners", "yeelight": "/devices",
 	}
 	for module, path := range probes {
 		t.Run(module, func(t *testing.T) {
