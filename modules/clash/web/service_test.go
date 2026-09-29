@@ -61,8 +61,8 @@ func TestStandaloneAPIUsesTheModuleManager(t *testing.T) {
 	if err := repository.Initialize(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	handler := New(NewManager(repository)).StandaloneHandler()
-	request := httptest.NewRequest(http.MethodPost, "/v1/clash/servers", strings.NewReader(`{"name":"home","api_url":"http://127.0.0.1:9090"}`))
+	handler := New(NewManager(repository)).Handler()
+	request := httptest.NewRequest(http.MethodPost, "/servers", strings.NewReader(`{"name":"home","api_url":"http://127.0.0.1:9090"}`))
 	request.Header.Set("Content-Type", "application/json")
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
@@ -70,7 +70,7 @@ func TestStandaloneAPIUsesTheModuleManager(t *testing.T) {
 		t.Fatalf("create response: status=%d body=%s", response.Code, response.Body.String())
 	}
 	list := httptest.NewRecorder()
-	handler.ServeHTTP(list, httptest.NewRequest(http.MethodGet, "/v1/clash/servers", nil))
+	handler.ServeHTTP(list, httptest.NewRequest(http.MethodGet, "/servers", nil))
 	if list.Code != http.StatusOK || !strings.Contains(list.Body.String(), `"name":"home"`) {
 		t.Fatalf("list response: status=%d body=%s", list.Code, list.Body.String())
 	}

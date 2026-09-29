@@ -25,7 +25,7 @@ func main() {
 		Listen:  *listen,
 		Credits: []system.Credit{{Name: "Go", URL: "https://golang.org", License: "BSD"}},
 	}}))
-	srv := &http.Server{Addr: *listen, Handler: module.StandaloneHandler()}
+	srv := &http.Server{Addr: *listen, Handler: module.Handler()}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	go func() { <-ctx.Done(); _ = srv.Shutdown(context.Background()) }()

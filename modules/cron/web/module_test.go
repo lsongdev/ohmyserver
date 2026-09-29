@@ -77,13 +77,13 @@ func TestCronRejectsInvalidActionIDsAndMissingEnabled(t *testing.T) {
 }
 
 func TestCronStandalonePageAndManifest(t *testing.T) {
-	handler := New(&apiService{}).StandaloneHandler()
+	handler := New(&apiService{}).Handler()
 	page := httptest.NewRecorder()
 	handler.ServeHTTP(page, httptest.NewRequest(http.MethodGet, "/", nil))
-	if page.Code != http.StatusOK || !strings.Contains(page.Body.String(), `name="api-base" content="/v1/cron"`) {
+	if page.Code != http.StatusOK || !strings.Contains(page.Body.String(), `name="api-base" content="."`) {
 		t.Fatalf("GET / status=%d body=%q", page.Code, page.Body.String())
 	}
-	for _, path := range []string{"/v1/cron/manifest.json", "/v1/cron/assets/index.js", "/v1/cron/assets/module.js"} {
+	for _, path := range []string{"/manifest.json", "/assets/index.js", "/assets/module.js"} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {

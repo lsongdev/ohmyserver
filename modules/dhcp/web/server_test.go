@@ -174,13 +174,13 @@ func TestStandaloneServesPageManifestAssetsAndSettingsAPI(t *testing.T) {
 	}
 	service := NewLocalService(context.Background(), repo)
 	defer service.Close()
-	handler := New(repo, service).StandaloneHandler()
+	handler := New(repo, service).Handler()
 	for _, test := range []struct{ path, contains string }{
 		{"/", `name="api-base"`},
-		{"/v1/dhcp/manifest.json", `assets/module.js`},
-		{"/v1/dhcp/assets/module.js", `createAPI`},
-		{"/v1/dhcp/assets/index.js", `runtime.createAPI`},
-		{"/v1/dhcp/settings", `"listen_addr"`},
+		{"/manifest.json", `assets/module.js`},
+		{"/assets/module.js", `createAPI`},
+		{"/assets/index.js", `mountStandalone`},
+		{"/settings", `"listen_addr"`},
 	} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, test.path, nil))
@@ -246,7 +246,7 @@ func TestStandaloneEntryReusesModulePages(t *testing.T) {
 	if strings.Contains(source, "getSettings(") || strings.Contains(source, "<form") || strings.Contains(source, "staticLeases.map") {
 		t.Fatalf("standalone entry must not reimplement DHCP business pages")
 	}
-	for _, want := range []string{"runtime.createAPI", "matched.route.load()", "manifest.navigation"} {
+	for _, want := range []string{"mountStandalone", "./runtime/standalone.js", "mountStandalone"} {
 		if !strings.Contains(source, want) {
 			t.Fatalf("standalone entry missing shared runtime behavior %q", want)
 		}

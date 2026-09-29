@@ -132,13 +132,6 @@ func (m *Module) Handler() http.Handler {
 	return wrapModuleWeb(mux)
 }
 
-// StandaloneHandler exposes the module UI and its API at their shell-compatible paths.
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/uptime/", http.StripPrefix("/v1/uptime", m.Handler()))
-	mux.HandleFunc("/", standalonePage)
-	return mux
-}
 func valid(x Monitor) bool {
 	return strings.TrimSpace(x.Name) != "" && strings.TrimSpace(x.Target) != "" && (x.Type == Ping || x.Type == TCP || x.Type == HTTP)
 }

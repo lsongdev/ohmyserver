@@ -25,6 +25,6 @@ func NewLocalModule(ctx context.Context, db *sql.DB, runtime DeploymentRuntime, 
 	return &LocalModule{module: New(repository, manager), manager: manager}, nil
 }
 
-func (m *LocalModule) Handler() http.Handler           { return m.module.Handler() }
-func (m *LocalModule) StandaloneHandler() http.Handler { return m.module.StandaloneHandler() }
-func (m *LocalModule) Close()                          { m.manager.Close() }
+func (m *LocalModule) Handler() http.Handler { return m.module.Handler() }
+
+func (m *LocalModule) Close() { m.manager.Close() }

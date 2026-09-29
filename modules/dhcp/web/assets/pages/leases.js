@@ -1,4 +1,4 @@
-import { html, useEffect, useState } from '@panel/shared/ui.js';
+import { html, useEffect, useState } from '@module/ui';
 
 export default function Leases({ api, staticOnly = false, navigate }) {
   const [items, setItems] = useState([]); const [error, setError] = useState('');

@@ -30,23 +30,23 @@ func TestSettingsAPIValidationAndCRUD(t *testing.T) {
 		return w
 	}
 
-	if response := call(http.MethodPost, "/", `{"name":"bad","type":"secret","value":"x"}`); response.Code != http.StatusUnprocessableEntity {
+	if response := call(http.MethodPost, "/entries", `{"name":"bad","type":"secret","value":"x"}`); response.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("invalid type: status=%d body=%s", response.Code, response.Body.String())
 	}
-	created := call(http.MethodPost, "/", `{"name":"site.title","type":"string","value":"hello","description":"title"}`)
+	created := call(http.MethodPost, "/entries", `{"name":"site.title","type":"string","value":"hello","description":"title"}`)
 	if created.Code != http.StatusCreated || !strings.Contains(created.Body.String(), `"name":"site.title"`) {
 		t.Fatalf("create: status=%d body=%s", created.Code, created.Body.String())
 	}
-	if response := call(http.MethodGet, "/", ""); response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"value":"hello"`) {
+	if response := call(http.MethodGet, "/entries", ""); response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"value":"hello"`) {
 		t.Fatalf("list: status=%d body=%s", response.Code, response.Body.String())
 	}
-	if response := call(http.MethodPut, "/1", `{"value":"updated"}`); response.Code != http.StatusOK {
+	if response := call(http.MethodPut, "/entries/1", `{"value":"updated"}`); response.Code != http.StatusOK {
 		t.Fatalf("update: status=%d body=%s", response.Code, response.Body.String())
 	}
-	if response := call(http.MethodDelete, "/1", ""); response.Code != http.StatusNoContent {
+	if response := call(http.MethodDelete, "/entries/1", ""); response.Code != http.StatusNoContent {
 		t.Fatalf("delete: status=%d body=%s", response.Code, response.Body.String())
 	}
-	if response := call(http.MethodGet, "/", ""); response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"data":[]`) {
+	if response := call(http.MethodGet, "/entries", ""); response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"data":[]`) {
 		t.Fatalf("empty list: status=%d body=%s", response.Code, response.Body.String())
 	}
 }
@@ -81,8 +81,8 @@ func TestStandaloneServesPageManifestAndAPI(t *testing.T) {
 	if err := repo.Initialize(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	handler := settingsweb.New(repo).StandaloneHandler()
-	for _, path := range []string{"/", "/v1/settings/manifest.json", "/v1/settings/assets/module.js", "/v1/settings/assets/index.js"} {
+	handler := settingsweb.New(repo).Handler()
+	for _, path := range []string{"/", "/manifest.json", "/assets/module.js", "/assets/index.js"} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {

@@ -10,6 +10,8 @@
 
 ## Developer Documentation
 
+- [模块装配与清单契约](module-contract.md) - Go 注册、模块 manifest 与浏览器加载边界
+- [模块 runtime 契约评审与优化方案](module-runtime-review.md) - 独立/嵌入运行差异、复现问题、统一契约与实施验收
 - [模块化前后端重构方案](frontend-modular-refactor.md) - Preact + HTM 原生 ESM、无构建交付、/v1 模块 API 与分阶段迁移计划
 - [Improvement Suggestions](improvements.md) - Project analysis and improvement recommendations
 - [Refactoring Guide](refactoring-guide.md) - Concrete refactoring steps and code examples

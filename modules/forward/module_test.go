@@ -115,8 +115,8 @@ func TestStandaloneAssets(t *testing.T) {
 	}
 	service := forwardweb.NewLocalService(repo)
 	defer service.Close()
-	handler := forwardweb.New(repo, service).StandaloneHandler()
-	for _, path := range []string{"/", "/v1/forward/manifest.json", "/v1/forward/assets/module.js", "/v1/forward/assets/index.js", "/v1/forward/listeners"} {
+	handler := forwardweb.New(repo, service).Handler()
+	for _, path := range []string{"/", "/manifest.json", "/assets/module.js", "/assets/index.js", "/listeners"} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {

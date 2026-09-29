@@ -12,17 +12,6 @@ type Module struct{ service dashboard.Service }
 func New(service dashboard.Service) *Module { return &Module{service: service} }
 func (*Module) Name() string                { return "dashboard" }
 
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/dashboard/", http.StripPrefix("/v1/dashboard", m.Handler()))
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
-		http.ServeFileFS(w, r, moduleAssets, "assets/index.html")
-	})
-	return mux
-}
-
 func (m *Module) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /overview", func(w http.ResponseWriter, r *http.Request) {

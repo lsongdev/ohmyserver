@@ -59,14 +59,14 @@ func TestProviderCreateRequiresJSONAndReturnsCreated(t *testing.T) {
 	service := &apiTestService{}
 	module := New(service)
 	r := httptest.NewRequest(http.MethodPost, "/providers", strings.NewReader(`{"name":"test","directory_url":"https://acme.test/directory"}`))
-	r.RequestURI = "/v1/acme/providers"
+	r.RequestURI = "/providers"
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	module.Handler().ServeHTTP(w, r)
 	if w.Code != http.StatusCreated || service.providerName != "test" || service.directoryURL != "https://acme.test/directory" {
 		t.Fatalf("status=%d service=%+v body=%s", w.Code, service, w.Body.String())
 	}
-	if w.Header().Get("Location") != "/v1/acme/providers" {
+	if w.Header().Get("Location") != "/providers" {
 		t.Fatalf("unexpected Location: %q", w.Header().Get("Location"))
 	}
 }
@@ -139,16 +139,16 @@ func TestHandlerServesManifestAndEmbeddedAssets(t *testing.T) {
 	}
 }
 
-func TestStandaloneHandlerServesPageAndMountedAPIAssets(t *testing.T) {
+func TestHandlerServesPageAndMountedAPIAssets(t *testing.T) {
 	module := New(&apiTestService{})
 	page := httptest.NewRecorder()
-	module.StandaloneHandler().ServeHTTP(page, httptest.NewRequest(http.MethodGet, "/", nil))
-	if page.Code != http.StatusOK || !strings.Contains(page.Body.String(), `name="api-base" content="/v1/acme"`) {
+	module.Handler().ServeHTTP(page, httptest.NewRequest(http.MethodGet, "/", nil))
+	if page.Code != http.StatusOK || !strings.Contains(page.Body.String(), `name="api-base" content="."`) {
 		t.Fatalf("GET /: status=%d body=%q", page.Code, page.Body.String())
 	}
-	for _, path := range []string{"/v1/acme/manifest.json", "/v1/acme/assets/index.js"} {
+	for _, path := range []string{"/manifest.json", "/assets/index.js"} {
 		response := httptest.NewRecorder()
-		module.StandaloneHandler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
+		module.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {
 			t.Errorf("GET %s: status=%d body=%q", path, response.Code, response.Body.String())
 		}

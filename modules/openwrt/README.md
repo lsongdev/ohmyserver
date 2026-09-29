@@ -1,8 +1,8 @@
 # OpenWrt module
 
 The module provides OpenWrt router management as a Go package, an HTTP API and
-an embedded browser UI. The shell application mounts `web.Module.Handler()` at
-`/v1/openwrt`; the module manifest describes the UI entry and navigation.
+an embedded browser UI. `web.Module.Handler()` is the complete module root;
+the manifest describes its relative UI entry and navigation.
 
 Run the module on its own with:
 
@@ -10,5 +10,5 @@ Run the module on its own with:
 go run ./cmd/openwrt web serve --listen 127.0.0.1:8080 --db openwrt.db
 ```
 
-The standalone server serves the module UI at `/` and the API and static assets
-under `/v1/openwrt`.
+The standalone server mounts the handler at `/`; an embedding host may mount
+the same handler at any prefix without the module knowing that prefix.

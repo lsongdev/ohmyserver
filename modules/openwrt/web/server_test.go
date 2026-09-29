@@ -68,7 +68,7 @@ func TestOpenWrtModuleOwnsCRUDAndProtectsCredentials(t *testing.T) {
 	}
 }
 
-func TestStandaloneHandlerServesUIManifestAssetsAndAPI(t *testing.T) {
+func TestHandlerServesUIManifestAssetsAndAPI(t *testing.T) {
 	db, err := sql.Open("sqlite", "file:openwrt-standalone-test?mode=memory&cache=shared")
 	if err != nil {
 		t.Fatal(err)
@@ -78,13 +78,13 @@ func TestStandaloneHandlerServesUIManifestAssetsAndAPI(t *testing.T) {
 	if err := repo.Initialize(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	handler := New(repo, &apiRuntime{}).StandaloneHandler()
+	handler := New(repo, &apiRuntime{}).Handler()
 	for path, contains := range map[string]string{
 		"/":                              "api-base",
-		"/v1/openwrt/manifest.json":      "assets/module.js",
-		"/v1/openwrt/assets/index.js":    "lsong.org/scripts/react/index.js",
-		"/v1/openwrt/assets/openwrt.css": ".openwrt-standalone-header",
-		"/v1/openwrt/routers":            `"data":[]`,
+		"/manifest.json":      "assets/module.js",
+		"/assets/index.js":    "lsong.org/scripts/react/index.js",
+		"/assets/openwrt.css": ".openwrt-standalone-header",
+		"/routers":            `"data":[]`,
 	} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))

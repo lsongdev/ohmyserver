@@ -43,7 +43,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer service.Close()
-	srv := &http.Server{Addr: *listen, Handler: forwardweb.New(repo, service).StandaloneHandler()}
+	srv := &http.Server{Addr: *listen, Handler: forwardweb.New(repo, service).Handler()}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	go func() { <-ctx.Done(); _ = srv.Shutdown(context.Background()) }()

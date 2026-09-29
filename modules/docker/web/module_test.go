@@ -150,13 +150,13 @@ func TestPullImageStreamsProgressAndTerminalEvent(t *testing.T) {
 	}
 }
 
-func TestStandaloneHandlerServesPageManifestAssetsAndAPI(t *testing.T) {
-	handler := New(&apiTestService{}).StandaloneHandler()
+func TestHandlerServesPageManifestAssetsAndAPI(t *testing.T) {
+	handler := New(&apiTestService{}).Handler()
 	for _, test := range []struct{ path, contains string }{
 		{"/", `name="api-base"`},
-		{"/v1/docker/manifest.json", `assets/module.js`},
-		{"/v1/docker/assets/module.js", `createAPI`},
-		{"/v1/docker/assets/index.js", `lsong.org/scripts/react/index.js`},
+		{"/manifest.json", `assets/module.js`},
+		{"/assets/module.js", `createAPI`},
+		{"/assets/index.js", `lsong.org/scripts/react/index.js`},
 	} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, test.path, nil))

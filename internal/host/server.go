@@ -122,14 +122,12 @@ func NewServer(cfg *config.Config) (server *Server, err error) {
 // Close closes the database connection and stops all listeners
 func (s *Server) Close() error {
 	s.closeOnce.Do(func() {
+		var ownedErr error
 		if s.acmeEngine != nil {
-			_ = s.acmeEngine.Close()
+			ownedErr = errors.Join(ownedErr, wrapCloseError("acme", s.acmeEngine.Close()))
 		}
 		if s.cronModule != nil {
-			_ = s.cronModule.Close()
-		}
-		if s.ntpModule != nil {
-			_ = s.ntpModule.Close()
+			ownedErr = errors.Join(ownedErr, wrapCloseError("cron", s.cronModule.Close()))
 		}
 		if s.monitorCancel != nil {
 			s.monitorCancel()
@@ -141,7 +139,7 @@ func (s *Server) Close() error {
 		if s.monitorCollection != nil {
 			collectionErr = s.monitorCollection.Close()
 		}
-		s.closeErr = errors.Join(s.stopServices(), collectionErr, s.docker.Close(), s.db.Close())
+		s.closeErr = errors.Join(ownedErr, s.stopServices(), collectionErr, s.docker.Close(), s.db.Close())
 	})
 	return s.closeErr
 }

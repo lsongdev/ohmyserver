@@ -61,8 +61,8 @@ func TestStandaloneAssetsAndAPI(t *testing.T) {
 	if err := repo.Initialize(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	handler := widgetsweb.New(repo).StandaloneHandler()
-	for _, path := range []string{"/", "/v1/widgets/manifest.json", "/v1/widgets/assets/module.js", "/v1/widgets/assets/index.js"} {
+	handler := widgetsweb.New(repo).Handler()
+	for _, path := range []string{"/", "/manifest.json", "/assets/module.js", "/assets/index.js"} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {
@@ -70,7 +70,7 @@ func TestStandaloneAssetsAndAPI(t *testing.T) {
 		}
 	}
 	response := httptest.NewRecorder()
-	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v1/widgets/widgets", nil))
+	handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/widgets", nil))
 	if response.Code != http.StatusOK {
 		t.Fatalf("GET widgets API: status=%d body=%s", response.Code, response.Body.String())
 	}

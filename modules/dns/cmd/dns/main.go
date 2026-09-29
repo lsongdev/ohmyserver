@@ -50,7 +50,7 @@ func main() {
 		}
 	}()
 	module := dnsweb.New(repo, service, *listDir)
-	srv := &http.Server{Addr: *listen, Handler: module.StandaloneHandler()}
+	srv := &http.Server{Addr: *listen, Handler: module.Handler()}
 	go func() { <-ctx.Done(); _ = srv.Shutdown(context.Background()) }()
 	log.Printf("DNS module listening on http://%s", *listen)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

@@ -8,4 +8,4 @@ Run it independently with:
 go run ./cmd/pve web serve --listen 127.0.0.1:8080 --db ./pve.db
 ```
 
-The standalone process serves the UI at `/` and the API, manifest, and assets under `/v1/pve`. Embedding hosts initialize the module repository on their shared SQLite connection and register the handler under the module's API prefix.
+The standalone process mounts the complete module handler at `/`. Embedding hosts initialize the module repository on their shared SQLite connection and mount that same handler at any prefix; all module routes remain relative to it.

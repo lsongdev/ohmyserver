@@ -102,7 +102,7 @@ test('cross-module links use the explicit host capability', () => {
 });
 
 
-test('hrefTo remains an optional host capability for standalone modules', () => {
+test('pages use the single cross-module capability name', () => {
   for (const moduleEntry of readdirSync(modulesDir, { withFileTypes: true })) {
     if (!moduleEntry.isDirectory()) continue;
     const pagesDir = resolve(modulesDir, moduleEntry.name, 'web/assets/pages');
@@ -111,7 +111,7 @@ test('hrefTo remains an optional host capability for standalone modules', () => 
     for (const page of pages) {
       if (!page.isFile() || !page.name.endsWith('.js')) continue;
       const source = readFileSync(resolve(pagesDir, page.name), 'utf8');
-      assert.doesNotMatch(source, /\bhrefTo\s*\(/, moduleEntry.name + '/' + page.name + ' must treat hrefTo as an optional host capability');
+      assert.doesNotMatch(source, /\bmoduleHref\b/, moduleEntry.name + '/' + page.name + ' must use hrefTo');
     }
   }
 });

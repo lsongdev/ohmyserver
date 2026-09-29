@@ -1,67 +1,154 @@
-# 模块装配与前端清单契约
+# 模块运行时契约
 
-状态：HTTP 装配与浏览器清单契约已落地；模块内部“公共 Go 库 / Web 服务 / CLI”分层仍在推进，独立仓库发布需完成阶段 5 验收。
+状态：**v1 已固定并实现**。2026-09-29 起，独立进程和 OhMyServer 壳使用同一份 Go Handler、浏览器 runtime、模块入口、API client 和页面实现。
 
-模块自行托管相对 API、前端文件和公开清单。宿主只用 Go 代码注册已编译模块及其依赖；浏览器壳读取模块清单后加载入口 JS 和绘制菜单。没有独立的模块挂载配置 JSON。
+## 基本原则
 
-## 模块内部边界
+模块只知道自己的稳定 ID、相对 API、相对页面路由和资源，不读取或推断宿主挂载。宿主拥有 HTTP 挂载、Hash 页面挂载、认证、布局以及跨模块可用性。独立运行也是一个宿主，它把同一个模块 Handler 直接挂在 `/`。
 
-模块的发布单元需要同时支持 Go 调用者、Web 管理界面和独立启动。以 Clash 为例，目标目录是：
+禁止通过运行模式开关、URL 末段、全局 service locator、转发头或宿主包让模块感知宿主。需要新能力时扩展明确的版本化契约；不得在独立和嵌入路径分别实现。
+
+## 发布单元
 
 ```text
-clash/
+modules/<id>/
   go.mod
-  clash/client.go          # 可被其他 Go 项目直接依赖的 Clash API 客户端
-  web/server.go            # Web/API 服务，调用 ../clash 客户端
-  web/assets.go            # 嵌入并托管 web/assets
-  web/assets/manifest.json  # 壳应用发现入口与菜单
-  web/assets/index.html     # 独立 Web UI 页面，引用公共 CSS
-  web/assets/index.js       # 独立页面启动，使用共享 Preact ESM
-  web/assets/module.js      # 壳应用发现的模块入口
-  web/assets/pages/         # 模块页面
-  cmd/clash/main.go         # clash web serve
+  <id>/                    # 可选的公共领域/协议库
+  web/                     # repository、service、HTTP Handler
+  web/assets/
+    manifest.json          # 声明性清单
+    module.js              # 浏览器可执行入口
+    api.js                 # 相对 API client
+    pages/                 # 两种宿主共用的页面
+    index.html             # 独立宿主文档
+    index.js               # 仅向共享 runtime 注入 UI primitives
+  cmd/<id>/main.go         # 独立进程组合根
 ```
 
-其他模块沿用相同职责：模块根是独立 Go module；公共领域库放 `<id>/` 包；HTTP/API 与静态托管放 `web/`；浏览器代码、清单和样式放 `web/assets/`；独立可执行程序放 `cmd/<id>/`。`index.html` 是模块独立页面并引用 `https://lsong.org/stylesheets/index.css`；standalone `index.js` 只是一个很薄的宿主，加载与 OhMyServer 相同的 `module.js`、`pages/*` 和 `api.js`。Standalone 可以通过本地 adapter 映射到 `https://lsong.org/scripts/react/index.js`，但不得重新实现模块业务页面。manifest 指向 `module.js` 作为壳可导入的模块对象。`web` 调用公共库并组合本模块 repository/服务接口，不能让 `cmd` 成为壳应用的依赖。壳只导入模块的 `web` 包并调用其构造器；独立命令与壳应用复用同一个 Web 服务实现。
+模块依赖 `github.com/lsongdev/ohmyserver/pkg/moduleweb` v0.1.0。该包拥有唯一的 HTTP 适配、transport、清单/runtime 校验、路由、页面加载、错误边界和独立布局实现。模块不得复制这些实现。
 
-`<id>/client.go` 封装外部服务协议，避免 `web`、壳或消费者各自直接依赖供应商客户端。若模块对外提供的是领域库而非外部 API 客户端，则在同一个公共 Go 包中提供领域 API。独立命令负责独立配置、数据库/存储初始化和 HTTP 监听；只有在 `GOWORK=off` 下通过 `go test ./...`、`go build ./...` 并实际启动服务后，才算具备独立运行条件。当前模块中的扁平包可作为迁移过渡，不能作为目标结构完成的证据。
+## Go HTTP 契约
 
-## Go 注册
-
-Go 不能通过 interface 约束包级 `New`，因此宿主的组合根显式 import 模块包，调用模块自己的强类型构造器并注册返回值。模块统一满足 `Name()` 与 `Handler()`；组合根从宿主资源中挑选模块需要的数据库连接池、设备客户端和窄跨模块接口，传给构造器。模块包不导入 `server` 或全局 service locator。
+宿主只需要：
 
 ```go
-registry := app.NewModules()
-module := docker.New(dockerService)
-if err := registry.Register(module); err != nil { return err }
+type HTTPModule interface {
+    Name() string
+    Handler() http.Handler
+}
 ```
 
-`Register` 按 `Name()` 将 ID `docker` 的 handler 挂到 `/v1/docker`，并给浏览器壳分配 Hash 页面根 `/docker`。handler 接收去掉 `/v1/docker` 前缀后的请求，自己处理 `/containers` 等 API 路由、`/assets/...` 前端文件和 `GET /manifest.json` 清单。由此保留现有 `/v1/docker/containers` API；浏览器顶级入口由 manifest 的 `home` 决定。宿主无须读取模块文件系统，也无需知道 JS 文件名。
+`Handler()` 是完整且与挂载无关的模块 HTTP 根：
 
-构造器返回 `http.Handler` 已足够覆盖普通 HTTP 模块。需要后台任务或连接回收时，返回的具体 handler 可额外实现 `Start(context.Context) error`、`Close(context.Context) error`，由宿主协调生命周期。数据库连接池可共享，schema、迁移和 repository 仍归模块所有。独立发布时宿主只需更新版本化 Go 依赖及这一处注册代码；启用/禁用可通过是否注册或宿主已有的能力配置决定。
-
-## 模块公开清单
-
-模块在自己的 `GET /manifest.json` 提供 JSON，示例见 [module-manifest.example.json](module-manifest.example.json)。清单字段：
-
-| 字段 | 用途 |
+| 相对路径 | 所有者与语义 |
 | --- | --- |
-| `contractVersion` | 壳与模块前端的契约版本，当前为 `1` |
-| `id` | 用于和宿主 Go 注册 ID 核对 |
-| `title`、`icon`、`group` | 模块声明的顶级导航展示信息 |
-| `entry` | 相对模块 HTTP 根的 JS 入口，例如 `assets/module.js` |
-| `home` | 可选的模块首页相对路由，默认 `/` |
-| `styles` | 相对模块 HTTP 根的 CSS 文件列表，可为空 |
-| `navigation` | 可选的模块内子菜单，每项含 `title` 与模块内相对 `path` |
+| `/` | 模块独立页面，HTML 中 `api-base="."` |
+| `/manifest.json` | 模块公开清单 |
+| `/assets/*` | 模块资源 |
+| `/assets/runtime/*` | `moduleweb` 保留的共享 runtime |
+| 其他路径 | 模块 API |
 
-模块知道自己有哪些页面适合出现在菜单，因此 `navigation` 由模块声明。它只列可见入口，不要求列出所有可访问路由；实际页面路由由模块入口默认导出的 `routes` 提供。省略 `navigation` 或设为空数组时，壳只显示顶级链接 `#/<id>`，由 `home` 指定首屏。清单不包含宿主 API 前缀、静态前缀或页面前缀。
+独立 CLI 直接运行 `Handler()`。嵌入宿主用 `http.StripPrefix` 挂载同一 Handler，并把裸挂载地址重定向到带 `/` 的模块根。模块收到的请求始终是去掉前缀后的相对路径。
 
-模块用 `//go:embed` 打包 JS/CSS，并在自己的 `ServeHTTP` 内提供 `/assets/`。宿主不接收 `fs.FS`；文件托管、MIME、缓存和静态 404 由模块负责。清单的 `entry/styles` 必须是模块根内的相对文件路径，不允许起始 `/`、`..`、URL scheme、查询或 Hash。清单和前端文件与 Go 包一起版本化。
+模块业务 handler 生成的状态、header、错误 body、下载、SSE 和 WebSocket 原样透传。`moduleweb` 只对 `http.ServeMux` 未匹配的路由生成 JSON 404/405，不按响应状态重写业务错误。宿主只处理“模块未注册”等宿主级错误。
 
-## 浏览器加载
+模块构造器与 Handler 不隐式启动后台任务。schema、迁移、`Start` 和 `Close` 由 CLI 或应用组合根显式协调；HTTP 注册表不反射调用生命周期。具体模块只实现其需要的方法，且不关闭注入的共享 DB/client。
 
-1. 宿主从已注册的 Go 模块生成公开模块索引 `GET /v1/modules`，只含已注册模块的 `id`、`apiBase`、`manifestURL` 和 Hash 页面根路径。这里的索引由代码注册表生成，不是另一份需要维护的配置。
-2. 浏览器壳从索引中取得已挂载模块，并向每个模块请求 `GET <模块根>/manifest.json`，校验 ID 和契约版本。壳用模块清单绘制顶级菜单、分组及可选子菜单；单个清单失败会为该模块显示错误态，其他模块继续加载。
-3. 进入模块时，壳按已校验的相对 `entry` 构造同源 URL，调用原生 `import(url)` 并读取默认导出的模块对象。对象只提供 `id`、相对页面 `routes` 和 `createAPI(transport)`；`title`、`icon`、`group`、`home`、`navigation`、`styles`、`entry` 只允许出现在 `manifest.json`。宿主传入已绑定模块 API 根的 `request`、`fetchImpl`、`apiURL` 和 `websocketURL`，模块代码不接触 API 挂载前缀。页面收到的 `navigate()` / `href()` 同样只接受模块根内的绝对相对路径（例如 `/leases`），不得写 `/dhcp/leases` 或 `#/dhcp/leases` 这样的宿主页面前缀。跨模块链接使用宿主注入的 `hrefTo(moduleID, path)`，例如 `hrefTo("docker", "/containers/abc")`；模块只声明目标模块 ID 与目标模块内路径，不自行拼接 Hash 或页面挂载前缀。
+## 宿主挂载契约
 
-链路是 `Go 注册 → 模块 http.Handler → /v1/modules → 模块 manifest.json → 浏览器 import()`。模块 JS 不读取宿主全局配置，也不自行向壳注册。宿主只加载已注册模块的同源清单和入口，不执行任意外部 JS URL。壳将挂载前缀封装在 `transport` 闭包中，通过模块的 `createAPI(transport)` 启动点注入请求、流式 fetch、资源 URL 和 WebSocket URL 能力；模块 API client 只提供模块内相对路径。
+宿主索引只公开：
+
+```json
+{
+  "modules": [{
+    "id": "clash",
+    "apiBase": "/v1/clash",
+    "pageBase": "/clash"
+  }]
+}
+```
+
+`id` 是模块身份；`apiBase` 与 `pageBase` 是宿主配置。三者分别校验且必须唯一。`apiBase` 可以是 `/` 或任意合法同源子路径；`pageBase` 可以是 `/` 或多段 Hash 路径，与 ID 无关。清单 URL 固定由 `apiBase + /manifest.json` 派生，不另设可漂移字段。
+
+runtime 内部始终保存 `{ mount, manifest, runtime }`，禁止平铺合并。manifest 中出现 `apiBase`、`pageBase`、`routes`、`createAPI` 等非白名单字段时整份清单无效，无法覆盖宿主配置。
+
+页面定位按 `pageBase` 段边界做最长匹配，根挂载最后兜底。宿主使用同一组函数生成链接和解析 URL，因此别名、多段路径、反向代理前缀和编码参数具有一致行为。
+
+## Manifest v1
+
+允许字段仅有：
+
+| 字段 | 规则 |
+| --- | --- |
+| `contractVersion` | 必须为 `1` |
+| `id` | 稳定模块 ID，必须与 Go 注册 ID 和 runtime ID 相同 |
+| `title`、`icon`、`group` | 展示信息 |
+| `entry` | 模块资源，例如 `assets/module.js` |
+| `home` | 模块内绝对相对路由，默认 `/` |
+| `styles` | 模块功能样式；不含共享独立布局样式 |
+| `navigation` | 可见子导航，每项仅含 `title`、模块内 `path` |
+
+`entry/styles` 必须位于本模块 `assets/`，拒绝绝对 URL、query、fragment、反斜杠、百分号和目录穿越。`home/navigation` 必须能匹配 runtime route。未知字段直接拒绝，避免悄悄形成第二份契约。
+
+## 浏览器 runtime v1
+
+`module.js` 默认导出仅允许三个字段：
+
+```js
+export default {
+  id: 'clash',
+  createAPI,
+  routes: [
+    { path: '/', load: () => import('./pages/servers.js') },
+    { path: '/:id', load: () => import('./pages/detail.js') },
+  ],
+};
+```
+
+路由只允许 `path/load/props`。等价参数模板、非法参数名和重复参数在加载前拒绝。匹配时逐段比较，越靠左的静态段优先。`route.props` 不得覆盖下列宿主能力：
+
+```text
+api, params, search, navigate, href, hrefTo
+```
+
+页面只通过这些能力工作：
+
+- `params` 为一次解码后的参数；编码斜杠仍属于一个参数段。
+- `search` 为当前 URL 的 `URLSearchParams`。
+- `navigate(path)`、`href(path)` 只接受以单个 `/` 开头的模块内路径。
+- `hrefTo(moduleID, path)` 是唯一跨模块能力；目标不可用时返回 `null`。独立宿主也始终提供该函数。
+
+页面组件以“模块实例 + route template”为身份。同一路由内 params/query 变化只更新 props；切换路由或模块才卸载。页面负责清理自己的请求、timer、EventSource、reader 和 WebSocket。共享 runtime 缓存成功的懒加载，失败后允许重试，并提供加载与渲染错误边界。
+
+## Transport v1
+
+`createAPI(transport)` 必须同步、无副作用，只返回模块 API client。transport 固定提供：
+
+| 能力 | 语义 |
+| --- | --- |
+| `request(path, options)` | JSON envelope；204 → `null`；按 `data` 字段存在性解包，保留 `null/false/0/""`；错误保留 `status/code/message` |
+| `fetchImpl(path, options)` | 原始 `Response`，供上传、下载和流使用，不解包、不缓冲 |
+| `apiURL(path)` | 同源 HTTP URL，供下载与 EventSource 使用 |
+| `websocketURL(path)` | 同一路径规则，协议转换为 `ws/wss` |
+
+四项能力使用同一解析器，只接受以单个 `/` 开头的模块内路径，可带 query；拒绝 scheme、协议相对 URL、fragment、反斜杠、空白和目录穿越。动态参数必须 `encodeURIComponent`。宿主固定使用 `credentials: same-origin`；调用方传入的业务 header 和 abort signal 被保留，JSON transport 管理自己的 `Accept` 与 `Content-Type`。
+
+## UI 依赖
+
+模块页面统一从 `@module/ui` 和 `preact/hooks` 导入。独立页 import map 将二者指向 `https://lsong.org/scripts/react/index.js`；OhMyServer 壳将二者指向同一个本地 Preact 实例。共享 runtime 本身不打包 Preact，由宿主注入 `html/render/Component/hooks`。
+
+`index.js` 只能完成这一注入并调用 `mountStandalone()`，不得包含 manifest 获取、transport、路由或业务页面实现。共享 `standalone.css` 由 runtime 加载，模块 manifest 只列功能 CSS。
+
+## 验收门槛
+
+任何契约修改必须同时通过：
+
+1. `node --test frontend/app/*.test.js pkg/moduleweb/browser/*.test.js`。
+2. 根模块 `go test ./...`、`go build ./...`。
+3. 每个独立模块在 `GOWORK=off` 下 test/build。
+4. 28 个独立 CLI 用临时 DB 与空闲端口实际启动，读取 `/`、manifest、模块 entry 和共享 runtime，并正常关闭。
+5. 无 local replace 的临时 Go proxy 外部宿主测试。
+6. 独立浏览器和嵌入壳浏览器至少覆盖加载、模块内导航、后退/返回和控制台错误。
+7. 所有前端与模块 JS 通过 `node --check`，并通过 `git diff --check`。
+
+批量验证入口为 `tests/module-smoke/check-runtime.py`。具体实现与问题关闭记录见 [runtime 评审](module-runtime-review.md)。

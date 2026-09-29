@@ -35,7 +35,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	module := terminalweb.New(localTerminal{shell: *shell})
-	srv := &http.Server{Addr: *listen, Handler: module.StandaloneHandler()}
+	srv := &http.Server{Addr: *listen, Handler: module.Handler()}
 	go func() { <-ctx.Done(); _ = srv.Shutdown(context.Background()) }()
 	log.Printf("Terminal module listening on http://%s", *listen)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

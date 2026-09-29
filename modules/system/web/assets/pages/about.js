@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 
 export default function About({ api }) {
   const [info, setInfo] = useState(null);

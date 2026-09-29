@@ -6,7 +6,6 @@
   "group": "网络服务",
   "entry": "assets/module.js",
   "styles": [
-    "assets/standalone.css",
     "assets/acme.css"
   ],
   "home": "/certificates",

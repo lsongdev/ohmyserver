@@ -157,20 +157,6 @@ func (m *Module) Handler() http.Handler {
 	return wrapModuleWeb(mux)
 }
 
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/ssh/", http.StripPrefix("/v1/ssh", m.Handler()))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return mux
-}
-
 func writeMetrics(w http.ResponseWriter, m Metrics) {
 	label := strings.NewReplacer("\\", "\\\\", "\"", "\\\"", "\n", " ").Replace(m.Host)
 	items := []struct {

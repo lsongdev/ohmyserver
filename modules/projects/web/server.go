@@ -52,16 +52,6 @@ func New(repo Store, deployments DeploymentService) *Module {
 }
 func (*Module) Name() string { return "projects" }
 
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/projects/", http.StripPrefix("/v1/projects", m.Handler()))
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return mux
-}
 func (m *Module) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /hooks/github/{id}", m.githubWebhook)

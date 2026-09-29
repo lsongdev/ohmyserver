@@ -85,8 +85,8 @@ func TestHandlerServesModuleManifestAndEntry(t *testing.T) {
 }
 
 func TestStandaloneServesPageAndAPI(t *testing.T) {
-	handler := newTestModule(t).StandaloneHandler()
-	for _, path := range []string{"/", "/v1/uptime/manifest.json", "/v1/uptime/assets/module.js", "/v1/uptime/assets/index.js"} {
+	handler := newTestModule(t).Handler()
+	for _, path := range []string{"/", "/manifest.json", "/assets/module.js", "/assets/index.js"} {
 		response := call(t, handler, http.MethodGet, path, "")
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {
 			t.Fatalf("GET %s: status=%d body=%q", path, response.Code, response.Body.String())

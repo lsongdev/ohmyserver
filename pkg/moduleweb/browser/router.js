@@ -1,6 +1,12 @@
 export function readLocation(hash = location.hash) {
   const source = hash.startsWith('#') ? hash.slice(1) : hash;
-  const url = new URL(source || '/', location.origin);
+  let url;
+  try {
+    localPath(source || '/');
+    url = new URL(source || '/', location.origin);
+  } catch {
+    return { pathname: '/__invalid_path__', rawSegments: [], segments: [], search: new URLSearchParams() };
+  }
   const rawSegments = url.pathname.split('/').filter(Boolean);
   let segments;
   try {
@@ -12,29 +18,46 @@ export function readLocation(hash = location.hash) {
 }
 
 export function href(path) {
-  const normalized = path.startsWith('/') ? path : `/${path}`;
-  return `#${normalized}`;
+  return `#${localPath(path)}`;
 }
 
 export function navigate(path, { replace = false } = {}) {
   const target = href(path);
   if (replace) {
     history.replaceState(null, '', target);
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    globalThis.dispatchEvent(new Event('hashchange'));
   } else {
     location.hash = target.slice(1);
   }
 }
 
 export function scopeModulePath(pageBase, path) {
-  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) {
-    throw new TypeError('module navigation path must start with a single /');
-  }
-  const base = pageBase === '/' ? '' : pageBase.replace(/\/+$/, '');
-  if (base && (path === base || path.startsWith(`${base}/`))) {
-    throw new TypeError('module navigation path must be relative to the module root');
-  }
+  localPath(path);
+  const normalized = mountPath(pageBase);
+  const base = normalized === '/' ? '' : normalized;
   return `${base}${path}` || '/';
+}
+
+export function resolveLocation(hash, modules) {
+  const location = readLocation(hash);
+  const module = modules.filter(item => {
+    const base = item.mount.pageBase;
+    return base === '/' || location.pathname === base || location.pathname.startsWith(`${base}/`);
+  }).sort((a, b) => b.mount.pageBase.length - a.mount.pageBase.length)[0] || null;
+  if (!module) return { module: null, page: null, params: {}, location };
+  const base = module.mount.pageBase === '/' ? '' : module.mount.pageBase;
+  const requested = location.pathname.slice(base.length) || '/';
+  const pathname = requested === '/' ? (module.manifest?.home || '/') : requested;
+  const matched = matchModuleRoute(module.runtime?.routes || [], pathname);
+  return { module, page: matched?.route || null, params: matched?.params || {}, location };
+}
+
+export function navigationFor(pageBase, hrefTo = () => null) {
+  return Object.freeze({
+    href: path => href(scopeModulePath(pageBase, path)),
+    navigate: (path, options) => navigate(scopeModulePath(pageBase, path), options),
+    hrefTo,
+  });
 }
 
 export function matchRoute(route, pathname) {
@@ -79,3 +102,4 @@ export function matchModuleRoute(routes, pathname) {
   }
   return best;
 }
+import { localPath, mountPath } from './paths.js';

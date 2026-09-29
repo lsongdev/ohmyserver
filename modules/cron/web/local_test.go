@@ -11,7 +11,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func TestLocalModuleOwnsRuntimeAndStandaloneHandler(t *testing.T) {
+func TestLocalModuleOwnsRuntimeAndHandler(t *testing.T) {
 	db, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "cron.db"))
 	if err != nil {
 		t.Fatal(err)
@@ -24,9 +24,9 @@ func TestLocalModuleOwnsRuntimeAndStandaloneHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	response := httptest.NewRecorder()
-	module.StandaloneHandler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v1/cron/jobs", nil))
+	module.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/jobs", nil))
 	if response.Code != http.StatusOK {
-		t.Fatalf("GET /v1/cron/jobs status=%d body=%s", response.Code, response.Body.String())
+		t.Fatalf("GET /jobs status=%d body=%s", response.Code, response.Body.String())
 	}
 	if err := module.Close(); err != nil {
 		t.Fatal(err)

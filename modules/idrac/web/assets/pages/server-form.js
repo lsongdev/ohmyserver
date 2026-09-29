@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useEffect, useState } from 'preact/hooks';
 const initial = { name: '', host: '', port: 443, username: '', password: '', version: '9', description: '' };
 export default function ServerForm({ api, params, navigate }) {

@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#moduleweb/*": "./pkg/moduleweb/browser/*"
+  },
+  "scripts": {
+    "test": "node --test frontend/app/*.test.js pkg/moduleweb/browser/*.test.js"
+  }
+}

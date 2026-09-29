@@ -80,8 +80,8 @@ func TestStandaloneAssetsAndAPI(t *testing.T) {
 	if err := repo.Initialize(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	handler := esxiweb.New(esxiweb.NewService(repo)).StandaloneHandler()
-	for _, path := range []string{"/", "/v1/esxi/manifest.json", "/v1/esxi/assets/module.js", "/v1/esxi/assets/index.js"} {
+	handler := esxiweb.New(esxiweb.NewService(repo)).Handler()
+	for _, path := range []string{"/", "/manifest.json", "/assets/module.js", "/assets/index.js"} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {

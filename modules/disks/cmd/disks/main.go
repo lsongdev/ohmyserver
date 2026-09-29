@@ -20,7 +20,7 @@ func main() {
 	flags := flag.NewFlagSet("disks web serve", flag.ExitOnError)
 	listen := flags.String("listen", "127.0.0.1:8080", "HTTP listen address")
 	_ = flags.Parse(os.Args[3:])
-	srv := &http.Server{Addr: *listen, Handler: disksweb.New(disks.NewLocalService()).StandaloneHandler()}
+	srv := &http.Server{Addr: *listen, Handler: disksweb.New(disks.NewLocalService()).Handler()}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	go func() { <-ctx.Done(); _ = srv.Shutdown(context.Background()) }()

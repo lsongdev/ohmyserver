@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useEffect, useState } from 'preact/hooks';
 
 const empty = () => ({ name:'', type:'', config:'', sort_order:0, enabled:true });

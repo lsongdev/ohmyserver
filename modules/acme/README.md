@@ -10,4 +10,4 @@ go run ./cmd/acme web serve --listen 127.0.0.1:8080
 
 To use HTTP-01, expose `/.well-known/acme-challenge/` on the requested certificate domains to this process (typically by binding the public HTTP listener or routing that path through a reverse proxy). The database defaults to the user's configuration directory and can be overridden with `--db`.
 
-Embedding applications initialize the module with `Repository.InitializeModule`, construct an `Engine` with their context and optional DNS challenge adapter, mount `web.New(engine).Handler()` under `/v1/acme`, and close the engine before closing its database.
+`web.New(engine).Handler()` is the complete module root: it serves the UI, manifest, assets, shared browser runtime, and relative API routes. The standalone command mounts it at `/`; embedding applications choose any mount prefix and close the engine before closing its database.

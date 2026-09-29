@@ -2,14 +2,11 @@
 package app
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"regexp"
 	"sort"
-	"strings"
 )
 
 var moduleName = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
@@ -22,10 +19,9 @@ type HTTPModule interface {
 type Modules struct{ items map[string]HTTPModule }
 
 type PublicModule struct {
-	ID          string `json:"id"`
-	APIBase     string `json:"apiBase"`
-	PageBase    string `json:"pageBase"`
-	ManifestURL string `json:"manifestURL"`
+	ID       string `json:"id"`
+	APIBase  string `json:"apiBase"`
+	PageBase string `json:"pageBase"`
 }
 
 func NewModules() *Modules { return &Modules{items: make(map[string]HTTPModule)} }
@@ -49,7 +45,7 @@ func (m *Modules) PublicModules(basePath string) []PublicModule {
 		if id == "dashboard" {
 			pageBase = "/"
 		}
-		items = append(items, PublicModule{ID: id, APIBase: basePath + "/v1/" + id, PageBase: pageBase, ManifestURL: basePath + "/v1/" + id + "/manifest.json"})
+		items = append(items, PublicModule{ID: id, APIBase: basePath + "/v1/" + id, PageBase: pageBase})
 	}
 	return items
 }
@@ -82,8 +78,14 @@ func (m *Modules) Handler() http.Handler {
 	mux := http.NewServeMux()
 	for name, module := range m.items {
 		prefix := "/" + name
-		handler := http.StripPrefix(prefix, jsonMethodErrors(module.Handler()))
-		mux.Handle(prefix, handler)
+		handler := http.StripPrefix(prefix, module.Handler())
+		mux.HandleFunc(prefix, func(w http.ResponseWriter, r *http.Request) {
+			target := name + "/"
+			if r.URL.RawQuery != "" {
+				target += "?" + r.URL.RawQuery
+			}
+			http.Redirect(w, r, target, http.StatusPermanentRedirect)
+		})
 		mux.Handle(prefix+"/", handler)
 	}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -95,69 +97,3 @@ func (m *Modules) Handler() http.Handler {
 	})
 	return mux
 }
-
-// jsonMethodErrors normalizes only 404/405 responses. Successful responses and
-// streaming capabilities are passed through unchanged.
-func jsonMethodErrors(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/manifest.json" || r.URL.Path == "/assets" || strings.HasPrefix(r.URL.Path, "/assets/") {
-			next.ServeHTTP(w, r)
-			return
-		}
-		next.ServeHTTP(&methodErrorWriter{ResponseWriter: w}, r)
-	})
-}
-
-type methodErrorWriter struct {
-	http.ResponseWriter
-	status  int
-	blocked bool
-}
-
-func (w *methodErrorWriter) WriteHeader(status int) {
-	if w.status != 0 {
-		return
-	}
-	w.status = status
-	if status == http.StatusNotFound || status == http.StatusMethodNotAllowed {
-		w.blocked = true
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.ResponseWriter.WriteHeader(status)
-		code, message := "api_not_found", "API endpoint not found"
-		if status == http.StatusMethodNotAllowed {
-			code, message = "method_not_allowed", "Method not allowed"
-		}
-		_ = json.NewEncoder(w.ResponseWriter).Encode(map[string]any{"error": map[string]string{"code": code, "message": message}})
-		return
-	}
-	w.ResponseWriter.WriteHeader(status)
-}
-
-func (w *methodErrorWriter) Write(p []byte) (int, error) {
-	if w.status == 0 {
-		w.WriteHeader(http.StatusOK)
-	}
-	if w.blocked {
-		return len(p), nil
-	}
-	return w.ResponseWriter.Write(p)
-}
-
-func (w *methodErrorWriter) Flush() {
-	if w.status == 0 {
-		w.WriteHeader(http.StatusOK)
-	}
-	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
-		flusher.Flush()
-	}
-}
-
-func (w *methodErrorWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	hijacker, ok := w.ResponseWriter.(http.Hijacker)
-	if !ok {
-		return nil, nil, fmt.Errorf("hijacking not supported")
-	}
-	return hijacker.Hijack()
-}
-
-func (w *methodErrorWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }

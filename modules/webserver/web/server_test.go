@@ -84,9 +84,9 @@ func TestWebserverModuleServesManifestAndOwnedAssets(t *testing.T) {
 	}
 }
 
-func TestStandaloneHandlerServesPageAndHostScopedModuleAssets(t *testing.T) {
-	handler := New(&apiService{}).StandaloneHandler()
-	for _, path := range []string{"/", "/v1/webserver/manifest.json", "/v1/webserver/assets/module.js", "/v1/webserver/assets/index.js"} {
+func TestHandlerServesPageAndHostScopedModuleAssets(t *testing.T) {
+	handler := New(&apiService{}).Handler()
+	for _, path := range []string{"/", "/manifest.json", "/assets/module.js", "/assets/index.js"} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {

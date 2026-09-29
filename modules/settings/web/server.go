@@ -16,25 +16,13 @@ func New(repo *Repository) *Module { return &Module{repo: repo} }
 func (*Module) Name() string       { return "settings" }
 func (m *Module) Handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", m.list)
-	mux.HandleFunc("PUT /{id}", m.update)
-	mux.HandleFunc("POST /", m.create)
-	mux.HandleFunc("DELETE /{id}", m.delete)
+	mux.HandleFunc("GET /entries", m.list)
+	mux.HandleFunc("PUT /entries/{id}", m.update)
+	mux.HandleFunc("POST /entries", m.create)
+	mux.HandleFunc("DELETE /entries/{id}", m.delete)
 	return wrapModuleWeb(mux)
 }
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/settings/", http.StripPrefix("/v1/settings", m.Handler()))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return mux
-}
+
 func (m *Module) list(w http.ResponseWriter, r *http.Request) {
 	items, err := m.repo.List(r.Context())
 	if err != nil {
@@ -63,7 +51,7 @@ func (m *Module) create(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	w.Header().Set("Location", fmt.Sprintf("/v1/settings/%d", item.ID))
+	w.Header().Set("Location", fmt.Sprintf("entries/%d", item.ID))
 	writeJSON(w, http.StatusCreated, map[string]any{"data": item})
 }
 func (m *Module) update(w http.ResponseWriter, r *http.Request) {

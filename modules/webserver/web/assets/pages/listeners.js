@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useEffect, useState } from 'preact/hooks';
 export default function Listeners({api,navigate}) {
   const [items,setItems]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(false);

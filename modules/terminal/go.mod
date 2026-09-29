@@ -7,6 +7,7 @@ require (
 	github.com/lsongdev/ohmyserver/pkg/terminal v0.0.0
 )
 
-require github.com/creack/pty v1.1.24 // indirect
-
-replace github.com/lsongdev/ohmyserver/pkg/terminal => ../../pkg/terminal
+require (
+	github.com/creack/pty v1.1.24 // indirect
+	github.com/lsongdev/ohmyserver/pkg/moduleweb v0.1.0
+)

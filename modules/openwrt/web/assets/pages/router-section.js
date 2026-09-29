@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useEffect, useState } from 'preact/hooks';
 
 const labels = { overview: '概览', network: '网络与 Wi-Fi', dhcp: 'DHCP 租约', packages: '软件包', firewall: '防火墙', services: '服务' };

@@ -70,19 +70,6 @@ func (m *Module) Handler() http.Handler {
 	return wrapModuleWeb(mux)
 }
 
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/widgets/", http.StripPrefix("/v1/widgets", m.Handler()))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return mux
-}
 func valid(x Widget) bool { return strings.TrimSpace(x.Name) != "" && strings.TrimSpace(x.Type) != "" }
 func idFrom(r *http.Request) (int64, error) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

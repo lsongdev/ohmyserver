@@ -4,6 +4,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { discoverModules } from './modules.js';
+import { validateManifest, validateRuntime } from '#moduleweb/definition.js';
 
 const repositoryRoot = resolve(new URL('../..', import.meta.url).pathname);
 
@@ -18,45 +19,45 @@ test('discovers module runtime and manifest URLs from the Go host index', async 
   const calls = [];
   const fetchImpl = async url => {
     calls.push(url);
-    if (url === '/v1/modules') return new Response(JSON.stringify({ modules: [{ id: 'demo', apiBase: '/v1/demo', pageBase: '/demo', manifestURL: '/v1/demo/manifest.json' }] }), { status: 200 });
+    if (url === '/v1/modules') return new Response(JSON.stringify({ modules: [{ id: 'demo', apiBase: '/v1/demo', pageBase: '/demo' }] }), { status: 200 });
     return new Response(JSON.stringify({ contractVersion: 1, id: 'demo', title: 'Demo', group: 'Tools', entry: 'assets/index.js', home: '/', styles: [], navigation: [] }), { status: 200 });
   };
   const [module] = await discoverModules(fetchImpl);
-  assert.equal(module.id, 'demo');
-  assert.equal(module.apiBase, '/v1/demo');
-  assert.equal(module.pageBase, '/demo');
-  assert.equal(module.moduleURL, new URL('assets/index.js', 'http://localhost/v1/demo/').href);
+  assert.equal(module.mount.id, 'demo');
+  assert.equal(module.mount.apiBase, '/v1/demo');
+  assert.equal(module.mount.pageBase, '/demo');
+  assert.equal(module.entryURL, new URL('assets/index.js', 'http://localhost/v1/demo/').href);
   assert.deepEqual(calls, ['/v1/modules', 'http://localhost/v1/demo/manifest.json']);
 });
 
 test('rejects a manifest whose identity differs from the Go registration', async () => {
   const fetchImpl = async url => url === '/v1/modules'
-    ? new Response(JSON.stringify({ modules: [{ id: 'demo', apiBase: '/v1/demo', pageBase: '/demo', manifestURL: '/v1/demo/manifest.json' }] }), { status: 200 })
+    ? new Response(JSON.stringify({ modules: [{ id: 'demo', apiBase: '/v1/demo', pageBase: '/demo' }] }), { status: 200 })
     : new Response(JSON.stringify({ contractVersion: 1, id: 'other', entry: 'assets/index.js' }), { status: 200 });
   const [module] = await discoverModules(fetchImpl);
-  assert.match(module.manifestError, /身份或版本无效/);
+  assert.match(module.manifestError, /identity or version/);
 });
 
 test('isolates a broken module manifest while loading the remaining modules', async () => {
   const fetchImpl = async url => {
     if (url === '/v1/modules') return new Response(JSON.stringify({ modules: [
-      { id: 'broken', apiBase: '/v1/broken', pageBase: '/broken', manifestURL: '/v1/broken/manifest.json' },
-      { id: 'working', apiBase: '/v1/working', pageBase: '/working', manifestURL: '/v1/working/manifest.json' },
+      { id: 'broken', apiBase: '/v1/broken', pageBase: '/broken' },
+      { id: 'working', apiBase: '/v1/working', pageBase: '/working' },
     ] }), { status: 200 });
     if (url.includes('/broken/')) return new Response('missing', { status: 404 });
     return new Response(JSON.stringify({ contractVersion: 1, id: 'working', title: 'Working', entry: 'assets/index.js', home: '/', styles: [], navigation: [] }), { status: 200 });
   };
   const [broken, working] = await discoverModules(fetchImpl);
-  assert.match(broken.manifestError, /清单加载失败/);
-  assert.equal(working.moduleURL, 'http://localhost/v1/working/assets/index.js');
+  assert.match(broken.manifestError, /manifest failed/);
+  assert.equal(working.entryURL, 'http://localhost/v1/working/assets/index.js');
 });
 
 test('rejects module asset paths that escape the module assets directory', async () => {
   const fetchImpl = async url => url === '/v1/modules'
-    ? new Response(JSON.stringify({ modules: [{ id: 'demo', apiBase: '/v1/demo', pageBase: '/demo', manifestURL: '/v1/demo/manifest.json' }] }), { status: 200 })
+    ? new Response(JSON.stringify({ modules: [{ id: 'demo', apiBase: '/v1/demo', pageBase: '/demo' }] }), { status: 200 })
     : new Response(JSON.stringify({ contractVersion: 1, id: 'demo', entry: '../other.js' }), { status: 200 });
   const [module] = await discoverModules(fetchImpl);
-  assert.match(module.manifestError, /资源路径无效/);
+  assert.match(module.manifestError, /asset path/);
 });
 
 test('every Go module has a matching manifest, embedded assets, and lazy page imports', () => {
@@ -122,8 +123,9 @@ test('standalone modules use one thin host and keep feature UI in pages', () => 
     const source = readFileSync(resolve(assetRoot, 'index.js'), 'utf8');
     if (baseline === null) baseline = source;
     assert.equal(source, baseline, dir.name + ' must use the common standalone host source');
-    assert.match(source, /manifest\.json/);
-    assert.match(source, /runtime\.routes/);
+    assert.match(source, /mountStandalone/);
+    assert.match(source, /import.*['"]\.\/runtime\/standalone\.js['"]/);
+    assert.doesNotMatch(source, /function |fetch\(|matchRoute/);
   }
 });
 
@@ -133,6 +135,8 @@ test('module runtimes expose only executable contract fields', async () => {
   for (const dir of moduleDirs) {
     const { assetRoot } = moduleWebLayout(dir.name);
     const runtime = (await import(pathToFileURL(resolve(assetRoot, 'module.js')))).default;
+    const manifest = validateManifest(JSON.parse(readFileSync(resolve(assetRoot, 'manifest.json'), 'utf8')));
+    assert.doesNotThrow(() => validateRuntime(runtime, manifest), dir.name);
     assert.deepEqual(Object.keys(runtime).sort(), ['createAPI', 'id', 'routes'], dir.name + ' runtime must keep presentation metadata in manifest.json');
     assert.equal(runtime.id, dir.name);
     assert.equal(typeof runtime.createAPI, 'function');

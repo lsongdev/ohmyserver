@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useEffect, useState } from 'preact/hooks';
 
 function TextField({ value, label, name, onChange, type = 'text', required = false, min, step, placeholder }) {

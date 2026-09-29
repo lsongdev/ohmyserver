@@ -64,7 +64,7 @@ func run(args []string) error {
 	defer engine.Close()
 	server := &http.Server{
 		Addr:              *listen,
-		Handler:           acmeweb.New(engine).StandaloneHandler(),
+		Handler:           acmeweb.New(engine).Handler(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	serveErr := make(chan error, 1)

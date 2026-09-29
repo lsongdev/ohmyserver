@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 
 const blank = { name: '', protocol: 'tcp', listen_port: '', forward_host: '127.0.0.1', forward_port: '', status: 'active' };
 export default function NewListener({ api, navigate }) {

@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="api-base" content="/v1/widgets">
+    <meta name="api-base" content=".">
     <title>widgets</title>
     <link rel="stylesheet" href="https://lsong.org/stylesheets/index.css">
     <script type="importmap">
       {
         "imports": {
-          "@panel/shared/ui.js": "https://lsong.org/scripts/react/index.js",
+          "@module/ui": "https://lsong.org/scripts/react/index.js",
           "preact/hooks": "https://lsong.org/scripts/react/index.js"
         }
       }
@@ -17,6 +17,6 @@
   </head>
   <body>
     <div id="app"></div>
-    <script type="module" src="/v1/widgets/assets/index.js"></script>
+    <script type="module" src="assets/index.js"></script>
   </body>
 </html>

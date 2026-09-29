@@ -38,7 +38,7 @@ func main() {
 	if e = module.Initialize(context.Background()); e != nil {
 		log.Fatal(e)
 	}
-	srv := &http.Server{Addr: *listen, Handler: module.StandaloneHandler()}
+	srv := &http.Server{Addr: *listen, Handler: module.Handler()}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	go func() { <-ctx.Done(); _ = srv.Shutdown(context.Background()) }()

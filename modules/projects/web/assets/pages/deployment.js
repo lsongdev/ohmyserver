@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 
 export default function DeploymentDetail({api,params,href}){
   const id=Number(params.id),deploymentId=Number(params.deploymentId),[deployment,setDeployment]=useState(null),[logs,setLogs]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(false);

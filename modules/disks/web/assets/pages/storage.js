@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 
 export default function Storage({ api }) {
   const [volumes,setVolumes]=useState([]),[devices,setDevices]=useState([]),[device,setDevice]=useState(''),[health,setHealth]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);

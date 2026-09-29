@@ -66,19 +66,7 @@ func (m *Module) Handler() http.Handler {
 	})
 	return wrapModuleWeb(mux)
 }
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/ntp/", http.StripPrefix("/v1/ntp", m.Handler()))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return mux
-}
+
 func writeError(w http.ResponseWriter, e error) { writeProblem(w, 400, "ntp_error", e.Error()) }
 func writeProblem(w http.ResponseWriter, status int, code, message string) {
 	writeJSON(w, status, map[string]any{"error": map[string]string{"code": code, "message": message}})

@@ -8,4 +8,4 @@ Run the local UI with:
 go run ./cmd/disks web serve --listen 127.0.0.1:8080
 ```
 
-The standalone process serves the UI at `/` and the module API, manifest, and assets under `/v1/disks`. Embedding hosts can construct the local service from the public `disks` package and mount `disks/web` under their chosen API prefix.
+The standalone process mounts the complete module handler at `/`. Embedding hosts construct the same handler from the public `disks` service and may mount it at any prefix; the module keeps all API, page, manifest, and asset paths relative to that root.

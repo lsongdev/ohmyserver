@@ -33,19 +33,7 @@ func (m *Module) Handler() http.Handler {
 	})
 	return wrapModuleWeb(mux)
 }
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/speedtest/", http.StripPrefix("/v1/speedtest", m.Handler()))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return mux
-}
+
 func (m *Module) listResults(w http.ResponseWriter, r *http.Request) {
 	items, err := m.service.ListResults(r.Context())
 	if err != nil {

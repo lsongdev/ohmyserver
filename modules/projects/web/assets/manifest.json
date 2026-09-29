@@ -6,7 +6,6 @@
   "group": "容器与部署",
   "entry": "assets/module.js",
   "styles": [
-    "assets/standalone.css",
     "assets/projects.css"
   ],
   "home": "/",

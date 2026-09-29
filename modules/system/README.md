@@ -8,4 +8,4 @@ Run the module UI/API independently with:
 go run ./cmd/system web serve --listen 127.0.0.1:8080
 ```
 
-The standalone process serves the UI at `/` and API/assets under `/v1/system`.
+The standalone process mounts the complete module handler at `/`; an embedding host may mount the same handler at any prefix. UI, relative API, manifest, and assets always share that module root.

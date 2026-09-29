@@ -16,7 +16,7 @@ go run ./cmd/clash web serve
 The service listens on `127.0.0.1:8080`, serves its management UI at `/`, and
 stores its database at the platform's user configuration directory under
 `clash/clash.db`. Use `--listen` and `--db` to override those defaults. The
-module API and discovery manifest are available under `/v1/clash/`.
+module API, discovery manifest, and assets share that same root.
 
 ## Embed in another Go application
 
@@ -28,10 +28,9 @@ if err := repository.Initialize(ctx); err != nil {
 handler := web.New(web.NewManager(repository)).Handler()
 ```
 
-The host mounts this handler at its chosen API root. The browser module calls
-only relative API routes and receives the host's transport prefix from the
-shell. The standalone command serves the module's `index.html` and uses the
-same handler for its API and embedded assets.
+The host mounts this complete handler at any chosen module root. The browser
+module calls only relative API and page routes; it never reads or constructs
+the host prefix. The standalone command mounts the same handler at `/`.
 
 ## Use the Go client
 

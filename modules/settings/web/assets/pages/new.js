@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 
 export default function NewSetting({ api, navigate }) {
   const [form, setForm] = useState({ name: '', type: 'string', value: '', description: '' });

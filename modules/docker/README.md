@@ -8,6 +8,6 @@ Run the module independently with:
 go run ./cmd/docker web serve --listen 127.0.0.1:8080 --db ./docker.db --apps-dir ./apps-catalog --compose-dir ./compose
 ```
 
-Set Docker's standard `DOCKER_HOST`/TLS environment variables when the daemon is not using its local default. The standalone process serves the management UI at `/` and the API and module manifest under `/v1/docker`.
+Set Docker's standard `DOCKER_HOST`/TLS environment variables when the daemon is not using its local default. The standalone process mounts the complete module handler at `/`.
 
-Module UI resources are in `web/assets`. Embedding applications mount the API under `/v1/docker` and provide the shared SQLite repository and host policy adapter.
+Module UI resources are in `web/assets`. Embedding applications provide the shared SQLite repository and host policy adapter, then mount the same handler at any module root; all module routes remain relative to it.

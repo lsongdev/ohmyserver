@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
+
 	"net/http"
 	"strings"
 	"time"
@@ -63,32 +63,6 @@ func (m *Module) Handler() http.Handler {
 	mux.HandleFunc("GET /apps/{id}/install", m.appInstallStatus)
 	mux.HandleFunc("POST /apps/{id}/{action}", m.appAction)
 	return wrapModuleWeb(mux)
-}
-
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/docker/", http.StripPrefix("/v1/docker", m.Handler()))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" || (r.Method != http.MethodGet && r.Method != http.MethodHead) {
-			http.NotFound(w, r)
-			return
-		}
-		assets, err := fs.Sub(moduleWeb, "assets")
-		if err != nil {
-			http.Error(w, "Docker module assets unavailable", http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
-		http.ServeFileFS(w, r, assets, "index.html")
-	})
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" || strings.HasPrefix(r.URL.Path, "/v1/docker/") {
-			mux.ServeHTTP(w, r)
-			return
-		}
-		http.NotFound(w, r)
-	})
 }
 
 func (m *Module) buildImage(w http.ResponseWriter, r *http.Request) {

@@ -6,7 +6,6 @@
   "group": "存储与系统",
   "entry": "assets/module.js",
   "styles": [
-    "assets/standalone.css",
     "assets/widgets.css"
   ],
   "home": "/",

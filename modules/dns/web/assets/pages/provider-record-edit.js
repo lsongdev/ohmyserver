@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useEffect, useState } from 'preact/hooks';
 import { decodeProviderZone } from '../provider-route.js';
 
@@ -7,7 +7,7 @@ const empty = { type: 'A', name: '', value: '', ttl: 300, comment: '' };
 export default function EditProviderRecord({ api, params, navigate }) {
   const [zoneID, setZoneID] = useState(''), [zoneName, setZoneName] = useState(''), [form, setForm] = useState(empty);
   const [error, setError] = useState(''), [busy, setBusy] = useState(false), [loading, setLoading] = useState(true);
-  const parent = `/dns/providers/${params.id}/zones/${params.zone}`;
+  const parent = `/providers/${params.id}/zones/${params.zone}`;
 
   useEffect(() => {
     let decoded;

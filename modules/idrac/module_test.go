@@ -94,8 +94,8 @@ func TestStandaloneAssetsAndAPI(t *testing.T) {
 	if err := repo.Initialize(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	handler := idracweb.New(idracweb.NewLocalService(repo)).StandaloneHandler()
-	for _, path := range []string{"/", "/v1/idrac/manifest.json", "/v1/idrac/assets/module.js", "/v1/idrac/assets/index.js", "/v1/idrac/servers"} {
+	handler := idracweb.New(idracweb.NewLocalService(repo)).Handler()
+	for _, path := range []string{"/", "/manifest.json", "/assets/module.js", "/assets/index.js", "/servers"} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {

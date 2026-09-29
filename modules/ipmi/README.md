@@ -8,4 +8,4 @@ Run it independently with:
 go run ./cmd/ipmi web serve --listen 127.0.0.1:8080 --db ./ipmi.db
 ```
 
-The standalone process serves the UI at `/` and the API, manifest, and assets under `/v1/ipmi`. Embedding hosts provide the shared SQLite connection or repository and mount the module handler at their registered API prefix.
+The standalone process mounts the complete module handler at `/`. Embedding hosts provide the shared SQLite connection or repository and mount that same handler at any prefix; all module routes remain relative to it.

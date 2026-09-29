@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useState } from 'preact/hooks';
 
 const initial = { name: '', kind: 'block', url: '', enabled: true, refresh_hours: 24 };

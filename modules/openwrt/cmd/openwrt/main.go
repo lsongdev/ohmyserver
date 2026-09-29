@@ -40,7 +40,7 @@ func main() {
 		log.Fatal(err)
 	}
 	module := openwrtweb.New(repo, openwrtweb.NewLocalService(repo))
-	srv := &http.Server{Addr: *listen, Handler: module.StandaloneHandler()}
+	srv := &http.Server{Addr: *listen, Handler: module.Handler()}
 	go func() { <-ctx.Done(); _ = srv.Shutdown(context.Background()) }()
 	log.Printf("OpenWrt module listening on http://%s", *listen)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

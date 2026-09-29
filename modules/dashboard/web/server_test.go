@@ -34,13 +34,13 @@ func TestHandlerServesModuleManifestAndEntry(t *testing.T) {
 	}
 }
 
-func TestStandaloneHandlerServesPageAssetsAndOverviewAPI(t *testing.T) {
-	handler := New(testService{}).StandaloneHandler()
+func TestHandlerServesPageAssetsAndOverviewAPI(t *testing.T) {
+	handler := New(testService{}).Handler()
 	for path, contains := range map[string]string{
 		"/":                             "api-base",
-		"/v1/dashboard/manifest.json":   "assets/module.js",
-		"/v1/dashboard/assets/index.js": "lsong.org/scripts/react/index.js",
-		"/v1/dashboard/overview":        `"hostname":"test-host"`,
+		"/manifest.json":   "assets/module.js",
+		"/assets/index.js": "lsong.org/scripts/react/index.js",
+		"/overview":        `"hostname":"test-host"`,
 	} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest("GET", path, nil))

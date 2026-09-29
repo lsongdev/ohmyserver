@@ -101,8 +101,8 @@ func TestStandaloneAssetsAndAPI(t *testing.T) {
 	if err := repo.Initialize(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	handler := yeelightweb.New(yeelightweb.NewLocalService(repo)).StandaloneHandler()
-	for _, path := range []string{"/", "/v1/yeelight/manifest.json", "/v1/yeelight/assets/module.js", "/v1/yeelight/assets/index.js", "/v1/yeelight/devices"} {
+	handler := yeelightweb.New(yeelightweb.NewLocalService(repo)).Handler()
+	for _, path := range []string{"/", "/manifest.json", "/assets/module.js", "/assets/index.js", "/devices"} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {
