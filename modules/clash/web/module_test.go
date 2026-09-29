@@ -133,9 +133,9 @@ func TestHandlerServesModuleManifestAndEntry(t *testing.T) {
 	}
 }
 
-func TestStandaloneHandlerServesUIAndMountedModuleAssets(t *testing.T) {
-	handler := New(&apiService{}).StandaloneHandler()
-	for _, path := range []string{"/", "/v1/clash/manifest.json", "/v1/clash/assets/index.js", "/v1/clash/assets/module.js"} {
+func TestHandlerServesUIAndMountedModuleAssets(t *testing.T) {
+	handler := New(&apiService{}).Handler()
+	for _, path := range []string{"/", "/manifest.json", "/assets/index.js", "/assets/module.js"} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {
@@ -146,8 +146,8 @@ func TestStandaloneHandlerServesUIAndMountedModuleAssets(t *testing.T) {
 	handler.ServeHTTP(page, httptest.NewRequest(http.MethodGet, "/", nil))
 	for _, expected := range []string{
 		`href="https://lsong.org/stylesheets/index.css"`,
-		`src="/v1/clash/assets/index.js"`,
-		`name="api-base" content="/v1/clash"`,
+		`src="assets/index.js"`,
+		`name="api-base" content="."`,
 	} {
 		if !strings.Contains(page.Body.String(), expected) {
 			t.Errorf("standalone index.html does not contain %q", expected)

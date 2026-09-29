@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 
 const blank = { name: '', host: '', port: 22, username: '', auth_type: 'password', password: '', private_key: '', description: '', enabled: true };
 export default function ServerForm({ api, params, navigate }) {

@@ -84,7 +84,7 @@ func run(args []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	service := dashboardweb.NewLocalService(nil, systemSource{})
-	server := &http.Server{Addr: *listen, Handler: dashboardweb.New(service).StandaloneHandler(), ReadHeaderTimeout: 5 * time.Second}
+	server := &http.Server{Addr: *listen, Handler: dashboardweb.New(service).Handler(), ReadHeaderTimeout: 5 * time.Second}
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- server.ListenAndServe() }()
 	log.Printf("Dashboard module listening on http://%s", *listen)

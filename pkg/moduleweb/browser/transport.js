@@ -24,21 +24,23 @@ export function createRequest({ fetchImpl = fetch } = {}) {
       const error = payload?.error || {};
       throw new APIError(error.message || response.statusText, response.status, error.code);
     }
-    return payload?.data ?? payload;
+    if (!payload || !Object.hasOwn(payload, 'data')) throw new APIError('Invalid JSON response envelope', response.status, 'invalid_response');
+    return payload.data;
   };
 }
 
-export function createModuleTransport({ apiBase, request = createRequest(), fetchImpl = fetch, origin = globalThis.location?.origin || 'http://localhost' }) {
-  const moduleRoot = new URL(`${apiBase.replace(/\/$/, '')}/`, origin);
+export function createModuleTransport({ apiBase, fetchImpl = fetch, request = createRequest({ fetchImpl }), origin = globalThis.location?.origin || 'http://localhost' }) {
+  const root = moduleRoot(apiBase, origin);
   const resolve = path => {
-    if (typeof path !== 'string' || /^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith('//')) throw new TypeError('module request path must be relative');
-    const url = new URL(path.replace(/^\/+/, ''), moduleRoot);
-    if (url.origin !== moduleRoot.origin || !url.pathname.startsWith(moduleRoot.pathname)) throw new TypeError('module request escaped its API mount');
+    localPath(path);
+    const url = new URL(path.slice(1), root);
+    if (url.origin !== root.origin || !url.pathname.startsWith(root.pathname)) throw new TypeError('module request escaped its API mount');
     return url;
   };
-  const scopedFetch = (path, options = {}) => fetchImpl(resolve(path).href, { credentials: 'same-origin', ...options });
-  return {
-    request: (path, options) => request(resolve(path).href, options),
+  const scopedRequest = (path, options = {}) => request(resolve(path).href, { ...options, credentials: 'same-origin' });
+  const scopedFetch = (path, options = {}) => fetchImpl(resolve(path).href, { ...options, credentials: 'same-origin' });
+  return Object.freeze({
+    request: scopedRequest,
     fetchImpl: scopedFetch,
     apiURL: path => resolve(path).href,
     websocketURL: path => {
@@ -46,5 +48,6 @@ export function createModuleTransport({ apiBase, request = createRequest(), fetc
       url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
       return url.href;
     },
-  };
+  });
 }
+import { localPath, moduleRoot } from './paths.js';

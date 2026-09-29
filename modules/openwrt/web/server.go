@@ -24,17 +24,6 @@ type Module struct {
 func New(repo *Repository, runtime Runtime) *Module { return &Module{repo: repo, runtime: runtime} }
 func (*Module) Name() string                        { return "openwrt" }
 
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/openwrt/", http.StripPrefix("/v1/openwrt", m.Handler()))
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return mux
-}
-
 func (m *Module) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /routers", m.list)

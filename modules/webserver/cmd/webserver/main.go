@@ -63,7 +63,7 @@ func run(args []string) error {
 	}
 	defer runtime.Close()
 	service := webserverweb.NewLocalService(repo, runtime, nil, nil)
-	server := &http.Server{Addr: *listen, Handler: webserverweb.New(service).StandaloneHandler(), ReadHeaderTimeout: 5 * time.Second}
+	server := &http.Server{Addr: *listen, Handler: webserverweb.New(service).Handler(), ReadHeaderTimeout: 5 * time.Second}
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- server.ListenAndServe() }()
 	log.Printf("Web Server module listening on http://%s (database %s)", *listen, *dbPath)

@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 
 const blank = { name: '', type: 'cron', schedule: '', command: '', working_dir: '', timeout: 0 };
 export default function NewCronJob({ api, navigate }) {

@@ -1,4 +1,4 @@
-import { html, useEffect, useState } from '@panel/shared/ui.js';
+import { html, useEffect, useState } from '@module/ui';
 
 export default function Overview({ api }) {
   const [settings, setSettings] = useState(null);

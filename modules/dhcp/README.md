@@ -8,4 +8,4 @@ Run the module independently with:
 go run ./cmd/dhcp web serve --listen 127.0.0.1:8080 --db ./dhcp.db
 ```
 
-The standalone server provides a management UI at `/` and the API plus module manifest under `/v1/dhcp`. Starting the DHCP server requires permission to bind the configured UDP port and access to the target network.
+The standalone server mounts the complete module handler at `/`, so its UI, relative API, manifest, and assets share one root. An embedding host may mount the same handler at any prefix. Starting the DHCP server requires permission to bind the configured UDP port and access to the target network.

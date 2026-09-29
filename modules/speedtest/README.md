@@ -8,4 +8,4 @@ Run it independently with:
 go run ./cmd/speedtest web serve --listen 127.0.0.1:8080 --db ./speedtest.db
 ```
 
-The standalone process serves the UI at `/` and the API, manifest, and assets under `/v1/speedtest`. Embedding hosts provide the module repository and register its handler through the Go composition root.
+The standalone process mounts the complete module handler at `/`. Embedding hosts provide the module repository and mount that same handler at any prefix through the Go composition root.

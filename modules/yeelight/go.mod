@@ -10,6 +10,7 @@ require (
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/lsongdev/ohmyserver/pkg/moduleweb v0.1.0
 	github.com/lsongdev/ssdp-go v0.0.0-20260411070512-aece6ff5803f // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect

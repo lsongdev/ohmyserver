@@ -56,7 +56,7 @@ func run(args []string) error {
 	if err := repository.Initialize(ctx); err != nil {
 		return fmt.Errorf("initialize Clash database: %w", err)
 	}
-	handler := clashweb.New(clashweb.NewManager(repository)).StandaloneHandler()
+	handler := clashweb.New(clashweb.NewManager(repository)).Handler()
 	server := &http.Server{
 		Addr:              *listen,
 		Handler:           handler,

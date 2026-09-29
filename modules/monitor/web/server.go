@@ -27,19 +27,7 @@ func (m *Module) Handler() http.Handler {
 	mux.Handle("POST /telegraf", TelegrafHandler(m.repo))
 	return wrapModuleWeb(mux)
 }
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/monitor/", http.StripPrefix("/v1/monitor", m.Handler()))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return mux
-}
+
 func (m *Module) hosts(w http.ResponseWriter, r *http.Request) {
 	v, e := m.repo.LatestForAllHosts(r.Context())
 	if e != nil {

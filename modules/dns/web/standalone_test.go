@@ -28,16 +28,16 @@ func standaloneTestRepository(t *testing.T) *Repository {
 	return repo
 }
 
-func TestStandaloneHandlerServesPageManifestAssetsAndMountedAPI(t *testing.T) {
+func TestHandlerServesPageManifestAssetsAndMountedAPI(t *testing.T) {
 	repo := standaloneTestRepository(t)
 	service := &apiService{repo: repo}
-	handler := New(repo, service, t.TempDir()).StandaloneHandler()
+	handler := New(repo, service, t.TempDir()).Handler()
 	for path, contains := range map[string]string{
-		"/":                       "api-base",
-		"/v1/dns/manifest.json":   "assets/module.js",
-		"/v1/dns/assets/index.js": "lsong.org/scripts/react/index.js",
-		"/v1/dns/assets/dns.css":  ".dns-standalone-header",
-		"/v1/dns/status":          `"state":"running"`,
+		"/":                "api-base",
+		"/manifest.json":   "assets/module.js",
+		"/assets/index.js": "lsong.org/scripts/react/index.js",
+		"/assets/dns.css":  ".dns-standalone-header",
+		"/status":          `"state":"running"`,
 	} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))

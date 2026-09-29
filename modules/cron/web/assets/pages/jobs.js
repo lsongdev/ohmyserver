@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 
 const blank = { name: '', type: 'cron', schedule: '', command: '', working_dir: '', timeout: 0 };
 const stamp = value => value ? new Date(value).toLocaleString() : '—';

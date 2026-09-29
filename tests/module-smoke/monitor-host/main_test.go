@@ -33,7 +33,7 @@ func TestExternalHostLoadsMonitorReleaseAndServesResources(t *testing.T) {
 
 	for _, test := range []struct{ path, body string }{
 		{"/v1/monitor/manifest.json", `"id": "monitor"`},
-		{"/v1/monitor/assets/module.js", "defineModule"},
+		{"/v1/monitor/assets/module.js", "createAPI"},
 		{"/v1/monitor/hosts", `"data":[]`},
 	} {
 		response, err := http.Get(host.URL + test.path)

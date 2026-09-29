@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useEffect, useState } from 'preact/hooks';
 
 export default function ContainerDetail({ api, params, navigate, hrefTo }) {
@@ -28,7 +28,7 @@ export default function ContainerDetail({ api, params, navigate, hrefTo }) {
     catch (err) { setLogsError(err.message || '日志读取失败'); }
     finally { setLoadingLogs(false); }
   }
-  const terminalHref = hrefTo?.('terminal', `/docker/${encodeURIComponent(params.id)}`);
+  const terminalHref = hrefTo('terminal', `/docker/${encodeURIComponent(params.id)}`);
   return html`<div>
     ${error ? html`<div class="notice-card error" role="alert">${error}</div>` : null}
     ${item ? html`<div class="card detail-card"><div class="page-toolbar"><h2>${item.name || item.id}</h2><button class="button" onclick=${() => navigate('/containers')}>返回容器列表</button></div>

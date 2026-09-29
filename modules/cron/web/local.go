@@ -3,7 +3,6 @@ package web
 import (
 	"context"
 	"database/sql"
-	"net/http"
 )
 
 // LocalModule composes the cron repository, scheduler, and HTTP module for a
@@ -22,7 +21,3 @@ func NewLocalModule(ctx context.Context, db *sql.DB, runner CommandRunner) *Loca
 
 func (m *LocalModule) Start(ctx context.Context) error { return m.engine.Start(ctx) }
 func (m *LocalModule) Close() error                    { return m.engine.Close() }
-
-// StandaloneHandler serves the local module UI and mounts its API at the
-// standalone default prefix.
-func (m *LocalModule) StandaloneHandler() http.Handler { return m.Module.StandaloneHandler() }

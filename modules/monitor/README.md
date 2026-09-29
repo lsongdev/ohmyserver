@@ -8,4 +8,4 @@ Run the module independently with:
 go run ./cmd/monitor web serve --listen 127.0.0.1:8080 --db ./monitor.db
 ```
 
-The standalone process serves the UI at `/` and the API, manifest, and assets under `/v1/monitor`. Embedding applications may provide a collector and repository using the module's narrow interfaces.
+The standalone process mounts the complete module handler at `/`; embedding applications may mount the same handler at any prefix and provide a collector and repository through the module's narrow interfaces.

@@ -90,6 +90,7 @@ require (
 	github.com/lsongdev/ohmyserver/modules/webserver v0.0.0
 	github.com/lsongdev/ohmyserver/modules/widgets v0.0.0
 	github.com/lsongdev/ohmyserver/modules/yeelight v0.0.0
+	github.com/lsongdev/ohmyserver/pkg/moduleweb v0.1.0
 	github.com/lsongdev/ohmyserver/pkg/terminal v0.0.0
 	github.com/lsongdev/ssdp-go v0.0.0-20260411070512-aece6ff5803f // indirect
 	github.com/lsongdev/workers-go v0.0.0-20260406114953-755eda039598 // indirect

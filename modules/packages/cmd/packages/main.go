@@ -33,7 +33,7 @@ func run(args []string) error {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	server := &http.Server{Addr: *listen, Handler: packagesweb.New(packageservice.NewSystemService()).StandaloneHandler(), ReadHeaderTimeout: 10 * time.Second}
+	server := &http.Server{Addr: *listen, Handler: packagesweb.New(packageservice.NewSystemService()).Handler(), ReadHeaderTimeout: 10 * time.Second}
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- server.ListenAndServe() }()
 	log.Printf("packages module listening on http://%s", *listen)

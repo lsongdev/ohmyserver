@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 
 const blank = () => ({ name: '', type: 'http', target: '', port: 443, interval: 60, timeout: 10, expected_status: 200, enabled: true });
 export default function NewMonitor({ api, navigate }) {

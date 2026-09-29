@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 type Service interface {
@@ -145,26 +144,6 @@ func (m *Module) Handler() http.Handler {
 	return wrapModuleWeb(mux)
 }
 
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/dhcp/", http.StripPrefix("/v1/dhcp", m.Handler()))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" || (r.Method != http.MethodGet && r.Method != http.MethodHead) {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" || strings.HasPrefix(r.URL.Path, "/v1/dhcp/") {
-			mux.ServeHTTP(w, r)
-			return
-		}
-		http.NotFound(w, r)
-	})
-}
 func pathID(r *http.Request) (int64, error) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil || id < 1 {

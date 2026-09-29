@@ -40,7 +40,7 @@ func main() {
 		log.Fatal(err)
 	}
 	module := uptimeweb.New(repo, uptime.NewChecker(repo))
-	server := &http.Server{Addr: *listen, Handler: module.StandaloneHandler()}
+	server := &http.Server{Addr: *listen, Handler: module.Handler()}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	go func() { <-ctx.Done(); _ = server.Shutdown(context.Background()) }()

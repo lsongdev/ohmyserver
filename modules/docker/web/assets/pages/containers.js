@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useCallback, useEffect, useState } from 'preact/hooks';
 
 function displayName(names = []) { return names[0]?.replace(/^\//, '') || '(unnamed)'; }

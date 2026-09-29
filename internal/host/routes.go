@@ -20,6 +20,7 @@ import (
 	frontendassets "github.com/lsongdev/ohmyserver/frontend"
 	acmeweb "github.com/lsongdev/ohmyserver/modules/acme/web"
 	monitorweb "github.com/lsongdev/ohmyserver/modules/monitor/web"
+	"github.com/lsongdev/ohmyserver/pkg/moduleweb"
 )
 
 type statusRecorder struct {
@@ -148,6 +149,7 @@ func NewHTTPRouterAtBase(s *Server, configuredBasePath string) (http.Handler, er
 		w.Header().Set("Cache-Control", "no-cache")
 		http.ServeFileFS(w, r, frontendFS, "login.html")
 	})
+	router.Handle("/frontend/runtime/", http.StripPrefix("/frontend/runtime/", moduleweb.BrowserHandler()))
 	staticFrontend := http.StripPrefix("/frontend/", http.FileServer(http.FS(frontendFS)))
 	router.Handle("/frontend/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-cache")
@@ -221,9 +223,6 @@ func NewHTTPRouterAtBase(s *Server, configuredBasePath string) (http.Handler, er
 			http.NotFound(w, r)
 			return
 		}
-		request := r.Clone(r.Context())
-		request.URL.Path = strings.TrimPrefix(r.URL.Path, basePath)
-		request.URL.RawPath = ""
-		protectedRouter.ServeHTTP(w, request)
+		http.StripPrefix(basePath, protectedRouter).ServeHTTP(w, r)
 	}), nil
 }

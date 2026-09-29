@@ -24,9 +24,9 @@ func TestLocalModuleComposesRepositoryRuntimeAndHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	response := httptest.NewRecorder()
-	module.StandaloneHandler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v1/dhcp/settings", nil))
+	module.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/settings", nil))
 	if response.Code != http.StatusOK {
-		t.Fatalf("GET /v1/dhcp/settings status=%d body=%s", response.Code, response.Body.String())
+		t.Fatalf("GET /settings status=%d body=%s", response.Code, response.Body.String())
 	}
 	if err := module.Close(); err != nil {
 		t.Fatal(err)

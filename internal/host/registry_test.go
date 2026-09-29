@@ -47,7 +47,7 @@ func TestAPIModuleRegistryMountsFeaturePrefixes(t *testing.T) {
 		"dhcp": "/settings", "disks": "/usage", "dns": "/settings", "docker": "/containers",
 		"esxi": "/servers", "files": "/entries", "forward": "/listeners", "idrac": "/servers",
 		"ipmi": "/servers", "monitor": "/hosts", "ntp": "/settings", "openwrt": "/routers",
-		"packages": "/packages", "projects": "/projects", "pve": "/servers", "settings": "/",
+		"packages": "/packages", "projects": "/projects", "pve": "/servers", "settings": "/entries",
 		"speedtest": "/results", "ssh": "/servers/test", "system": "/info", "terminal": "/local/ws",
 		"uptime": "/monitors", "webserver": "/listeners", "yeelight": "/devices",
 	}

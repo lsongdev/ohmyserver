@@ -110,19 +110,7 @@ func (m *Module) Handler() http.Handler {
 	})
 	return wrapModuleWeb(mux)
 }
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/forward/", http.StripPrefix("/v1/forward", m.Handler()))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return mux
-}
+
 func valid(x Listener) bool {
 	return strings.TrimSpace(x.Name) != "" && (x.Protocol == "tcp" || x.Protocol == "udp") && x.ListenPort > 0 && x.ListenPort < 65536 && x.ForwardPort > 0 && x.ForwardPort < 65536 && strings.TrimSpace(x.ForwardHost) != ""
 }

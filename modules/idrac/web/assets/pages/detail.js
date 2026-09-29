@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useEffect, useState } from 'preact/hooks';
 export default function Detail({ api, params, navigate }) {
   const [server,setServer]=useState(null);const [inventory,setInventory]=useState(null);const [error,setError]=useState('');const [busy,setBusy]=useState(false);const [refresh,setRefresh]=useState(0);

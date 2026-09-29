@@ -20,17 +20,6 @@ type Module struct{ service Service }
 func New(service Service) *Module { return &Module{service: service} }
 func (*Module) Name() string      { return "webserver" }
 
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/webserver/", http.StripPrefix("/v1/webserver", m.Handler()))
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return mux
-}
-
 func (m *Module) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /listeners", func(w http.ResponseWriter, r *http.Request) {

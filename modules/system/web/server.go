@@ -3,7 +3,6 @@ package web
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	system "github.com/lsongdev/ohmyserver/modules/system"
 )
@@ -28,27 +27,6 @@ func (m *Module) Handler() http.Handler {
 	return wrapModuleWeb(mux)
 }
 
-// StandaloneHandler serves the same module API and assets without the panel shell.
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/system/", http.StripPrefix("/v1/system", m.Handler()))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" || (r.Method != http.MethodGet && r.Method != http.MethodHead) {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-cache")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/v1/system/") || r.URL.Path == "/" {
-			mux.ServeHTTP(w, r)
-			return
-		}
-		http.NotFound(w, r)
-	})
-}
 func systemJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)

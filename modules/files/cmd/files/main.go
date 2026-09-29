@@ -43,7 +43,7 @@ func run(args []string) error {
 	defer service.Close()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	server := &http.Server{Addr: *listen, Handler: filesweb.New(service).StandaloneHandler(), ReadHeaderTimeout: 5 * time.Second}
+	server := &http.Server{Addr: *listen, Handler: filesweb.New(service).Handler(), ReadHeaderTimeout: 5 * time.Second}
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- server.ListenAndServe() }()
 	log.Printf("Files module listening on http://%s (root %s)", *listen, *rootPath)

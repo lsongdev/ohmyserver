@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useState } from 'preact/hooks';
 import { PolicyForm } from '../forms.js';
 

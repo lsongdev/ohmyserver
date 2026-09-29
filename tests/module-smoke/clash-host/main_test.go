@@ -21,10 +21,11 @@ func TestExternalHostLoadsClashReleaseAndServesResources(t *testing.T) {
 	}
 	db.SetMaxOpenConns(1)
 	defer db.Close()
-	module, err := clashweb.NewStandaloneLocalModule(context.Background(), db)
-	if err != nil {
+	repo := clashweb.NewRepository(db)
+	if err := repo.Initialize(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+	module := clashweb.NewLocalModule(repo)
 	mux := http.NewServeMux()
 	mux.Handle("/v1/clash/", http.StripPrefix("/v1/clash", module.Handler()))
 	host := httptest.NewServer(mux)

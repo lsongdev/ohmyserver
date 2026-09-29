@@ -32,19 +32,7 @@ func (m *Module) Handler() http.Handler {
 	mux.HandleFunc("POST /servers/{id}/power", m.power)
 	return wrapModuleWeb(mux)
 }
-func (m *Module) StandaloneHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/v1/idrac/", http.StripPrefix("/v1/idrac", m.Handler()))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		http.ServeFileFS(w, r, moduleWeb, "assets/index.html")
-	})
-	return mux
-}
+
 func (m *Module) list(w http.ResponseWriter, r *http.Request) {
 	v, e := m.service.ListIDRAC(r.Context())
 	if e != nil {

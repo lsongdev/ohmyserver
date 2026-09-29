@@ -105,21 +105,21 @@ func TestHandlerServesModuleManifestAndEntry(t *testing.T) {
 	}
 }
 
-func TestStandaloneHandlerServesUIAndMountedAPI(t *testing.T) {
+func TestHandlerServesUIAndMountedAPI(t *testing.T) {
 	root := t.TempDir()
 	service, err := files.NewLocalFilesystemAt(root)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer service.Close()
-	handler := New(service).StandaloneHandler()
+	handler := New(service).Handler()
 	page := httptest.NewRecorder()
 	handler.ServeHTTP(page, httptest.NewRequest(http.MethodGet, "/", nil))
 	if page.Code != http.StatusOK || !strings.Contains(page.Body.String(), "index.js") {
 		t.Fatalf("GET / status=%d body=%q", page.Code, page.Body.String())
 	}
 	api := httptest.NewRecorder()
-	handler.ServeHTTP(api, httptest.NewRequest(http.MethodGet, "/v1/files/entries?path="+url.QueryEscape(root), nil))
+	handler.ServeHTTP(api, httptest.NewRequest(http.MethodGet, "/entries?path="+url.QueryEscape(root), nil))
 	if api.Code != http.StatusOK || !strings.Contains(api.Body.String(), `"data"`) {
 		t.Fatalf("GET mounted API status=%d body=%q", api.Code, api.Body.String())
 	}

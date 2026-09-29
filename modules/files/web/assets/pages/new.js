@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'preact/hooks';
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 
 export default function FileOperation({ api, params, search, navigate }) {
   const operation = ['create_file', 'create_folder', 'upload'].includes(params.operation) ? params.operation : '';
   const path = search?.get('path') || '';
   const showHidden = search?.get('show_hidden') === 'true';
   const [listing, setListing] = useState(null), [name, setName] = useState(''), [content, setContent] = useState(''), [file, setFile] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false);
-  const back = `/files?path=${encodeURIComponent(path)}&show_hidden=${showHidden}`;
+  const back = `/?path=${encodeURIComponent(path)}&show_hidden=${showHidden}`;
   useEffect(() => { const controller = new AbortController(); api.list(path, showHidden, { signal: controller.signal }).then(setListing).catch(e => { if (e.name !== 'AbortError') setError(e.message || '目录读取失败'); }); return () => controller.abort(); }, [api, path, showHidden]);
   const submit = async event => { event.preventDefault(); setBusy(true); setError(''); try { if (!operation) throw new Error('文件操作类型无效'); if (listing?.is_file) throw new Error('不能在文件路径下创建内容'); if (operation === 'upload') { if (!file) throw new Error('请选择一个文件'); await api.upload(listing?.current_path || path, file); } else await api.create(operation, listing?.current_path || path, name, content); navigate(back); } catch (e) { setError(e.message || '文件操作失败'); } finally { setBusy(false); } };
   const title = operation === 'upload' ? '上传文件' : operation === 'create_folder' ? '新建目录' : '新建文件';

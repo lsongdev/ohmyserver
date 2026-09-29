@@ -5,9 +5,7 @@
   "icon": "◷",
   "group": "基础设施",
   "entry": "assets/module.js",
-  "styles": [
-    "assets/standalone.css"
-  ],
+  "styles": [],
   "home": "/",
   "navigation": [
     {

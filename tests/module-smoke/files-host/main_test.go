@@ -30,7 +30,7 @@ func TestExternalHostLoadsFilesReleaseAndServesResources(t *testing.T) {
 
 	for _, test := range []struct{ path, body string }{
 		{"/v1/files/manifest.json", `"id": "files"`},
-		{"/v1/files/assets/module.js", "defineModule"},
+		{"/v1/files/assets/module.js", "createAPI"},
 		{"/v1/files/entries", `"hello.txt"`},
 	} {
 		response, err := http.Get(host.URL + test.path)

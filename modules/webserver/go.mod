@@ -24,6 +24,7 @@ require (
 	github.com/dop251/goja v0.0.0-20260311135729-065cd970411c // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/google/pprof v0.0.0-20250317173921-a4b03ec1a45e // indirect
+	github.com/lsongdev/ohmyserver/pkg/moduleweb v0.1.0
 	github.com/lsongdev/workers-go v0.0.0-20260406114953-755eda039598 // indirect
 	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/time v0.16.0 // indirect

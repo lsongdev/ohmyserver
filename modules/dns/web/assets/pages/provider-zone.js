@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useEffect,useState } from 'preact/hooks';
 import { decodeProviderZone } from '../provider-route.js';
 

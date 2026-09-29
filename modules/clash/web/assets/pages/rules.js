@@ -1,3 +1,3 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useEffect,useState } from 'preact/hooks';
 export default function Rules({api,params,navigate}){const[data,setData]=useState(null);const[error,setError]=useState('');useEffect(()=>{const c=new AbortController();api.rules(params.id,{signal:c.signal}).then(setData).catch(e=>{if(e.name!=='AbortError')setError(e.message)});return()=>c.abort()},[api,params.id]);return html`<div><button class="button button-link" onclick=${()=>navigate(`/${params.id}`)}>← 实例详情</button><h2>规则</h2>${error?html`<div class="notice-card error"><p>${error}</p></div>`:null}<div class="table-wrap"><table class="table"><thead><tr><th>#</th><th>类型</th><th>匹配值</th><th>代理</th></tr></thead><tbody>${(data?.rules||[]).map((r,i)=>html`<tr><td>${i+1}</td><td>${r.type}</td><td>${r.payload}</td><td>${r.proxy}</td></tr>`)}</tbody></table></div><h3>规则提供者</h3><pre>${JSON.stringify(data?.providers||[],null,2)}</pre></div>`}

@@ -46,7 +46,7 @@ func main() {
 		log.Fatal(err)
 	}
 	service := docker.NewLocalService(ctx, client, repo, *appsDir, *composeDir)
-	srv := &http.Server{Addr: *listen, Handler: dockerweb.New(service).StandaloneHandler()}
+	srv := &http.Server{Addr: *listen, Handler: dockerweb.New(service).Handler()}
 	go func() { <-ctx.Done(); _ = srv.Shutdown(context.Background()) }()
 	log.Printf("Docker module listening on http://%s", *listen)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

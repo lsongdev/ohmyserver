@@ -37,7 +37,7 @@ func TestOriginAllowed(t *testing.T) {
 			if tc.tls {
 				scheme = "https"
 			}
-			r := httptest.NewRequest(http.MethodGet, scheme+"://"+tc.host+"/v1/terminal/local/ws", nil)
+			r := httptest.NewRequest(http.MethodGet, scheme+"://"+tc.host+"/local/ws", nil)
 			r.Host = tc.host
 			if tc.origin != "" {
 				r.Header.Set("Origin", tc.origin)
@@ -143,23 +143,23 @@ func TestNewWithOriginPolicyAllowsExplicitProxyOrigin(t *testing.T) {
 		origin, err := url.Parse(r.Header.Get("Origin"))
 		return err == nil && origin.Scheme+"://"+origin.Host == customOrigin.Scheme+"://"+customOrigin.Host
 	})
-	r := httptest.NewRequest(http.MethodGet, "http://127.0.0.1:9000/v1/terminal/local/ws", nil)
+	r := httptest.NewRequest(http.MethodGet, "http://127.0.0.1:9000/local/ws", nil)
 	r.Header.Set("Origin", customOrigin.String())
 	if !module.allowOrigin(r) {
 		t.Fatal("explicit proxy origin policy rejected configured origin")
 	}
 }
 
-func TestStandaloneHandlerServesUIManifestAndModuleAssets(t *testing.T) {
+func TestHandlerServesUIManifestAndModuleAssets(t *testing.T) {
 	handler := New(terminalOpenerFunc(func(context.Context, string, string, uint16, uint16) (transport.Session, error) {
 		return nil, errors.New("not opened")
-	})).StandaloneHandler()
+	})).Handler()
 	for path, contains := range map[string]string{
 		"/":                                "api-base",
-		"/v1/terminal/manifest.json":       "assets/module.js",
-		"/v1/terminal/assets/index.js":     "lsong.org/scripts/react/index.js",
-		"/v1/terminal/assets/module.js":    "createAPI",
-		"/v1/terminal/assets/terminal.css": ".terminal-viewport",
+		"/manifest.json":       "assets/module.js",
+		"/assets/index.js":     "lsong.org/scripts/react/index.js",
+		"/assets/module.js":    "createAPI",
+		"/assets/terminal.css": ".terminal-viewport",
 	} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))

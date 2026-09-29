@@ -1,4 +1,4 @@
-import { html, useState } from '@panel/shared/ui.js';
+import { html, useState } from '@module/ui';
 
 const blank = { mac: '', ip: '', hostname: '', description: '' };
 export default function NewStaticLease({ api, navigate }) {

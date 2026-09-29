@@ -21,10 +21,11 @@ func TestExternalHostLoadsOpenWrtReleaseAndServesResources(t *testing.T) {
 	}
 	db.SetMaxOpenConns(1)
 	defer db.Close()
-	module, err := openwrtweb.NewStandaloneLocalModule(context.Background(), db)
-	if err != nil {
+	repo := openwrtweb.NewRepository(db)
+	if err := repo.Initialize(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+	module := openwrtweb.NewLocalModule(repo)
 	mux := http.NewServeMux()
 	mux.Handle("/v1/openwrt/", http.StripPrefix("/v1/openwrt", module.Handler()))
 	host := httptest.NewServer(mux)
@@ -32,7 +33,7 @@ func TestExternalHostLoadsOpenWrtReleaseAndServesResources(t *testing.T) {
 
 	for _, test := range []struct{ path, body string }{
 		{"/v1/openwrt/manifest.json", `"id": "openwrt"`},
-		{"/v1/openwrt/assets/module.js", "defineModule"},
+		{"/v1/openwrt/assets/module.js", "createAPI"},
 		{"/v1/openwrt/routers", `"data":[]`},
 	} {
 		response, err := http.Get(host.URL + test.path)

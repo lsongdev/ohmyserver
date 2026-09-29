@@ -24,8 +24,8 @@ func TestLocalModuleComposesRepositoryServiceAndHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	response := httptest.NewRecorder()
-	module.StandaloneHandler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v1/ssh/servers", nil))
+	module.Handler().ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/servers", nil))
 	if response.Code != http.StatusOK {
-		t.Fatalf("GET /v1/ssh/servers status=%d body=%s", response.Code, response.Body.String())
+		t.Fatalf("GET /servers status=%d body=%s", response.Code, response.Body.String())
 	}
 }

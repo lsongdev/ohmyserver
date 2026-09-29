@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 
 const empty={name:'',description:'',repo:'',webhook_branch:'main',webhook_secret:''};
 export default function Projects({api,navigate,href}){

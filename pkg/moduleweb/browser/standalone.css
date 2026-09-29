@@ -1,7 +1,6 @@
 .module-standalone {
   box-sizing: border-box;
   width: 100%;
-  max-width: 1280px;
   min-width: 0;
   margin: 0 auto;
   padding: 1.5rem;

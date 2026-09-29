@@ -38,7 +38,7 @@ func main() {
 	if err = repo.Initialize(context.Background()); err != nil {
 		log.Fatal(err)
 	}
-	srv := &http.Server{Addr: *listen, Handler: yeelightweb.New(yeelightweb.NewLocalService(repo)).StandaloneHandler()}
+	srv := &http.Server{Addr: *listen, Handler: yeelightweb.New(yeelightweb.NewLocalService(repo)).Handler()}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	go func() { <-ctx.Done(); _ = srv.Shutdown(context.Background()) }()

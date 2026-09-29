@@ -10,5 +10,4 @@ Run the complete module independently with Docker and Git available on the host:
 go run ./cmd/projects web serve --listen 127.0.0.1:8080 --db ./projects.db --workspace ./workspace
 ```
 
-The standalone server serves its UI at `/`, and serves the API and shell manifest
-under `/v1/projects`. The `--docker` option selects the Docker CLI executable.
+The standalone server mounts the complete module handler at `/`; an embedding host may mount that same handler at any prefix. The `--docker` option selects the Docker CLI executable.

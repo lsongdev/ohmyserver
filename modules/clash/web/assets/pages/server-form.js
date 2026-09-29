@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useEffect,useState } from 'preact/hooks';
 const blank={name:'',api_url:'',secret:'',description:''};
 export default function ServerForm({api,params,navigate}){

@@ -41,8 +41,8 @@ func TestModuleRequiresDeviceForHealth(t *testing.T) {
 }
 
 func TestStandaloneAssetAndAPIPaths(t *testing.T) {
-	handler := disksweb.New(fakeService{}).StandaloneHandler()
-	for _, path := range []string{"/", "/v1/disks/manifest.json", "/v1/disks/assets/module.js", "/v1/disks/assets/index.js"} {
+	handler := disksweb.New(fakeService{}).Handler()
+	for _, path := range []string{"/", "/manifest.json", "/assets/module.js", "/assets/index.js"} {
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, httptest.NewRequest(http.MethodGet, path, nil))
 		if response.Code != http.StatusOK || response.Body.Len() == 0 {

@@ -1,7 +1,7 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useState } from 'preact/hooks';
 
-const returnPath = { container: '/docker/containers', volume: '/docker/volumes', network: '/docker/networks' };
+const returnPath = { container: '/containers', volume: '/volumes', network: '/networks' };
 
 export default function CreateDockerResource({ api, kind, title, navigate }) {
   const [values, setValues] = useState({ name: '', image: '', command: '', driver: '', subnet: '', gateway: '', ip_range: '' });

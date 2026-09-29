@@ -8,4 +8,4 @@ Run it independently with:
 go run ./cmd/settings web serve --listen 127.0.0.1:8080 --db ./settings.db
 ```
 
-The standalone process serves the UI at `/` and the API, manifest, and assets under `/v1/settings`. Embedding hosts may share a SQLite connection but leave the settings schema and repository to this module.
+The standalone process mounts the complete module handler at `/`; embedding hosts may mount the same handler at any prefix. Hosts may share a SQLite connection but leave the settings schema and repository to this module.

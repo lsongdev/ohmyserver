@@ -8,4 +8,4 @@ Run it independently with:
 go run ./cmd/uptime web serve --listen 127.0.0.1:8080 --db ./uptime.db
 ```
 
-The standalone process serves the UI at `/` and the API, manifest, and assets under `/v1/uptime`. Embedding hosts can inject the checker and repository through the module's service constructor.
+The standalone process mounts the complete module handler at `/`. Embedding hosts inject the checker and repository through the module's service constructor and may mount that same handler at any prefix.

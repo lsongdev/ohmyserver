@@ -1,4 +1,4 @@
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 import { useEffect, useState } from 'preact/hooks';
 
 const blank = () => ({ name: '', type: 'http', target: '', port: 443, interval: 60, timeout: 10, expected_status: 200, enabled: true });

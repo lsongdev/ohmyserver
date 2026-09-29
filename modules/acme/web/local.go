@@ -2,7 +2,6 @@ package web
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 
 	acme "github.com/lsongdev/ohmyserver/modules/acme"
@@ -23,24 +22,9 @@ func NewLocalModule(ctx context.Context, repository *Repository, dns acme.DNSCha
 	return &LocalModule{repository: repository, engine: engine, http: New(engine)}
 }
 
-// NewStandaloneLocalModule initializes module-owned persistence and recovers
-// interrupted issuances before starting the local engine.
-func NewStandaloneLocalModule(ctx context.Context, db *sql.DB, dns acme.DNSChallenge, updated acme.CertificateUpdated) (*LocalModule, error) {
-	repository := NewRepository(db)
-	if err := repository.InitializeModule(ctx); err != nil {
-		return nil, err
-	}
-	if err := repository.RecoverInterruptedIssuances(ctx); err != nil {
-		return nil, err
-	}
-	return NewLocalModule(ctx, repository, dns, updated), nil
-}
-
 func (m *LocalModule) Repository() *Repository { return m.repository }
 func (m *LocalModule) Engine() *acme.Engine    { return m.engine }
 func (m *LocalModule) Web() *Module            { return m.http }
 func (m *LocalModule) Handler() http.Handler   { return m.http.Handler() }
-func (m *LocalModule) StandaloneHandler() http.Handler {
-	return m.http.StandaloneHandler()
-}
+
 func (m *LocalModule) Close() error { return m.engine.Close() }

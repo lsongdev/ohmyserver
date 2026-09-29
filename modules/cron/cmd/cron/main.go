@@ -57,7 +57,7 @@ func run(args []string) error {
 		return fmt.Errorf("start cron engine: %w", err)
 	}
 	defer module.Close()
-	server := &http.Server{Addr: *listen, Handler: module.StandaloneHandler(), ReadHeaderTimeout: 5 * time.Second}
+	server := &http.Server{Addr: *listen, Handler: module.Handler(), ReadHeaderTimeout: 5 * time.Second}
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- server.ListenAndServe() }()
 	log.Printf("Cron module listening on http://%s (database %s)", *listen, *dbPath)

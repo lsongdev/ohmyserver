@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { html } from '@panel/shared/ui.js';
+import { html } from '@module/ui';
 
 const formatBytes = value => {
   if (!value) return '0 B';
@@ -22,7 +22,7 @@ export default function SSHStats({ api, params, navigate, hrefTo }) {
     source.onerror = () => { if (source.readyState === EventSource.CLOSED) setError('统计连接已关闭'); };
     return () => { active = false; source.close(); };
   }, [api, params.id]);
-  const terminalHref = hrefTo?.('terminal', `/ssh/${params.id}`);
+  const terminalHref = hrefTo('terminal', `/ssh/${params.id}`);
   return html`<div class="ssh-stats-page">
     ${error && html`<div class="notice-card error" role="alert">${error}</div>`}
     <section class="card"><div class="page-toolbar"><div><h2>${server?.name || `SSH 服务器 ${params.id}`}</h2><p class="muted">${server ? `${server.username}@${server.host}:${server.port}` : ''}</p></div><div class="button-group"><button class="button" onClick=${() => navigate('/servers')}>返回列表</button><span class="status-pill ${stats?.connected ? 'running' : ''}">${stats?.connected ? '已连接' : '等待数据'}</span><a class="button" href=${api.metricsURL(params.id)} target="_blank" rel="noreferrer">Prometheus 指标</a>${terminalHref && server?.enabled && server?.has_credential ? html`<a class="button" href=${terminalHref}>打开终端</a>` : null}</div></div>
