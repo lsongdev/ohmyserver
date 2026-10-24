@@ -145,9 +145,11 @@ func run(cfg config, logger *slog.Logger) error {
 	if appsHost == "" {
 		appsHost = defaultHost(cfg.listen)
 	}
+	exposer := &gateway.AppExposer{Gateway: management, Server: gw, Certs: certs.Service}
+	go exposer.RunReconcile(ctx, time.Minute, logger)
 	docker, err := dockerweb.New(ctx, dockerweb.Options{
 		DataDir: filepath.Join(dataDir, "docker"), CatalogRepo: cfg.catalog, AppsHost: appsHost, Logger: logger,
-		Store: dockerApps, Exposer: &gateway.AppExposer{Gateway: management, Certs: certs.Service},
+		Store: dockerApps, Exposer: exposer,
 	})
 	if err != nil {
 		return fmt.Errorf("docker: %w", err)

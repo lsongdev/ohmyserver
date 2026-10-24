@@ -7,13 +7,18 @@
 //     and answers its HTTP-01 challenges on port 80.
 //   - docker-go's apps.Exposer: installed apps get a gateway site for
 //     their domain, plus a certificate when an ACME account is available.
+//     Until the certificate exists the site is served on plain HTTP only
+//     (the gateway refuses TLS hosts without a certificate); Reconcile
+//     moves it onto every listener once it is issued.
 package gateway
 
 import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log/slog"
 	"slices"
+	"strings"
 	"time"
 
 	acmeapi "github.com/lsongdev/acme-go/api"
@@ -48,36 +53,137 @@ const sitePrefix = "app-"
 // AppExposer publishes docker-go apps through the gateway.
 type AppExposer struct {
 	Gateway *yabberapi.API   // changes go through the management API's lock and are saved
+	Server  *yabber.Server   // the gateway, for reading its configuration
 	Certs   *acmeapi.Service // optional: requests certificates for exposed domains
+	// Covered reports whether a usable certificate covers domain. Nil asks
+	// Certs.
+	Covered func(ctx context.Context, domain string) bool
 }
 
 var _ apps.Exposer = (*AppExposer)(nil)
 
-// Expose routes the app's domain to its published port on this host and
-// requests a certificate for it if none covers it yet.
+// Expose routes the app's domain to its published port on this host. A
+// domain no certificate covers yet is served on the plain HTTP listeners
+// only, and a certificate is requested for it.
 func (e *AppExposer) Expose(ctx context.Context, app apps.Exposure) error {
 	log := app.Log
 	if log == nil {
 		log = func(string) {}
 	}
 	name := sitePrefix + app.ID
+	covered := e.covered(ctx, app.Domain)
+	var restricted bool
 	err := e.Gateway.Update(func(c *yabber.Config) error {
 		c.Sites = slices.DeleteFunc(c.Sites, func(s yabber.Site) bool { return s.Name == name })
-		c.Sites = append(c.Sites, yabber.Site{
+		site := yabber.Site{
 			Name:    name,
 			Hosts:   []string{app.Domain},
 			Handler: yabber.Handler{Proxy: &yabber.Proxy{Upstream: fmt.Sprintf("http://127.0.0.1:%d", app.Port)}},
-		})
+		}
+		if !covered && hasTLS(c) {
+			site.Listeners = plainListeners(c)
+			if len(site.Listeners) == 0 {
+				return fmt.Errorf("no plain HTTP listener can serve %s until its certificate is issued", app.Domain)
+			}
+			restricted = true
+		}
+		c.Sites = append(c.Sites, site)
 		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("gateway: publish %s: %w", app.Domain, err)
 	}
-	log(fmt.Sprintf("Gateway routes %s to port %d", app.Domain, app.Port))
-	if e.Certs != nil {
+	if restricted {
+		log(fmt.Sprintf("Gateway serves http://%s from port %d; HTTPS starts once its certificate is issued", app.Domain, app.Port))
+	} else {
+		log(fmt.Sprintf("Gateway serves %s from port %d", app.Domain, app.Port))
+	}
+	if e.Certs != nil && !covered {
 		e.ensureCertificate(ctx, app.Domain, log)
 	}
 	return nil
+}
+
+// Reconcile moves app sites that were waiting for a certificate onto every
+// listener once one covers their domain, and returns how many it moved.
+func (e *AppExposer) Reconcile(ctx context.Context) (int, error) {
+	var ready []string
+	for _, site := range e.Server.Config().Sites {
+		if strings.HasPrefix(site.Name, sitePrefix) && len(site.Listeners) > 0 && len(site.Hosts) > 0 && e.covered(ctx, site.Hosts[0]) {
+			ready = append(ready, site.Name)
+		}
+	}
+	if len(ready) == 0 {
+		return 0, nil
+	}
+	err := e.Gateway.Update(func(c *yabber.Config) error {
+		for i := range c.Sites {
+			if slices.Contains(ready, c.Sites[i].Name) {
+				c.Sites[i].Listeners = nil
+			}
+		}
+		return nil
+	})
+	return len(ready), err
+}
+
+// RunReconcile calls Reconcile every interval until ctx is done.
+func (e *AppExposer) RunReconcile(ctx context.Context, interval time.Duration, logger *slog.Logger) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+		if n, err := e.Reconcile(ctx); err != nil {
+			logger.Error("moving app sites onto HTTPS failed", "err", err)
+		} else if n > 0 {
+			logger.Info("app sites now served over HTTPS", "count", n)
+		}
+	}
+}
+
+// covered reports whether an active, unexpired certificate covers domain.
+func (e *AppExposer) covered(ctx context.Context, domain string) bool {
+	if e.Covered != nil {
+		return e.Covered(ctx, domain)
+	}
+	if e.Certs == nil {
+		return false
+	}
+	certificates, err := e.Certs.ListCertificates(ctx)
+	if err != nil {
+		return false
+	}
+	now := time.Now()
+	for _, c := range certificates {
+		if c.Status == acmeapi.CertificateActive && now.Before(c.NotAfter) && slices.Contains(c.Domains, domain) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasTLS reports whether the gateway may serve sites over TLS. Without
+// explicit listeners yabber adds an HTTPS one when certificates exist.
+func hasTLS(c *yabber.Config) bool {
+	return len(c.Listeners) == 0 || slices.ContainsFunc(c.Listeners, func(l yabber.Listener) bool { return l.TLS })
+}
+
+// plainListeners returns the gateway's plain HTTP listeners.
+func plainListeners(c *yabber.Config) []string {
+	if len(c.Listeners) == 0 {
+		return []string{"http"} // yabber's default listener
+	}
+	var names []string
+	for _, l := range c.Listeners {
+		if !l.TLS {
+			names = append(names, l.Name)
+		}
+	}
+	return names
 }
 
 // Unexpose removes the app's gateway site. Its certificate is kept; the
@@ -90,8 +196,8 @@ func (e *AppExposer) Unexpose(ctx context.Context, id string) error {
 	})
 }
 
-// ensureCertificate starts an issuance for domain unless a certificate
-// already covers it. Failing to get one does not fail publishing: the site
+// ensureCertificate starts an issuance for domain unless one is already
+// pending or valid. Failing to get one does not fail publishing: the site
 // works over HTTP until a certificate exists.
 func (e *AppExposer) ensureCertificate(ctx context.Context, domain string, log func(string)) {
 	certificates, err := e.Certs.ListCertificates(ctx)
