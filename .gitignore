@@ -1,6 +1,4 @@
-
-.DS_Store
-*.db
-*.db-journal
-ohmyserver
-bin/
+/data/
+/ohmyserver
+/go.work.sum
+/data.log

@@ -1,4 +1,0 @@
-.yeelight-state{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin:18px 0 26px}
-.yeelight-state>div{display:grid;gap:7px;padding:14px;background:#f8fafc;border:1px solid var(--line);border-radius:9px}
-.yeelight-state span{color:var(--muted);font-size:11px}.yeelight-state strong{font-size:17px}
-.color-input{width:70px;min-height:44px;padding:3px}

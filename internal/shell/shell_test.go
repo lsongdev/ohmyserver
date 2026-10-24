@@ -1,0 +1,173 @@
+package shell
+
+import (
+	"encoding/json"
+	"io"
+	"io/fs"
+	"net/http"
+	"net/http/cookiejar"
+	"net/http/httptest"
+	"net/url"
+	"strings"
+	"testing"
+	"testing/fstest"
+)
+
+// testModule satisfies Module the way contract modules do: structurally.
+type testModule struct {
+	id     string
+	assets fstest.MapFS
+}
+
+func (m testModule) Handler() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /hello", func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, m.id+" says hi") })
+	return mux
+}
+
+func (m testModule) Assets() fs.FS { return m.assets }
+
+func module(id string) testModule {
+	return testModule{id: id, assets: fstest.MapFS{
+		"manifest.json": {Data: []byte(`{"contract":1,"id":"` + id + `","title":"` + strings.ToUpper(id) + `","entry":"module.js","styles":["app.css"],"nav":[{"path":"/","title":"Home"}]}`)},
+		"module.js":     {Data: []byte("export function mount(el, ctx) {}")},
+		"app.css":       {Data: []byte("p{}")},
+	}}
+}
+
+func get(t *testing.T, c *http.Client, u string) (int, string) {
+	t.Helper()
+	resp, err := c.Get(u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	return resp.StatusCode, string(body)
+}
+
+func TestMountsModulesByManifest(t *testing.T) {
+	h, err := New(Options{Home: "acme", Titles: map[string]string{"acme": "证书"}}, module("docker"), module("acme"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(h.Handler())
+	defer srv.Close()
+	for path, want := range map[string]string{
+		"/m/acme/api/hello":          "acme says hi",
+		"/m/docker/ui/module.js":     "export function mount",
+		"/m/docker/ui/manifest.json": `"contract":1`,
+		"/_shell/shell.js":           "mount",
+	} {
+		if status, body := get(t, srv.Client(), srv.URL+path); status != 200 || !strings.Contains(body, want) {
+			t.Errorf("%s: %d %.60q", path, status, body)
+		}
+	}
+	_, body := get(t, srv.Client(), srv.URL+"/_panel.json")
+	var panel struct {
+		Home    string
+		Modules []moduleInfo
+	}
+	json.Unmarshal([]byte(body), &panel)
+	if panel.Home != "acme" || len(panel.Modules) != 2 || panel.Modules[1].Title != "证书" ||
+		panel.Modules[0].API != "m/docker/api/" || panel.Modules[0].Entry != "module.js" {
+		t.Fatalf("panel = %s", body)
+	}
+}
+
+func TestIndexHasStrictCSP(t *testing.T) {
+	h, _ := New(Options{Title: "<Panel>"}, module("docker"))
+	w := httptest.NewRecorder()
+	h.Handler().ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
+	if csp := w.Header().Get("Content-Security-Policy"); !strings.Contains(csp, "script-src 'self';") {
+		t.Fatalf("csp = %s", csp)
+	}
+	if body := w.Body.String(); !strings.Contains(body, "&lt;Panel&gt;") || strings.Contains(body, "<script>") {
+		t.Fatalf("index = %s", body)
+	}
+}
+
+func TestManifestValidation(t *testing.T) {
+	bad := func(edit func(fstest.MapFS)) testModule {
+		m := module("x")
+		edit(m.assets)
+		return m
+	}
+	for name, m := range map[string]testModule{
+		"no manifest": bad(func(a fstest.MapFS) { delete(a, "manifest.json") }),
+		"old contract": bad(func(a fstest.MapFS) {
+			a["manifest.json"].Data = []byte(`{"contract":2,"id":"x","title":"X","entry":"module.js"}`)
+		}),
+		"bad id": bad(func(a fstest.MapFS) {
+			a["manifest.json"].Data = []byte(`{"contract":1,"id":"X","title":"X","entry":"module.js"}`)
+		}),
+		"missing entry": bad(func(a fstest.MapFS) { delete(a, "module.js") }),
+		"missing style": bad(func(a fstest.MapFS) { delete(a, "app.css") }),
+	} {
+		if _, err := New(Options{}, m); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+	if _, err := New(Options{}, module("a"), module("a")); err == nil {
+		t.Error("duplicate id accepted")
+	}
+	if _, err := New(Options{Home: "nope"}, module("a")); err == nil {
+		t.Error("unknown home accepted")
+	}
+}
+
+func TestAuth(t *testing.T) {
+	h, _ := New(Options{Auth: &Auth{Secret: "s3cret"}}, module("docker"))
+	srv := httptest.NewServer(h.Handler())
+	defer srv.Close()
+	jar, _ := cookiejar.New(nil)
+	client := &http.Client{Jar: jar}
+	if status, _ := get(t, client, srv.URL+"/m/docker/api/hello"); status != 401 {
+		t.Fatalf("anonymous api: %d", status)
+	}
+	if status, _ := get(t, client, srv.URL+"/_panel.json"); status != 401 {
+		t.Fatalf("anonymous manifest: %d", status)
+	}
+	// The shell and module assets are public so the login page can load.
+	if status, _ := get(t, client, srv.URL+"/_shell/shell.js"); status != 200 {
+		t.Fatalf("shell: %d", status)
+	}
+	login := func(secret string) int {
+		resp, err := client.Post(srv.URL+"/_auth/login", "application/json", strings.NewReader(`{"secret":"`+secret+`"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	if status := login("wrong"); status != 401 {
+		t.Fatalf("wrong secret: %d", status)
+	}
+	if status := login("s3cret"); status != 204 {
+		t.Fatalf("login: %d", status)
+	}
+	if status, body := get(t, client, srv.URL+"/m/docker/api/hello"); status != 200 || body != "docker says hi" {
+		t.Fatalf("after login: %d %q", status, body)
+	}
+	req, _ := http.NewRequest("GET", srv.URL+"/m/docker/api/hello", nil)
+	req.Header.Set("Authorization", "Bearer s3cret")
+	resp, _ := http.DefaultClient.Do(req)
+	resp.Body.Close()
+	if resp.StatusCode != 200 {
+		t.Fatalf("bearer: %d", resp.StatusCode)
+	}
+	// A different secret invalidates existing sessions.
+	other, _ := New(Options{Auth: &Auth{Secret: "changed"}}, module("docker"))
+	srv2 := httptest.NewServer(other.Handler())
+	defer srv2.Close()
+	u, _ := url.Parse(srv.URL)
+	req, _ = http.NewRequest("GET", srv2.URL+"/m/docker/api/hello", nil)
+	for _, c := range jar.Cookies(u) {
+		req.AddCookie(c)
+	}
+	resp, _ = http.DefaultClient.Do(req)
+	resp.Body.Close()
+	if resp.StatusCode != 401 {
+		t.Fatalf("session signed with old secret accepted: %d", resp.StatusCode)
+	}
+}
