@@ -2,7 +2,7 @@
 
 This document is the agreement between the panel **shell** (OhMyServer;
 implemented in `internal/shell`) and **modules** (independent applications
-such as docker-go, acme-go and yabber). A module that follows it runs on its own and
+such as docker-go, acme-go, yabber and dns-go). A module that follows it runs on its own and
 can be mounted by any shell, without importing any shell code.
 
 Contract version: **1**.

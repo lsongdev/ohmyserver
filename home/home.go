@@ -14,6 +14,8 @@ import (
 	"time"
 
 	acmeapi "github.com/lsongdev/acme-go/api"
+	dnsapi "github.com/lsongdev/dns-go/api"
+	dnsweb "github.com/lsongdev/dns-go/web"
 	"github.com/lsongdev/docker-go/engine"
 	dockerweb "github.com/lsongdev/docker-go/web"
 	"github.com/lsongdev/yabber"
@@ -35,6 +37,7 @@ type Sources struct {
 	Docker  *dockerweb.Docker
 	Certs   *acmeapi.Service
 	Gateway *yabber.Server
+	DNS     *dnsweb.DNS
 }
 
 // Home is the overview module.
@@ -83,6 +86,14 @@ type gatewaySummary struct {
 	Sites     int                     `json:"sites"`
 	Requests  uint64                  `json:"requests"`
 	Listeners []yabber.ListenerStatus `json:"listeners"`
+}
+
+type dnsSummary struct {
+	Mode      string                  `json:"mode"`
+	Queries   uint64                  `json:"queries"`
+	Blocked   uint64                  `json:"blocked"`
+	Zones     int                     `json:"zones"`
+	Listeners []dnsapi.ListenerStatus `json:"listeners"`
 }
 
 func (src Sources) summary(ctx context.Context) map[string]any {
@@ -134,6 +145,13 @@ func (src Sources) summary(ctx context.Context) map[string]any {
 		out["gateway"] = gatewaySummary{
 			Healthy: g.Healthy(), Sites: len(g.Config().Sites),
 			Requests: g.Metrics().Total().Requests, Listeners: g.Status().Listeners,
+		}
+	}
+	if d := src.DNS; d != nil {
+		stats := d.Stats.Summary(0, 60)
+		out["dns"] = dnsSummary{
+			Mode: d.Settings().Mode, Queries: stats.Total, Blocked: stats.Blocked,
+			Zones: len(d.Manager.Service().Zones.List()), Listeners: d.Listeners(),
 		}
 	}
 	return out

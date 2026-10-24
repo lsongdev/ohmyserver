@@ -211,3 +211,43 @@ func TestExposeBeforeCertificateThenReconcile(t *testing.T) {
 		t.Fatalf("second reconcile moved %d sites", n)
 	}
 }
+
+// recordLog is a stand-in Records that remembers its calls.
+type recordLog struct{ calls []string }
+
+func (r *recordLog) Publish(_ context.Context, domain string, _ func(string)) {
+	r.calls = append(r.calls, "+"+domain)
+}
+
+func (r *recordLog) Unpublish(_ context.Context, domain string) error {
+	r.calls = append(r.calls, "-"+domain)
+	return nil
+}
+
+// App domains follow the app in DNS: published on Expose, moved when the
+// domain changes, removed on Unexpose.
+func TestExposePublishesDNSRecords(t *testing.T) {
+	f := newFixture(t)
+	records := &recordLog{}
+	exposer := &AppExposer{Gateway: f.api, Server: f.gw, Records: records}
+	ctx := context.Background()
+	for _, domain := range []string{"a.example.com", "a.example.com", "b.example.com"} {
+		if err := exposer.Expose(ctx, apps.Exposure{ID: "notes", Domain: domain, Port: 8080}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// A refused domain publishes nothing.
+	if err := exposer.Expose(ctx, apps.Exposure{ID: "clash", Domain: "mine.example.com", Port: 8080}); err == nil {
+		t.Fatal("exposing over an operator site succeeded")
+	}
+	if err := exposer.Unexpose(ctx, "notes"); err != nil {
+		t.Fatal(err)
+	}
+	if err := exposer.Unexpose(ctx, "notes"); err != nil {
+		t.Fatal(err)
+	}
+	want := "+a.example.com +a.example.com -a.example.com +b.example.com -b.example.com"
+	if got := strings.Join(records.calls, " "); got != want {
+		t.Fatalf("calls = %s\nwant    %s", got, want)
+	}
+}

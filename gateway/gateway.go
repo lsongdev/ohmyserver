@@ -9,7 +9,8 @@
 //     their domain, plus a certificate when an ACME account is available.
 //     Until the certificate exists the site is served on plain HTTP only
 //     (the gateway refuses TLS hosts without a certificate); Reconcile
-//     moves it onto every listener once it is issued.
+//     moves it onto every listener once it is issued. With Records set,
+//     the domain also gets an address record in DNS.
 package gateway
 
 import (
@@ -58,6 +59,16 @@ type AppExposer struct {
 	// Covered reports whether a usable certificate covers domain. Nil asks
 	// Certs.
 	Covered func(ctx context.Context, domain string) bool
+	// Records, optional, publishes app domains in DNS.
+	Records Records
+}
+
+// Records publishes the address of an app's domain in DNS (package dns
+// implements it for dns-go). Publish reports what it did, or why it did
+// nothing, through log; failing to publish never fails exposing the app.
+type Records interface {
+	Publish(ctx context.Context, domain string, log func(string))
+	Unpublish(ctx context.Context, domain string) error
 }
 
 var _ apps.Exposer = (*AppExposer)(nil)
@@ -71,6 +82,7 @@ func (e *AppExposer) Expose(ctx context.Context, app apps.Exposure) error {
 		log = func(string) {}
 	}
 	name := sitePrefix + app.ID
+	previous := e.siteHost(name)
 	covered := e.covered(ctx, app.Domain)
 	var restricted bool
 	err := e.Gateway.Update(func(c *yabber.Config) error {
@@ -98,10 +110,28 @@ func (e *AppExposer) Expose(ctx context.Context, app apps.Exposure) error {
 	} else {
 		log(fmt.Sprintf("Gateway serves %s from port %d", app.Domain, app.Port))
 	}
+	if e.Records != nil {
+		if previous != "" && !strings.EqualFold(previous, app.Domain) {
+			if err := e.Records.Unpublish(ctx, previous); err != nil {
+				log("Removing the DNS record for " + previous + " failed: " + err.Error())
+			}
+		}
+		e.Records.Publish(ctx, app.Domain, log)
+	}
 	if e.Certs != nil && !covered {
 		e.ensureCertificate(ctx, app.Domain, log)
 	}
 	return nil
+}
+
+// siteHost returns the domain the named site serves, or "".
+func (e *AppExposer) siteHost(name string) string {
+	for _, site := range e.Server.Config().Sites {
+		if site.Name == name && len(site.Hosts) > 0 {
+			return site.Hosts[0]
+		}
+	}
+	return ""
 }
 
 // Reconcile moves app sites that were waiting for a certificate onto every
@@ -186,14 +216,20 @@ func plainListeners(c *yabber.Config) []string {
 	return names
 }
 
-// Unexpose removes the app's gateway site. Its certificate is kept; the
-// certificate manager shows it and it can be deleted there.
+// Unexpose removes the app's gateway site and its DNS record. Its
+// certificate is kept; the certificate manager shows it and it can be
+// deleted there.
 func (e *AppExposer) Unexpose(ctx context.Context, id string) error {
 	name := sitePrefix + id
-	return e.Gateway.Update(func(c *yabber.Config) error {
+	domain := e.siteHost(name)
+	err := e.Gateway.Update(func(c *yabber.Config) error {
 		c.Sites = slices.DeleteFunc(c.Sites, func(s yabber.Site) bool { return s.Name == name })
 		return nil
 	})
+	if err != nil || e.Records == nil || domain == "" {
+		return err
+	}
+	return e.Records.Unpublish(ctx, domain)
 }
 
 // ensureCertificate starts an issuance for domain unless one is already

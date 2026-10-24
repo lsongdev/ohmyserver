@@ -34,6 +34,9 @@ export default function Overview({ ctx }) {
         ${s.gateway ? html`
           <${Card} title="网关站点" to=${link('yabber', '/sites')}
             value=${s.gateway.sites} sub=${`${s.gateway.requests} 次请求`} />` : null}
+        ${s.dns ? html`
+          <${Card} title="DNS 查询" to=${link('dns', '/')}
+            value=${s.dns.queries} sub=${`${s.dns.blocked} 次拦截 · ${s.dns.zones} 个区域`} />` : null}
       </div>
       ${s.gateway ? html`<div class="section"><h2>网关监听</h2>
         <div class="table-wrap"><table class="table">
@@ -41,6 +44,15 @@ export default function Overview({ ctx }) {
           <tbody>${s.gateway.listeners.map(l => html`<tr key=${l.name}>
             <td>${l.name}</td><td class="mono">${l.address}</td><td>${l.tls ? html`<${Badge} tone="blue">TLS<//>` : '—'}</td>
             <td>${l.running ? html`<${Status} state="running" />` : html`<${Status} state="failed" label=${l.error || '未运行'} />`}</td>
+          </tr>`)}</tbody>
+        </table></div>
+      </div>` : null}
+      ${s.dns ? html`<div class="section"><h2>DNS 监听</h2>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th>协议</th><th>地址</th><th>TLS</th><th>状态</th></tr></thead>
+          <tbody>${s.dns.listeners.map(l => html`<tr key=${l.type + l.addr}>
+            <td>${l.type.toUpperCase()}</td><td class="mono">${l.addr}</td><td>${l.tls ? html`<${Badge} tone="blue">TLS<//>` : '—'}</td>
+            <td>${l.error ? html`<${Status} state="failed" label=${l.error} />` : html`<${Status} state="running" />`}</td>
           </tr>`)}</tbody>
         </table></div>
       </div>` : null}`}

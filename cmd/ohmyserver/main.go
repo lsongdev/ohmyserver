@@ -3,15 +3,16 @@
 // cooperate.
 //
 // Each module is an independent project that also runs on its own
-// (docker-go, acme, yabber) and follows the module contract
+// (docker-go, acme, yabber, dns-go) and follows the module contract
 // (docs/module-contract.md). This command only assembles them: it builds
 // each module, gives it the shared database or a store backed by it,
-// connects modules through the adapters in package gateway, and mounts them
-// in the shell.
+// connects modules through the adapters in packages gateway and dns, and
+// mounts them in the shell.
 package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -23,7 +24,10 @@ import (
 	"time"
 
 	acmeweb "github.com/lsongdev/acme-go/web"
+	dnsconfig "github.com/lsongdev/dns-go/config"
+	dnsweb "github.com/lsongdev/dns-go/web"
 	dockerweb "github.com/lsongdev/docker-go/web"
+	"github.com/lsongdev/ohmyserver/dns"
 	"github.com/lsongdev/ohmyserver/gateway"
 	"github.com/lsongdev/ohmyserver/home"
 	"github.com/lsongdev/ohmyserver/internal/shell"
@@ -49,13 +53,14 @@ func main() {
 	catalog := flag.String("catalog", dockerweb.DefaultCatalog, `app catalog git repository ("-": use the local copy as is)`)
 	gatewayHTTP := flag.String("gateway-http", ":80", "gateway HTTP listener for a new installation")
 	gatewayHTTPS := flag.String("gateway-https", ":443", "gateway HTTPS listener for a new installation")
+	dnsListen := flag.String("dns-listen", ":53", "DNS listener (UDP and TCP) for a new installation")
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
 	if err := run(config{
 		listen: *listen, dataDir: *dataDir, appsHost: *appsHost, catalog: *catalog,
-		gatewayHTTP: *gatewayHTTP, gatewayHTTPS: *gatewayHTTPS,
+		gatewayHTTP: *gatewayHTTP, gatewayHTTPS: *gatewayHTTPS, dnsListen: *dnsListen,
 	}, logger); err != nil {
 		logger.Error("fatal", "err", err)
 		os.Exit(1)
@@ -65,6 +70,7 @@ func main() {
 type config struct {
 	listen, dataDir, appsHost, catalog string
 	gatewayHTTP, gatewayHTTPS          string
+	dnsListen                          string
 }
 
 func run(cfg config, logger *slog.Logger) error {
@@ -85,12 +91,34 @@ func run(cfg config, logger *slog.Logger) error {
 	}
 	defer db.Close()
 
+	// DNS server: uses SQLite itself, so it takes the database, which also
+	// holds its server settings (created from the flags on first run, then
+	// edited in the panel). Its TLS listeners serve the certificate
+	// manager's certificates; certificateSource is set once that exists,
+	// before any listener starts.
+	var certificateSource func(*tls.ClientHelloInfo) (*tls.Certificate, error)
+	dnsServer, err := dnsweb.New(ctx, db, dnsweb.Options{
+		Server: defaultDNS(cfg.dnsListen), DataDir: filepath.Join(dataDir, "dns"), Logger: logger,
+		Certificates: func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) { return certificateSource(hello) },
+	})
+	if err != nil {
+		return fmt.Errorf("dns: %w", err)
+	}
+
 	// Certificate manager: uses SQLite itself, so it takes the database.
-	certs, err := acmeweb.New(ctx, db, acmeweb.Options{Logger: logger})
+	// DNS-01 challenges for zones the DNS server serves authoritatively are
+	// published there.
+	certs, err := acmeweb.New(ctx, db, acmeweb.Options{Logger: logger, DNSProvider: dns.Challenges{Manager: dnsServer.Manager}})
 	if err != nil {
 		return fmt.Errorf("certificates: %w", err)
 	}
 	go certs.Service.RunAutoRenew(ctx, 12*time.Hour)
+	certificateSource = dns.Certificates(certs.Service)
+	if err := dnsServer.Start(); err != nil {
+		// Keep the panel up: listener errors show in the overview and the
+		// DNS settings page, where the addresses can be changed.
+		logger.Error("some DNS listeners did not start", "err", err)
+	}
 
 	// Gateway: keeps its configuration in the database instead of a file,
 	// serves the certificate manager's certificates and answers its
@@ -136,7 +164,7 @@ func run(cfg config, logger *slog.Logger) error {
 	}
 
 	// Docker: install records in the database, apps published through the
-	// gateway.
+	// gateway and, when a DNS zone contains their domain, in DNS.
 	dockerApps, err := stores.NewDockerApps(ctx, db)
 	if err != nil {
 		return err
@@ -145,7 +173,10 @@ func run(cfg config, logger *slog.Logger) error {
 	if appsHost == "" {
 		appsHost = defaultHost(cfg.listen)
 	}
-	exposer := &gateway.AppExposer{Gateway: management, Server: gw, Certs: certs.Service}
+	exposer := &gateway.AppExposer{
+		Gateway: management, Server: gw, Certs: certs.Service,
+		Records: &dns.AppRecords{Manager: dnsServer.Manager, Address: appsHost},
+	}
 	go exposer.RunReconcile(ctx, time.Minute, logger)
 	docker, err := dockerweb.New(ctx, dockerweb.Options{
 		DataDir: filepath.Join(dataDir, "docker"), CatalogRepo: cfg.catalog, AppsHost: appsHost, Logger: logger,
@@ -165,16 +196,31 @@ func run(cfg config, logger *slog.Logger) error {
 		logger.Warn("serving without authentication on a non-loopback address; set OHMYSERVER_PASSWORD")
 	}
 	host, err := shell.New(opts,
-		home.New(home.Sources{Docker: docker, Certs: certs.Service, Gateway: gw}),
-		docker, certs, yabberweb.New(management),
+		home.New(home.Sources{Docker: docker, Certs: certs.Service, Gateway: gw, DNS: dnsServer}),
+		docker, certs, yabberweb.New(management), dnsServer,
 	)
 	if err != nil {
 		return err
 	}
-	defer host.Close() // closes docker and certs after the server stops
+	defer host.Close() // closes docker, certs and dns after the server stops
 
 	logger.Info("panel listening", "url", "http://"+cfg.listen, "data", dataDir)
 	return shell.ListenAndServe(ctx, cfg.listen, host.Handler())
+}
+
+// defaultDNS is a new installation's DNS server: a forwarding resolver for
+// the local network, with a cache and encrypted upstreams first.
+func defaultDNS(listen string) dnsconfig.Server {
+	return dnsconfig.Server{
+		Mode:    dnsconfig.ModeForwarding,
+		Listens: []dnsconfig.ListenSpec{{Type: "udp", Addr: listen}, {Type: "tcp", Addr: listen}},
+		Upstreams: []dnsconfig.UpstreamSpec{
+			{Type: "doh", Addr: "https://doh.pub/dns-query"},
+			{Type: "dot", Addr: "1.1.1.1:853"},
+			{Type: "udp", Addr: "8.8.8.8:53"},
+		},
+		Cache: dnsconfig.CacheSpec{Enabled: true},
+	}
 }
 
 // defaultHost picks the address apps are advertised at: the listen host, or
