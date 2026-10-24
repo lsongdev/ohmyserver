@@ -1,36 +1,16 @@
 go 1.26.1
 
+// Local development: build against sibling checkouts of every module.
 use (
 	.
-	./modules/acme
-	./modules/clash
-	./modules/cron
-	./modules/dashboard
-	./modules/dhcp
-	./modules/disks
-	./modules/dns
-	./modules/docker
-	./modules/esxi
-	./modules/files
-	./modules/forward
-	./modules/idrac
-	./modules/ipmi
-	./modules/monitor
-	./modules/ntp
-	./modules/openwrt
-	./modules/packages
-	./modules/projects
-	./modules/pve
-	./modules/settings
-	./modules/speedtest
-	./modules/ssh
-	./modules/system
-	./modules/terminal
-	./modules/uptime
-	./modules/webserver
-	./modules/widgets
-	./modules/yeelight
-	./pkg/moduleweb
-	./pkg/terminal
-	./tests/module-smoke/docker-host
+	../acme-go
+	../docker-go
+	../yabber
+)
+
+// Modules are not tagged yet; resolve them from the checkouts above.
+replace (
+	github.com/lsongdev/acme-go v0.0.0 => ../acme-go
+	github.com/lsongdev/docker-go v0.0.0 => ../docker-go
+	github.com/lsongdev/yabber v0.0.0 => ../yabber
 )

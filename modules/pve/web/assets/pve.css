@@ -1,4 +1,0 @@
-.pve-node{margin-top:22px}
-.pve-node h3{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
-.pve-check{width:auto;min-height:auto;vertical-align:middle}
-@media(max-width:640px){.pve-node .data-table{min-width:760px}}

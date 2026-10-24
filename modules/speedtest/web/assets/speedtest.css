@@ -1,7 +1,0 @@
-.speedtest-controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
-.speedtest-controls .form-group{flex:1;min-width:min(100%,220px)}
-.speedtest-progress{margin-top:16px}
-.speedtest-progress dl{display:grid;grid-template-columns:max-content 1fr max-content 1fr;gap:6px 14px}
-.progress-track{height:8px;overflow:hidden;border-radius:99px;background:var(--surface-muted,#eee)}
-.progress-track span{display:block;height:100%;background:var(--accent,#3987e8);transition:width .2s ease}
-@media(max-width:600px){.speedtest-progress dl{grid-template-columns:max-content 1fr}}

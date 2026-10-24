@@ -1,6 +1,0 @@
-.widget-form{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin:16px 0 24px}
-.widget-form .form-field{min-width:145px;flex:1}
-.widget-form .widget-config{flex-basis:100%}
-.widget-enabled{display:flex;align-items:center;gap:8px;white-space:nowrap}
-.widget-enabled .input{width:auto}
-.widget-config-view{max-width:320px;overflow-wrap:anywhere}

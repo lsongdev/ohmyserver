@@ -1,4 +1,0 @@
-.projects-page { display: grid; gap: 1rem; }
-.projects-page .card h2 { margin-top: 0; }
-.projects-page .table-wrap { overflow-x: auto; }
-.deployment-log { max-height: 60vh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: .75rem; background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: .25rem; }
