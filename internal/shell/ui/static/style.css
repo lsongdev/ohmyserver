@@ -65,6 +65,8 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+/* Keep content width stable when a loading page acquires a scrollbar. */
+html { scrollbar-gutter: stable; }
 body {
   background: var(--bg);
   color: var(--text);
@@ -81,15 +83,16 @@ code, .mono { font-family: var(--mono); font-size: 12.5px; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Layout */
-.layout { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
+.layout { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100dvh; }
 .sidebar {
-  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  position: sticky; top: 0; height: 100dvh; overflow-y: auto;
   background: var(--surface); border-right: 1px solid var(--border); padding: 16px 12px;
 }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 16px; color: var(--text); padding: 4px 8px 16px; }
 .brand:hover { text-decoration: none; }
 .brand-mark { color: var(--primary); }
 .sidebar .menu-toggle { display: none; } /* beats .btn's display */
+.menu-backdrop { display: none; }
 .nav-group { margin-bottom: 14px; }
 .nav-heading { font-size: 11.5px; font-weight: 600; color: var(--muted); padding: 0 8px 4px; letter-spacing: .04em; }
 .nav-link {
@@ -101,16 +104,6 @@ code, .mono { font-family: var(--mono); font-size: 12.5px; }
 .nav-icon { width: 18px; text-align: center; opacity: .8; }
 .nav-count { margin-left: auto; background: var(--primary); color: var(--primary-text); border-radius: 999px; font-size: 11px; padding: 0 7px; line-height: 18px; }
 .main { padding: 24px 28px 48px; min-width: 0; }
-
-@media (max-width: 760px) {
-  .layout { grid-template-columns: 1fr; }
-  .sidebar { position: sticky; z-index: 20; height: auto; padding: 8px 16px; display: flex; align-items: center; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--border); }
-  .brand { padding: 6px 0; }
-  .sidebar .menu-toggle { display: inline-flex; margin-left: auto; }
-  .nav { display: none; width: 100%; padding-top: 8px; }
-  .menu-open .nav { display: block; }
-  .main { padding: 16px 16px 40px; }
-}
 
 /* Page */
 .page-header { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -252,13 +245,33 @@ table.table { width: 100%; border-collapse: collapse; }
 
 /* Shell */
 .sidebar { display: flex; flex-direction: column; }
-.sidebar .nav { flex: 1; }
-.sidebar-logout { justify-content: flex-start; color: var(--muted); margin-top: 8px; }
+.sidebar .nav { display: flex; flex-direction: column; flex: 1; }
+.sidebar-logout { justify-content: flex-start; color: var(--muted); margin-top: auto; }
 .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
 .login-card { width: min(360px, 100%); display: grid; gap: 14px; padding: 24px; }
 .login-card .brand { padding: 0 0 4px; }
 @media (max-width: 760px) {
-  .sidebar { flex-direction: row; }
-  .sidebar-logout { display: none; }
-  .menu-open .sidebar-logout { display: inline-flex; width: 100%; }
+  html:has(.menu-open) { overflow: hidden; }
+  /* An explicit header row prevents auto grid tracks redistributing free
+     space as module CSS, JavaScript and API data arrive. */
+  .layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: 56px 1fr; }
+  .sidebar {
+    z-index: 20; height: 56px; padding: 0 16px; overflow: visible;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+    border-right: 0; border-bottom: 1px solid var(--border);
+  }
+  .brand { min-width: 0; padding: 0; }
+  .sidebar .menu-toggle { display: inline-flex; width: 40px; height: 40px; padding: 0; }
+  .sidebar .nav {
+    display: none; position: absolute; top: 56px; left: 0; right: 0; z-index: 1;
+    max-height: calc(100dvh - 56px); overflow-y: auto; overscroll-behavior: contain;
+    padding: 16px; background: var(--surface); border-bottom: 1px solid var(--border);
+  }
+  .menu-open .nav { display: flex; }
+  .menu-open .menu-backdrop {
+    display: block; position: fixed; inset: 56px 0 0; z-index: 0;
+    width: 100%; height: auto; padding: 0; border: 0; border-radius: 0;
+    background: rgb(0 0 0 / 35%); cursor: default;
+  }
+  .main { padding: 16px 16px 40px; }
 }

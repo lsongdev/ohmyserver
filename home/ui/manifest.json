@@ -4,6 +4,7 @@
   "title": "概览",
   "icon": "◎",
   "entry": "module.js",
+  "styles": ["style.css"],
   "home": "/",
   "nav": [{ "path": "/", "title": "概览", "icon": "◎" }]
 }

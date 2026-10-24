@@ -1,0 +1,2 @@
+/* The host waits for this shared stylesheet before mounting the overview. */
+@import url('../../../_shell/style.css');
