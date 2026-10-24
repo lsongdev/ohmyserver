@@ -33,10 +33,11 @@ This repository holds the assembly:
   address record pointing at `-host`.
 - `home` is the panel's own overview module.
 - `cmd/ohmyserver` opens the shared SQLite database (`<data>/ohmyserver.db`),
-  builds every module and mounts them.
+  builds every module and mounts them. The data directory is
+  `~/.ohmyserver` unless `-data` says otherwise.
 
 ```sh
-OHMYSERVER_PASSWORD=… go run ./cmd/ohmyserver -listen 127.0.0.1:8080 -data ./data
+OHMYSERVER_PASSWORD=… go run ./cmd/ohmyserver -listen 127.0.0.1:8080
 ```
 
 The gateway listens on :80 and :443 by default; `-gateway-http` and
