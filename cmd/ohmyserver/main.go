@@ -48,7 +48,7 @@ Flags:
 func main() {
 	flag.Usage = func() { fmt.Fprint(flag.CommandLine.Output(), usage); flag.PrintDefaults() }
 	listen := flag.String("listen", "127.0.0.1:8080", "panel listen address")
-	dataDir := flag.String("data", "./data", "data directory: the shared database and one subdirectory per module")
+	dataDir := flag.String("data", defaultDataDir(), "data directory: the shared database and one subdirectory per module")
 	appsHost := flag.String("host", "", "address users reach installed apps at (default: derived from -listen)")
 	catalog := flag.String("catalog", dockerweb.DefaultCatalog, `app catalog git repository ("-": use the local copy as is)`)
 	gatewayHTTP := flag.String("gateway-http", ":80", "gateway HTTP listener for a new installation")
@@ -206,6 +206,16 @@ func run(cfg config, logger *slog.Logger) error {
 
 	logger.Info("panel listening", "url", "http://"+cfg.listen, "data", dataDir)
 	return shell.ListenAndServe(ctx, cfg.listen, host.Handler())
+}
+
+// defaultDataDir is ~/.ohmyserver, or ./data when there is no home
+// directory (e.g. a service user without one).
+func defaultDataDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "./data"
+	}
+	return filepath.Join(home, ".ohmyserver")
 }
 
 // defaultDNS is a new installation's DNS server: a forwarding resolver for
