@@ -1,0 +1,129 @@
+Unable to find image 'debian:stable-slim' locally
+stable-slim: Pulling from library/debian
+d5aa054efa80: Pulling fs layer
+7664747fc3c1: Download complete
+d5aa054efa80: Download complete
+d5aa054efa80: Pull complete
+Digest: sha256:a717a33469731894e77e912ea7d714e27c2dc38ee6554fd1a3102e92999cfc66
+Status: Downloaded newer image for debian:stable-slim
+@stat
+cpu  4499 0 23878 78643532 120 0 1182 0 0 0
+@loadavg
+0.15 0.03 0.01 1/299 7
+@meminfo
+MemTotal:        8195904 kB
+MemFree:         7535024 kB
+MemAvailable:    7730844 kB
+Buffers:             148 kB
+Cached:           355576 kB
+SwapCached:            0 kB
+Active:           137764 kB
+Inactive:         335928 kB
+Active(anon):     116380 kB
+Inactive(anon):    24000 kB
+Active(file):      21384 kB
+Inactive(file):   311928 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+SwapTotal:       9244472 kB
+SwapFree:        9244472 kB
+Dirty:               152 kB
+Writeback:             0 kB
+AnonPages:        109264 kB
+Mapped:            85148 kB
+Shmem:             22328 kB
+KReclaimable:      20928 kB
+Slab:              64720 kB
+SReclaimable:      20928 kB
+SUnreclaim:        43792 kB
+KernelStack:        4944 kB
+PageTables:         3368 kB
+SecPageTables:         0 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:    13342424 kB
+Committed_AS:    1040916 kB
+VmallocTotal:   135288315904 kB
+VmallocUsed:       38772 kB
+VmallocChunk:          0 kB
+Percpu:             2800 kB
+AnonHugePages:         0 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+FileHugePages:         0 kB
+FilePmdMapped:         0 kB
+Balloon:               0 kB
+GPUActive:             0 kB
+GPUReclaim:            0 kB
+@netdev
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+  eth0:     260       2    0    0    0     0          0         0       42       1    0    0    0     0       0          0
+@diskstats
+   7       0 loop0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       1 loop1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       2 loop2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       3 loop3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43       0 nbd0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43      32 nbd1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43      64 nbd2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43      96 nbd3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 254       0 vda 199374 1449 40249232 3805 0 0 0 0 0 821004 3805 0 0 0 0 0 0
+ 254      16 vdb 22879 42 357713 508 7380 4881 587160 3016 0 21558 6158 643 0 144768 139 2634 2493
+ 254      17 vdb1 22806 42 357640 507 7380 4881 587160 3016 0 3507 3663 643 0 144768 139 0 0
+ 254      32 vdc 3 0 24 0 1 0 8 0 0 0 0 1 0 2097144 0 0 0
+ 253       0 zram0 2 0 16 0 1 0 8 1 0 1 1 0 0 0 0 0 0
+@mounts
+overlay / overlay rw,relatime,lowerdir=/var/lib/docker/containerd/daemon/io.containerd.snapshotter.v1.overlayfs/snapshots/171/fs:/var/lib/docker/containerd/daemon/io.containerd.snapshotter.v1.overlayfs/snapshots/170/fs,upperdir=/var/lib/docker/containerd/daemon/io.containerd.snapshotter.v1.overlayfs/snapshots/172/fs,workdir=/var/lib/docker/containerd/daemon/io.containerd.snapshotter.v1.overlayfs/snapshots/172/work 0 0
+proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
+tmpfs /dev tmpfs rw,nosuid,size=65536k,mode=755 0 0
+devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=666 0 0
+sysfs /sys sysfs ro,nosuid,nodev,noexec,relatime 0 0
+cgroup /sys/fs/cgroup cgroup2 ro,nosuid,nodev,noexec,relatime,nsdelegate 0 0
+mqueue /dev/mqueue mqueue rw,nosuid,nodev,noexec,relatime 0 0
+shm /dev/shm tmpfs rw,nosuid,nodev,noexec,relatime,size=4097024k 0 0
+/dev/vdb1 /etc/hostname btrfs rw,noatime,nodatasum,nodatacow,ssd,discard,space_cache=v2,subvolid=256,subvol=/docker 0 0
+/dev/vdb1 /etc/hosts btrfs rw,noatime,nodatasum,nodatacow,ssd,discard,space_cache=v2,subvolid=256,subvol=/docker 0 0
+/dev/vdb1 /etc/resolv.conf btrfs rw,noatime,nodatasum,nodatacow,ssd,discard,space_cache=v2,subvolid=256,subvol=/docker 0 0
+proc /proc/bus proc ro,nosuid,nodev,noexec,relatime 0 0
+proc /proc/fs proc ro,nosuid,nodev,noexec,relatime 0 0
+proc /proc/irq proc ro,nosuid,nodev,noexec,relatime 0 0
+proc /proc/sys proc ro,nosuid,nodev,noexec,relatime 0 0
+proc /proc/sysrq-trigger proc ro,nosuid,nodev,noexec,relatime 0 0
+tmpfs /proc/asound tmpfs ro,relatime,size=4k,nr_inodes=1 0 0
+tmpfs /proc/interrupts tmpfs rw,nosuid,size=65536k,mode=755 0 0
+tmpfs /proc/keys tmpfs rw,nosuid,size=65536k,mode=755 0 0
+tmpfs /proc/timer_list tmpfs rw,nosuid,size=65536k,mode=755 0 0
+tmpfs /sys/firmware tmpfs ro,relatime,size=4k,nr_inodes=1 0 0
+@df
+Filesystem     1024-blocks   Used Available Capacity Mounted on
+overlay            2031616 754196   1277420      38% /
+tmpfs                65536      0     65536       0% /dev
+shm                4097024      0   4097024       0% /dev/shm
+/dev/vdb1          2031616 754196   1277420      38% /etc/hosts
+tmpfs                    4      0         4       0% /proc/asound
+@uptime
+78701.70 786435.33
+@hostname
+1b5971e2ab77
+@uname
+Linux 7.2.9-orbstack-00391-g2b298d05fbd4 aarch64
+@cpuinfo
+processor	: 0
+10
+@osrelease
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+NAME="Debian GNU/Linux"
+VERSION_ID="13"
+VERSION="13 (trixie)"
+VERSION_CODENAME=trixie
+DEBIAN_VERSION_FULL=13.7
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+@addr
+192.168.215.2 
+@end
