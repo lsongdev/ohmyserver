@@ -20,6 +20,7 @@ import (
 	"github.com/lsongdev/docker-go/engine"
 	dockerweb "github.com/lsongdev/docker-go/web"
 	forwardapi "github.com/lsongdev/forward-go/api"
+	monitorapi "github.com/lsongdev/monitor-go/api"
 	sshapi "github.com/lsongdev/ssh-go/api"
 	"github.com/lsongdev/yabber"
 )
@@ -44,6 +45,7 @@ type Sources struct {
 	Forward *forwardapi.Service
 	SSH     *sshapi.Service
 	Cron    *cronapi.Service
+	Monitor *monitorapi.Service
 }
 
 // Home is the overview module.
@@ -163,6 +165,11 @@ func (src Sources) summary(ctx context.Context) map[string]any {
 	if f := src.Forward; f != nil {
 		if sum, err := f.Summary(ctx); err == nil {
 			out["forward"] = sum
+		}
+	}
+	if m := src.Monitor; m != nil {
+		if sum, err := m.Summary(ctx); err == nil {
+			out["monitor"] = sum
 		}
 	}
 	if c := src.Cron; c != nil {

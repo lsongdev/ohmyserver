@@ -4,6 +4,7 @@ import { html, useMemo } from '../../../../_shell/html.js';
 import { useResource } from '../../../../_shell/hooks.js';
 import { createClient } from '../../../../_shell/client.js';
 import { Page, Notice, Loading, Status, Badge } from '../../../../_shell/ui.js';
+import { bytes } from '../../../../_shell/format.js';
 
 function Card({ title, to, value, sub, error }) {
   const body = html`<span class="stat-label">${title}</span>
@@ -18,9 +19,20 @@ export default function Overview({ ctx }) {
   const summary = useResource(signal => api.get('summary', { signal }), [api], { interval: 10000 });
   const s = summary.data;
   const link = ctx.link;
+  const local = s?.monitor?.local?.latest;
+  const pct = (used, total) => (total ? Math.round((used / total) * 100) : 0);
   return html`<${Page} title="概览">
     <${Notice} error=${summary.error} />
     ${!s ? (summary.error ? null : html`<${Loading} />`) : html`
+      ${local ? html`<div class="grid" style="margin-bottom:16px">
+        <${Card} title="CPU" to=${link('monitor', '/hosts/local')} value=${`${local.cpu.toFixed(1)}%`} sub=${`负载 ${local.load1.toFixed(2)}`} />
+        <${Card} title="内存" to=${link('monitor', '/hosts/local')} value=${`${pct(local.mem_used, local.mem_total)}%`}
+          sub=${`${bytes(local.mem_used)} / ${bytes(local.mem_total)}`} />
+        <${Card} title="磁盘" to=${link('monitor', '/hosts/local')} value=${`${pct(local.disk_used, local.disk_total)}%`}
+          sub=${`${bytes(local.disk_used)} / ${bytes(local.disk_total)}`} />
+        ${s.monitor.hosts > 1 ? html`<${Card} title="监控主机" to=${link('monitor', '/')} value=${`${s.monitor.online} / ${s.monitor.hosts}`}
+          sub=${s.monitor.offline ? `${s.monitor.offline} 台离线` : '全部在线'} />` : null}
+      </div>` : null}
       <div class="grid">
         ${s.docker ? html`
           <${Card} title="容器" to=${link('docker', '/containers')} error=${s.docker.error}
