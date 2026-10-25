@@ -1,0 +1,7 @@
+/* SSH module styles; everything else comes from style.css. */
+.terminal { background: #000; border-radius: var(--radius); padding: 8px; height: max(360px, calc(100vh - 210px)); }
+.terminal .xterm { height: 100%; }
+.choices { display: flex; gap: 16px; flex-wrap: wrap; }
+fieldset.field { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.key-line { margin: 0; padding: 12px; border-radius: var(--radius); background: var(--surface-2); font: 12.5px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.test-result { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }

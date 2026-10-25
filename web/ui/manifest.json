@@ -1,0 +1,13 @@
+{
+  "contract": 1,
+  "id": "ssh",
+  "title": "SSH",
+  "icon": "▶",
+  "entry": "module.js",
+  "styles": ["style.css", "ssh.css"],
+  "home": "/",
+  "nav": [
+    { "path": "/", "title": "主机", "icon": "▶" },
+    { "path": "/key", "title": "面板公钥", "icon": "⚿" }
+  ]
+}
