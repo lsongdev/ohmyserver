@@ -228,7 +228,7 @@ func run(cfg config, logger *slog.Logger) error {
 
 	opts := shell.Options{
 		Title: "OhMyServer", Home: "home",
-		Titles: map[string]string{"acme": "证书", "yabber": "网关"},
+		Titles: map[string]string{"acme": "Certificates", "yabber": "Gateway"},
 	}
 	if password := os.Getenv("OHMYSERVER_PASSWORD"); password != "" {
 		opts.Auth = &shell.Auth{Secret: password}
