@@ -1,0 +1,49 @@
+/* Host monitor styles; everything else comes from style.css. */
+:root, :host {
+  --series-1: var(--primary);
+  --series-2: #16a34a;
+  --series-3: #d97706;
+}
+@media (prefers-color-scheme: dark) {
+  :root, :host { --series-2: #4ade80; --series-3: #f5b34a; }
+}
+
+.host-grid > .card { margin-top: 0; }
+.host-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+a.host-card { display: flex; flex-direction: column; gap: 12px; color: inherit; }
+a.host-card:hover { text-decoration: none; }
+.host-head { display: flex; align-items: flex-start; gap: 10px; }
+.host-head .cell-main { font-size: 15px; }
+.host-head .badge { margin-left: auto; }
+/* One grid for all rows, so the bars line up whatever the values' widths. */
+.gauges { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 8px 10px; font-size: 12.5px; }
+.gauge { display: contents; }
+.gauge .meter { margin: 0; }
+.gauge .value { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.meter > span.warn { background: var(--amber); }
+.meter > span.danger { background: var(--danger); }
+.host-foot { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.sparks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.spark-box { font-size: 11.5px; color: var(--muted); }
+.spark { display: block; width: 100%; height: 36px; margin-top: 2px; }
+.spark polyline { fill: none; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.spark polygon { opacity: .15; }
+
+.ranges { display: inline-flex; gap: 4px; }
+.charts > .card { margin-top: 0; }
+.charts { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
+.chart-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.chart-head h2 { margin: 0 !important; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; margin-left: auto; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
+.legend b { color: var(--text); font-weight: 600; margin-left: 4px; }
+.plot { position: relative; height: 160px; cursor: crosshair; }
+.plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.plot .grid line { stroke: var(--border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.plot .line { fill: none; stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.plot .area { opacity: .12; }
+.plot .cursor { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.plot .ymax { position: absolute; top: -2px; left: 0; font-size: 11px; color: var(--muted); background: var(--surface); padding-right: 4px; }
+.axis { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11.5px; color: var(--muted); }
+.chart-empty { height: 160px; display: grid; place-items: center; color: var(--muted); border: 1px dashed var(--border); border-radius: var(--radius); }
+.num, .table .num { text-align: right; font-variant-numeric: tabular-nums; }
