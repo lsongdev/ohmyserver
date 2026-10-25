@@ -1,12 +1,12 @@
 {
   "contract": 1,
   "id": "monitor",
-  "title": "主机监控",
+  "title": "Monitoring",
   "icon": "◔",
   "entry": "module.js",
   "styles": ["style.css", "monitor.css"],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "主机", "icon": "◔" }
+    { "path": "/", "title": "Hosts", "icon": "◔" }
   ]
 }
