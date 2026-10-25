@@ -57,6 +57,9 @@ export default function Overview({ ctx }) {
           <${Card} title="定时任务" to=${link('cron', '/')}
             value=${s.cron.enabled}
             sub=${s.cron.failing ? `${s.cron.failing} 个最近一次失败` : s.cron.running ? `${s.cron.running} 个运行中` : `共 ${s.cron.jobs} 个任务`} />` : null}
+        ${s.ci ? html`
+          <${Card} title="CI" to=${link('ci', '/')} value=${s.ci.repos}
+            sub=${s.ci.running || s.ci.pending ? `${s.ci.running} 个构建中 · ${s.ci.pending} 个排队` : s.ci.failing ? `${s.ci.failing} 个仓库最近构建失败` : '仓库最近构建都通过'} />` : null}
         ${s.ssh ? html`
           <${Card} title="SSH 主机" to=${link('ssh', '/')}
             value=${s.ssh.hosts} sub=${`${s.ssh.sessions} 个终端在线`} />` : null}

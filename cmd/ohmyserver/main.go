@@ -4,7 +4,7 @@
 //
 // Each module is an independent project that also runs on its own
 // (docker-go, acme, yabber, dns-go, forward-go, ssh-go, cron-go,
-// monitor-go) and follows the module contract
+// monitor-go, ci-go) and follows the module contract
 // (docs/module-contract.md). This command only assembles them: it builds
 // each module, gives it the shared database or a store backed by it,
 // connects modules through the adapters in packages gateway, dns, cron and
@@ -26,6 +26,8 @@ import (
 	"time"
 
 	acmeweb "github.com/lsongdev/acme-go/web"
+	ciapi "github.com/lsongdev/ci-go/api"
+	ciweb "github.com/lsongdev/ci-go/web"
 	"github.com/lsongdev/cron-go/runner"
 	cronweb "github.com/lsongdev/cron-go/web"
 	dnsconfig "github.com/lsongdev/dns-go/config"
@@ -226,6 +228,14 @@ func run(cfg config, logger *slog.Logger) error {
 		return fmt.Errorf("monitor: %w", err)
 	}
 
+	// CI: builds run in containers on the Docker daemon the Docker module
+	// manages, so built images appear there; webhooks reach it without the
+	// panel's sign-in (its manifest lists them as public).
+	builds, err := ciweb.New(ctx, db, ciweb.Options{Options: ciapi.Options{Logger: logger}})
+	if err != nil {
+		return fmt.Errorf("ci: %w", err)
+	}
+
 	opts := shell.Options{
 		Title: "OhMyServer", Home: "home",
 		Titles: map[string]string{"acme": "Certificates", "yabber": "Gateway"},
@@ -239,8 +249,9 @@ func run(cfg config, logger *slog.Logger) error {
 		home.New(home.Sources{
 			Docker: docker, Certs: certs.Service, Gateway: gw, DNS: dnsServer,
 			Forward: forwarder.Service, SSH: terminals.Service, Cron: scheduler.Service, Monitor: monitoring.Service,
+			CI: builds.Service,
 		}),
-		docker, certs, yabberweb.New(management), dnsServer, forwarder, terminals, scheduler, monitoring,
+		docker, certs, yabberweb.New(management), dnsServer, forwarder, terminals, scheduler, monitoring, builds,
 	)
 	if err != nil {
 		return err

@@ -22,6 +22,7 @@ type testModule struct {
 func (m testModule) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /hello", func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, m.id+" says hi") })
+	mux.HandleFunc("POST /hooks/{name}", func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, "hook "+r.PathValue("name")) })
 	return mux
 }
 
@@ -169,5 +170,40 @@ func TestAuth(t *testing.T) {
 	resp.Body.Close()
 	if resp.StatusCode != 401 {
 		t.Fatalf("session signed with old secret accepted: %d", resp.StatusCode)
+	}
+}
+
+// Paths a module declares public skip the sign-in; nothing else does.
+func TestPublicPaths(t *testing.T) {
+	m := module("ci")
+	m.assets["manifest.json"].Data = []byte(`{"contract":1,"id":"ci","title":"CI","entry":"module.js","styles":["app.css"],"public":["/hooks/"]}`)
+	h, err := New(Options{Auth: &Auth{Secret: "s3cret"}}, m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(h.Handler())
+	defer srv.Close()
+	post := func(path string) int {
+		resp, err := http.Post(srv.URL+path, "application/json", strings.NewReader("{}"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	if status := post("/m/ci/api/hooks/github"); status != 200 {
+		t.Fatalf("public hook: %d", status)
+	}
+	if status, _ := get(t, srv.Client(), srv.URL+"/m/ci/api/hello"); status != 401 {
+		t.Fatalf("private api: %d", status)
+	}
+	if status := post("/m/ci/api/hooks/../hello"); status == 200 {
+		t.Fatal("public prefix escaped")
+	}
+	for _, bad := range []string{`"hooks/"`, `"/"`, `"/a/../b/"`, `"/{x}"`} {
+		m.assets["manifest.json"].Data = []byte(`{"contract":1,"id":"ci","title":"CI","entry":"module.js","public":[` + bad + `]}`)
+		if _, err := New(Options{}, m); err == nil {
+			t.Errorf("public path %s accepted", bad)
+		}
 	}
 }
