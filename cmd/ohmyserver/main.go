@@ -3,7 +3,7 @@
 // cooperate.
 //
 // Each module is an independent project that also runs on its own
-// (docker-go, acme, yabber, dns-go) and follows the module contract
+// (docker-go, acme, yabber, dns-go, forward-go, ssh-go) and follows the module contract
 // (docs/module-contract.md). This command only assembles them: it builds
 // each module, gives it the shared database or a store backed by it,
 // connects modules through the adapters in packages gateway and dns, and
@@ -27,11 +27,13 @@ import (
 	dnsconfig "github.com/lsongdev/dns-go/config"
 	dnsweb "github.com/lsongdev/dns-go/web"
 	dockerweb "github.com/lsongdev/docker-go/web"
+	forwardweb "github.com/lsongdev/forward-go/web"
 	"github.com/lsongdev/ohmyserver/dns"
 	"github.com/lsongdev/ohmyserver/gateway"
 	"github.com/lsongdev/ohmyserver/home"
 	"github.com/lsongdev/ohmyserver/internal/shell"
 	"github.com/lsongdev/ohmyserver/internal/stores"
+	sshweb "github.com/lsongdev/ssh-go/web"
 	"github.com/lsongdev/yabber"
 	yabberapi "github.com/lsongdev/yabber/api"
 	yabberweb "github.com/lsongdev/yabber/web"
@@ -186,6 +188,17 @@ func run(cfg config, logger *slog.Logger) error {
 		return fmt.Errorf("docker: %w", err)
 	}
 
+	// Port forwarder and SSH terminal: both use SQLite themselves, so they
+	// take the database.
+	forwarder, err := forwardweb.New(ctx, db, forwardweb.Options{Logger: logger})
+	if err != nil {
+		return fmt.Errorf("forward: %w", err)
+	}
+	terminals, err := sshweb.New(ctx, db, sshweb.Options{Logger: logger})
+	if err != nil {
+		return fmt.Errorf("ssh: %w", err)
+	}
+
 	opts := shell.Options{
 		Title: "OhMyServer", Home: "home",
 		Titles: map[string]string{"acme": "证书", "yabber": "网关"},
@@ -196,13 +209,16 @@ func run(cfg config, logger *slog.Logger) error {
 		logger.Warn("serving without authentication on a non-loopback address; set OHMYSERVER_PASSWORD")
 	}
 	host, err := shell.New(opts,
-		home.New(home.Sources{Docker: docker, Certs: certs.Service, Gateway: gw, DNS: dnsServer}),
-		docker, certs, yabberweb.New(management), dnsServer,
+		home.New(home.Sources{
+			Docker: docker, Certs: certs.Service, Gateway: gw, DNS: dnsServer,
+			Forward: forwarder.Service, SSH: terminals.Service,
+		}),
+		docker, certs, yabberweb.New(management), dnsServer, forwarder, terminals,
 	)
 	if err != nil {
 		return err
 	}
-	defer host.Close() // closes docker, certs and dns after the server stops
+	defer host.Close() // closes the modules after the server stops
 
 	logger.Info("panel listening", "url", "http://"+cfg.listen, "data", dataDir)
 	return shell.ListenAndServe(ctx, cfg.listen, host.Handler())

@@ -37,6 +37,13 @@ export default function Overview({ ctx }) {
         ${s.dns ? html`
           <${Card} title="DNS 查询" to=${link('dns', '/')}
             value=${s.dns.queries} sub=${`${s.dns.blocked} 次拦截 · ${s.dns.zones} 个区域`} />` : null}
+        ${s.forward ? html`
+          <${Card} title="端口转发" to=${link('forward', '/')}
+            value=${s.forward.running}
+            sub=${s.forward.failed ? `${s.forward.failed} 条未能启动` : `${s.forward.rules} 条规则 · ${s.forward.active} 个连接`} />` : null}
+        ${s.ssh ? html`
+          <${Card} title="SSH 主机" to=${link('ssh', '/')}
+            value=${s.ssh.hosts} sub=${`${s.ssh.sessions} 个终端在线`} />` : null}
       </div>
       ${s.gateway ? html`<div class="section"><h2>网关监听</h2>
         <div class="table-wrap"><table class="table">

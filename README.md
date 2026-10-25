@@ -9,6 +9,8 @@ project that also runs on its own:
 | Certificates (ACME) | acme-go | `acme serve` |
 | Gateway (reverse proxy, TLS) | yabber | `yabber run -admin …` |
 | DNS (resolver, filtering, zones) | dns-go | `dns-go -config …` |
+| Port forwarding (TCP/UDP) | forward-go | `forward-go` |
+| SSH hosts and web terminal | ssh-go | `ssh-go` |
 
 Modules follow the [module contract](docs/module-contract.md): an API
 handler, assets with a `manifest.json`, and a `mount(el, ctx)` entry point.
@@ -32,6 +34,9 @@ This repository holds the assembly:
   certificates, and an app domain inside a zone dns-go manages gets an
   address record pointing at `-host`.
 - `home` is the panel's own overview module.
+
+The SSH module opens shells on every saved host, so set
+`OHMYSERVER_PASSWORD` whenever the panel listens beyond loopback.
 - `cmd/ohmyserver` opens the shared SQLite database (`<data>/ohmyserver.db`),
   builds every module and mounts them. The data directory is
   `~/.ohmyserver` unless `-data` says otherwise.
@@ -50,5 +55,6 @@ taken, or :53 without the privilege) shows in the overview instead of
 stopping the panel.
 
 Development uses `go.work` with sibling checkouts of the modules
-(`../docker-go`, `../acme-go`, `../yabber`, `../dns-go`). The remaining modules of the
+(`../docker-go`, `../acme-go`, `../yabber`, `../dns-go`, `../forward-go`,
+`../ssh-go`). The remaining modules of the
 previous monolith (on `main`) are to be extracted the same way.
