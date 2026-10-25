@@ -3,10 +3,10 @@
 // cooperate.
 //
 // Each module is an independent project that also runs on its own
-// (docker-go, acme, yabber, dns-go, forward-go, ssh-go) and follows the module contract
+// (docker-go, acme, yabber, dns-go, forward-go, ssh-go, cron-go) and follows the module contract
 // (docs/module-contract.md). This command only assembles them: it builds
 // each module, gives it the shared database or a store backed by it,
-// connects modules through the adapters in packages gateway and dns, and
+// connects modules through the adapters in packages gateway, dns and cron, and
 // mounts them in the shell.
 package main
 
@@ -24,10 +24,13 @@ import (
 	"time"
 
 	acmeweb "github.com/lsongdev/acme-go/web"
+	"github.com/lsongdev/cron-go/runner"
+	cronweb "github.com/lsongdev/cron-go/web"
 	dnsconfig "github.com/lsongdev/dns-go/config"
 	dnsweb "github.com/lsongdev/dns-go/web"
 	dockerweb "github.com/lsongdev/docker-go/web"
 	forwardweb "github.com/lsongdev/forward-go/web"
+	"github.com/lsongdev/ohmyserver/cron"
 	"github.com/lsongdev/ohmyserver/dns"
 	"github.com/lsongdev/ohmyserver/gateway"
 	"github.com/lsongdev/ohmyserver/home"
@@ -199,6 +202,14 @@ func run(cfg config, logger *slog.Logger) error {
 		return fmt.Errorf("ssh: %w", err)
 	}
 
+	// Scheduler: jobs run on this machine or on the SSH module's hosts.
+	scheduler, err := cronweb.New(ctx, db, cronweb.Options{
+		Runners: []runner.Runner{cron.SSHHosts{Service: terminals.Service}}, Logger: logger,
+	})
+	if err != nil {
+		return fmt.Errorf("cron: %w", err)
+	}
+
 	opts := shell.Options{
 		Title: "OhMyServer", Home: "home",
 		Titles: map[string]string{"acme": "证书", "yabber": "网关"},
@@ -211,9 +222,9 @@ func run(cfg config, logger *slog.Logger) error {
 	host, err := shell.New(opts,
 		home.New(home.Sources{
 			Docker: docker, Certs: certs.Service, Gateway: gw, DNS: dnsServer,
-			Forward: forwarder.Service, SSH: terminals.Service,
+			Forward: forwarder.Service, SSH: terminals.Service, Cron: scheduler.Service,
 		}),
-		docker, certs, yabberweb.New(management), dnsServer, forwarder, terminals,
+		docker, certs, yabberweb.New(management), dnsServer, forwarder, terminals, scheduler,
 	)
 	if err != nil {
 		return err

@@ -11,6 +11,7 @@ project that also runs on its own:
 | DNS (resolver, filtering, zones) | dns-go | `dns-go -config …` |
 | Port forwarding (TCP/UDP) | forward-go | `forward-go` |
 | SSH hosts and web terminal | ssh-go | `ssh-go` |
+| Scheduled jobs (cron) | cron-go | `cron-go` |
 
 Modules follow the [module contract](docs/module-contract.md): an API
 handler, assets with a `manifest.json`, and a `mount(el, ctx)` entry point.
@@ -33,10 +34,13 @@ This repository holds the assembly:
   stay manual), DoT/DoH listeners with `tls: true` serve acme-go's
   certificates, and an app domain inside a zone dns-go manages gets an
   address record pointing at `-host`.
+- `cron` lets cron-go jobs run on ssh-go's saved hosts as well as on this
+  machine, with the hosts' stored credentials and pinned host keys.
 - `home` is the panel's own overview module.
 
-The SSH module opens shells on every saved host, so set
-`OHMYSERVER_PASSWORD` whenever the panel listens beyond loopback.
+The SSH and cron modules run commands on this machine and every saved
+host, so set `OHMYSERVER_PASSWORD` whenever the panel listens beyond
+loopback.
 - `cmd/ohmyserver` opens the shared SQLite database (`<data>/ohmyserver.db`),
   builds every module and mounts them. The data directory is
   `~/.ohmyserver` unless `-data` says otherwise.
@@ -56,5 +60,5 @@ stopping the panel.
 
 Development uses `go.work` with sibling checkouts of the modules
 (`../docker-go`, `../acme-go`, `../yabber`, `../dns-go`, `../forward-go`,
-`../ssh-go`). The remaining modules of the
+`../ssh-go`, `../cron-go`). The remaining modules of the
 previous monolith (on `main`) are to be extracted the same way.
