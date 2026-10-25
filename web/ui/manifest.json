@@ -1,0 +1,12 @@
+{
+  "contract": 1,
+  "id": "cron",
+  "title": "定时任务",
+  "icon": "◷",
+  "entry": "module.js",
+  "styles": ["style.css", "cron.css"],
+  "home": "/",
+  "nav": [
+    { "path": "/", "title": "任务", "icon": "◷" }
+  ]
+}
