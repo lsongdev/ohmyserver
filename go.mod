@@ -4,6 +4,7 @@ go 1.26.1
 
 require (
 	github.com/lsongdev/acme-go v0.0.0
+	github.com/lsongdev/ci-go v0.0.0
 	github.com/lsongdev/cron-go v0.0.0
 	github.com/lsongdev/dns-go v0.0.0
 	github.com/lsongdev/docker-go v0.0.0

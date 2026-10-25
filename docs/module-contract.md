@@ -64,9 +64,10 @@ links or redirects.
 ### Authentication
 
 When mounted, the shell authenticates every request before it reaches the
-module's handler: modules must be constructable with their own
-authentication disabled. Standalone, a module authenticates however it likes
-(password, token, reverse proxy).
+module's handler, except for the API paths the manifest lists as `public`:
+modules must be constructable with their own authentication disabled, and
+must authenticate their public paths themselves. Standalone, a module
+authenticates however it likes (password, token, reverse proxy).
 
 Write requests reach the handler only from the panel's own origin: the shell
 applies `http.CrossOriginProtection`. Modules should apply it themselves when
@@ -102,6 +103,7 @@ standalone.
 | `styles` | no | Stylesheets the shell loads into the module's shadow root, in order. |
 | `home` | no | Module path shown at the module root; defaults to the first `nav` path. |
 | `nav` | no | Navigation entries: module path, title, optional icon and group. |
+| `public` | no | API paths served without the shell's sign-in, such as webhook endpoints (`["/hooks/"]`; a trailing `/` covers everything below). The module authenticates these requests itself, e.g. by checking a signature. |
 
 All paths are relative to the assets root. Module paths (`home`, `nav[].path`)
 are relative to the module and start with `/`.

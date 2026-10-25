@@ -13,6 +13,7 @@ import (
 	"html"
 	"io/fs"
 	"net/http"
+	"path"
 	"regexp"
 	"strings"
 
@@ -38,6 +39,10 @@ type Manifest struct {
 	Styles   []string  `json:"styles,omitempty"`
 	Home     string    `json:"home,omitempty"`
 	Nav      []NavItem `json:"nav,omitempty"`
+	// Public lists API paths served without the panel's sign-in, such as
+	// webhook endpoints; the module authenticates them itself. A path
+	// ending in "/" covers everything below it.
+	Public []string `json:"public,omitempty"`
 }
 
 type NavItem struct {
@@ -93,6 +98,11 @@ func ReadManifest(m Module) (Manifest, error) {
 	for _, name := range append([]string{man.Entry}, man.Styles...) {
 		if _, err := fs.Stat(assets, strings.TrimPrefix(name, "/")); err != nil || name == "" {
 			return man, fmt.Errorf("module %q: asset %q is missing", man.ID, name)
+		}
+	}
+	for _, p := range man.Public {
+		if !strings.HasPrefix(p, "/") || p == "/" || strings.ContainsAny(p, " {}") || path.Clean(p) != strings.TrimSuffix(p, "/") {
+			return man, fmt.Errorf("module %q: invalid public path %q", man.ID, p)
 		}
 	}
 	return man, nil
@@ -169,7 +179,11 @@ func (h *Host) routes() http.Handler {
 	for _, m := range h.modules {
 		base := "/m/" + m.manifest.ID
 		mux.Handle("GET "+base+"/ui/", http.StripPrefix(base+"/ui", staticHandler(m.Assets())))
-		mux.Handle(base+"/api/", protect(http.StripPrefix(base+"/api", m.Handler())))
+		api := http.StripPrefix(base+"/api", m.Handler())
+		mux.Handle(base+"/api/", protect(api))
+		for _, p := range m.manifest.Public {
+			mux.Handle(base+"/api"+p, api) // the module authenticates these
+		}
 	}
 	// Every state-changing request must come from the panel's own origin.
 	return http.NewCrossOriginProtection().Handler(mux)

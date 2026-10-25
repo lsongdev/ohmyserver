@@ -13,6 +13,7 @@ project that also runs on its own:
 | SSH hosts and web terminal | ssh-go | `ssh-go` |
 | Scheduled jobs (cron) | cron-go | `cron-go` |
 | Host monitoring | monitor-go | `monitor-go` |
+| CI (builds and tests in Docker) | ci-go | `ci-go` |
 
 Modules follow the [module contract](docs/module-contract.md): an API
 handler, assets with a `manifest.json`, and a `mount(el, ctx)` entry point.
@@ -40,6 +41,9 @@ This repository holds the assembly:
 - `monitor` lets monitor-go read ssh-go's saved Linux hosts over SSH, with
   nothing installed on them (one kept connection per host); the overview
   shows this machine's CPU, memory and disk.
+- ci-go builds on the Docker daemon the Docker module manages, so built
+  images appear under Images; its webhook path is public in its manifest,
+  so git hosts reach it without the panel's sign-in.
 - `home` is the panel's own overview module.
 
 The SSH and cron modules run commands on this machine and every saved
@@ -64,5 +68,5 @@ stopping the panel.
 
 Development uses `go.work` with sibling checkouts of the modules
 (`../docker-go`, `../acme-go`, `../yabber`, `../dns-go`, `../forward-go`,
-`../ssh-go`, `../cron-go`, `../monitor-go`). The remaining modules of the
+`../ssh-go`, `../cron-go`, `../monitor-go`, `../ci-go`). The remaining modules of the
 previous monolith (on `main`) are to be extracted the same way.
