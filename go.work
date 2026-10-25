@@ -6,6 +6,8 @@ use (
 	../acme-go
 	../dns-go
 	../docker-go
+	../forward-go
+	../ssh-go
 	../yabber
 )
 
@@ -14,5 +16,7 @@ replace (
 	github.com/lsongdev/acme-go v0.0.0 => ../acme-go
 	github.com/lsongdev/dns-go v0.0.0 => ../dns-go
 	github.com/lsongdev/docker-go v0.0.0 => ../docker-go
+	github.com/lsongdev/forward-go v0.0.0 => ../forward-go
+	github.com/lsongdev/ssh-go v0.0.0 => ../ssh-go
 	github.com/lsongdev/yabber v0.0.0 => ../yabber
 )

@@ -18,6 +18,8 @@ import (
 	dnsweb "github.com/lsongdev/dns-go/web"
 	"github.com/lsongdev/docker-go/engine"
 	dockerweb "github.com/lsongdev/docker-go/web"
+	forwardapi "github.com/lsongdev/forward-go/api"
+	sshapi "github.com/lsongdev/ssh-go/api"
 	"github.com/lsongdev/yabber"
 )
 
@@ -38,6 +40,8 @@ type Sources struct {
 	Certs   *acmeapi.Service
 	Gateway *yabber.Server
 	DNS     *dnsweb.DNS
+	Forward *forwardapi.Service
+	SSH     *sshapi.Service
 }
 
 // Home is the overview module.
@@ -152,6 +156,16 @@ func (src Sources) summary(ctx context.Context) map[string]any {
 		out["dns"] = dnsSummary{
 			Mode: d.Settings().Mode, Queries: stats.Total, Blocked: stats.Blocked,
 			Zones: len(d.Manager.Service().Zones.List()), Listeners: d.Listeners(),
+		}
+	}
+	if f := src.Forward; f != nil {
+		if sum, err := f.Summary(ctx); err == nil {
+			out["forward"] = sum
+		}
+	}
+	if t := src.SSH; t != nil {
+		if sum, err := t.Summary(ctx); err == nil {
+			out["ssh"] = sum
 		}
 	}
 	return out
