@@ -3,10 +3,12 @@
 // cooperate.
 //
 // Each module is an independent project that also runs on its own
-// (docker-go, acme, yabber, dns-go, forward-go, ssh-go, cron-go) and follows the module contract
+// (docker-go, acme, yabber, dns-go, forward-go, ssh-go, cron-go,
+// monitor-go) and follows the module contract
 // (docs/module-contract.md). This command only assembles them: it builds
 // each module, gives it the shared database or a store backed by it,
-// connects modules through the adapters in packages gateway, dns and cron, and
+// connects modules through the adapters in packages gateway, dns, cron and
+// monitor, and
 // mounts them in the shell.
 package main
 
@@ -30,12 +32,15 @@ import (
 	dnsweb "github.com/lsongdev/dns-go/web"
 	dockerweb "github.com/lsongdev/docker-go/web"
 	forwardweb "github.com/lsongdev/forward-go/web"
+	"github.com/lsongdev/monitor-go/collector"
+	monitorweb "github.com/lsongdev/monitor-go/web"
 	"github.com/lsongdev/ohmyserver/cron"
 	"github.com/lsongdev/ohmyserver/dns"
 	"github.com/lsongdev/ohmyserver/gateway"
 	"github.com/lsongdev/ohmyserver/home"
 	"github.com/lsongdev/ohmyserver/internal/shell"
 	"github.com/lsongdev/ohmyserver/internal/stores"
+	"github.com/lsongdev/ohmyserver/monitor"
 	sshweb "github.com/lsongdev/ssh-go/web"
 	"github.com/lsongdev/yabber"
 	yabberapi "github.com/lsongdev/yabber/api"
@@ -210,6 +215,17 @@ func run(cfg config, logger *slog.Logger) error {
 		return fmt.Errorf("cron: %w", err)
 	}
 
+	// Host monitor: this machine and the SSH module's hosts, read over SSH
+	// without installing anything on them.
+	sshCollector := &monitor.SSHHosts{Service: terminals.Service}
+	defer sshCollector.Close() // after the monitor stops (deferred later, runs first)
+	monitoring, err := monitorweb.New(ctx, db, monitorweb.Options{
+		Collectors: []collector.Collector{sshCollector}, Logger: logger,
+	})
+	if err != nil {
+		return fmt.Errorf("monitor: %w", err)
+	}
+
 	opts := shell.Options{
 		Title: "OhMyServer", Home: "home",
 		Titles: map[string]string{"acme": "证书", "yabber": "网关"},
@@ -222,9 +238,9 @@ func run(cfg config, logger *slog.Logger) error {
 	host, err := shell.New(opts,
 		home.New(home.Sources{
 			Docker: docker, Certs: certs.Service, Gateway: gw, DNS: dnsServer,
-			Forward: forwarder.Service, SSH: terminals.Service, Cron: scheduler.Service,
+			Forward: forwarder.Service, SSH: terminals.Service, Cron: scheduler.Service, Monitor: monitoring.Service,
 		}),
-		docker, certs, yabberweb.New(management), dnsServer, forwarder, terminals, scheduler,
+		docker, certs, yabberweb.New(management), dnsServer, forwarder, terminals, scheduler, monitoring,
 	)
 	if err != nil {
 		return err
