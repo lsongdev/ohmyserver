@@ -14,6 +14,7 @@ import (
 	"time"
 
 	acmeapi "github.com/lsongdev/acme-go/api"
+	cronapi "github.com/lsongdev/cron-go/api"
 	dnsapi "github.com/lsongdev/dns-go/api"
 	dnsweb "github.com/lsongdev/dns-go/web"
 	"github.com/lsongdev/docker-go/engine"
@@ -42,6 +43,7 @@ type Sources struct {
 	DNS     *dnsweb.DNS
 	Forward *forwardapi.Service
 	SSH     *sshapi.Service
+	Cron    *cronapi.Service
 }
 
 // Home is the overview module.
@@ -161,6 +163,11 @@ func (src Sources) summary(ctx context.Context) map[string]any {
 	if f := src.Forward; f != nil {
 		if sum, err := f.Summary(ctx); err == nil {
 			out["forward"] = sum
+		}
+	}
+	if c := src.Cron; c != nil {
+		if sum, err := c.Summary(ctx); err == nil {
+			out["cron"] = sum
 		}
 	}
 	if t := src.SSH; t != nil {

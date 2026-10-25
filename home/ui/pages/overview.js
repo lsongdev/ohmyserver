@@ -41,6 +41,10 @@ export default function Overview({ ctx }) {
           <${Card} title="端口转发" to=${link('forward', '/')}
             value=${s.forward.running}
             sub=${s.forward.failed ? `${s.forward.failed} 条未能启动` : `${s.forward.rules} 条规则 · ${s.forward.active} 个连接`} />` : null}
+        ${s.cron ? html`
+          <${Card} title="定时任务" to=${link('cron', '/')}
+            value=${s.cron.enabled}
+            sub=${s.cron.failing ? `${s.cron.failing} 个最近一次失败` : s.cron.running ? `${s.cron.running} 个运行中` : `共 ${s.cron.jobs} 个任务`} />` : null}
         ${s.ssh ? html`
           <${Card} title="SSH 主机" to=${link('ssh', '/')}
             value=${s.ssh.hosts} sub=${`${s.ssh.sessions} 个终端在线`} />` : null}
