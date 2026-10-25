@@ -7,7 +7,7 @@
   "styles": ["style.css", "ssh.css"],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "主机", "icon": "▶" },
-    { "path": "/key", "title": "面板公钥", "icon": "⚿" }
+    { "path": "/", "title": "Hosts", "icon": "▶" },
+    { "path": "/key", "title": "Panel Key", "icon": "⚿" }
   ]
 }
