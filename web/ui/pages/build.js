@@ -11,7 +11,7 @@ export default function Build({ params }) {
   const action = useAction();
   const [chosen, setChosen] = useState(null);
 
-  if (!build.data) return html`<${Page} title="构建">${build.error ? html`<${Notice} error=${build.error} />` : html`<${Loading} />`}<//>`;
+  if (!build.data) return html`<${Page} title="Build">${build.error ? html`<${Notice} error=${build.error} />` : html`<${Loading} />`}<//>`;
   const b = build.data;
   const steps = b.steps || [];
   // Follow the running step until one is chosen; otherwise show the failing
@@ -24,15 +24,15 @@ export default function Build({ params }) {
   const restart = () => action.run(async () => { const nb = await api.post(`/builds/${b.id}/restart`); navigate(`/builds/${nb.id}`); });
 
   return html`<${Page} title=${`${repo.data?.name || ''} #${b.number}`}
-    subtitle=${html`<a href=${href(`/repos/${b.repo_id}`)}>← ${repo.data?.name || '仓库'}</a> · <${BuildStatus} status=${b.status} /> · <span class="mono">${b.branch}</span>${b.commit ? html` · <span class="commit">${short(b.commit)}</span>` : null}${
+    subtitle=${html`<a href=${href(`/repos/${b.repo_id}`)}>← ${repo.data?.name || 'Repository'}</a> · <${BuildStatus} status=${b.status} /> · <span class="mono">${b.branch}</span>${b.commit ? html` · <span class="commit">${short(b.commit)}</span>` : null}${
       ' · ' + [b.message, EVENTS[b.event] || b.event, b.author, datetime(b.created_at), duration(b.started_at, b.finished_at)].filter(Boolean).join(' · ')}`}
     actions=${active(b.status)
-      ? html`<button class="btn btn-danger" disabled=${action.busy} onClick=${cancel}>取消</button>`
-      : html`<button class="btn" disabled=${action.busy} onClick=${restart}>重新运行</button>`}>
+      ? html`<button class="button button-danger" disabled=${action.busy} onClick=${cancel}>Cancel</button>`
+      : html`<button class="button" disabled=${action.busy} onClick=${restart}>Run again</button>`}>
     <${Notice} error=${action.error} />
     ${b.error ? html`<${Notice} tone=${b.status === 'canceled' ? 'warn' : 'error'}>${b.error}<//>` : null}
-    ${b.status === 'skipped' ? html`<${Notice} tone="info">配置里的 when 条件不包含这次的分支或事件，没有执行任何步骤。<//>` : null}
-    ${b.status === 'pending' ? html`<${Notice} tone="info">排队中，等待前面的构建完成。<//>` : null}
+    ${b.status === 'skipped' ? html`<${Notice} tone="info">The when condition in the configuration excludes this branch or event, so no steps ran.<//>` : null}
+    ${b.status === 'pending' ? html`<${Notice} tone="info">Queued behind earlier builds.<//>` : null}
     ${steps.length ? html`<div class="build-layout">
       <div class="card" style="padding:0"><div class="step-list">
         ${steps.map(s => html`<button key=${s.position} class=${`step-item ${s === step ? 'active' : ''}`} onClick=${() => setChosen(s.position)}>
@@ -73,6 +73,6 @@ function StepLog({ build, step }) {
   const lines = text ? text.replace(/\r\n?/g, '\n').replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '').replace(/\n$/, '').split('\n') : [];
   return html`<div>
     <${Notice} error=${error} />
-    <${LogView} lines=${lines} empty=${step.status === 'skipped' ? '已跳过' : running ? '等待输出…' : '没有输出'} />
+    <${LogView} lines=${lines} empty=${step.status === 'skipped' ? 'Skipped' : running ? 'Waiting for output…' : 'No output'} />
   </div>`;
 }

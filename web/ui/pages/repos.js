@@ -13,23 +13,23 @@ export default function Repos() {
     const b = await api.post(`/repos/${r.id}/builds`);
     navigate(`/builds/${b.id}`);
   });
-  return html`<${Page} title="仓库" subtitle="推送代码或手动运行，按仓库里的 .ci.yml 在容器中构建和测试。"
-    actions=${html`<button class="btn btn-primary" onClick=${() => setAdding(true)}>添加仓库</button>`}>
+  return html`<${Page} title="Repositories" subtitle="Build and test in containers, as each repository's .ci.yml says, on push or on demand."
+    actions=${html`<button class="button button-primary" onClick=${() => setAdding(true)}>Add repository</button>`}>
     <${Notice} error=${repos.error || action.error} />
-    ${repos.data === undefined ? (repos.error ? null : html`<${Loading} />`) : !repos.data.length ? html`<${Empty}>还没有仓库。<//>` : html`
+    ${repos.data === undefined ? (repos.error ? null : html`<${Loading} />`) : !repos.data.length ? html`<${Empty}>No repositories yet.<//>` : html`
       <div class="table-wrap"><table class="table">
-        <thead><tr><th>仓库</th><th>最近构建</th><th>提交</th><th class="num">耗时</th><th class="actions"></th></tr></thead>
+        <thead><tr><th>Repository</th><th>Last build</th><th>Commit</th><th class="num">Duration</th><th class="actions"></th></tr></thead>
         <tbody>${repos.data.map(r => {
           const b = r.last_build;
           return html`<tr key=${r.id}>
             <td><a class="cell-main" href=${href(`/repos/${r.id}`)}>${r.name}</a><div class="cell-sub mono">${r.url}</div></td>
             <td>${b ? html`<a href=${href(`/builds/${b.id}`)}><${BuildStatus} status=${b.status} title=${b.error} /></a>
-              <div class="cell-sub">#${b.number} · ${b.branch} · ${datetime(b.created_at)}</div>` : html`<span class="muted">还没有构建</span>`}</td>
+              <div class="cell-sub">#${b.number} · ${b.branch} · ${datetime(b.created_at)}</div>` : html`<span class="muted">No builds yet</span>`}</td>
             <td>${b?.commit ? html`<span class="commit">${short(b.commit)}</span><div class="cell-sub message" title=${b.message}>${b.message}</div>` : '—'}</td>
             <td class="num">${b ? duration(b.started_at, b.finished_at) : '—'}</td>
-            <td class="actions"><span class="btn-group">
-              <button class="btn btn-sm btn-primary" disabled=${action.busy} onClick=${() => run(r)}>运行</button>
-              <a class="btn btn-sm" href=${href(`/repos/${r.id}`)}>详情</a>
+            <td class="actions"><span class="button-row">
+              <button class="button button-small button-primary" disabled=${action.busy} onClick=${() => run(r)}>Run</button>
+              <a class="button button-small" href=${href(`/repos/${r.id}`)}>Details</a>
             </span></td>
           </tr>`;
         })}</tbody>
@@ -56,47 +56,47 @@ export function RepoForm({ repo, onClose, onSaved }) {
     run(async () => {
       const body = { ...r, timeout: Number(r.timeout) || 60, secrets: Object.fromEntries(secrets.filter(s => s.name.trim()).map(s => [s.name.trim(), s.value])) };
       const saved = isNew ? await api.post('/repos', body) : await api.put(`/repos/${repo.id}`, body);
-      toast(isNew ? '仓库已添加' : '仓库已保存', 'success');
+      toast(isNew ? 'Repository added' : 'Repository saved', 'success');
       onSaved(saved);
     });
   };
-  return html`<${Modal} wide title=${isNew ? '添加仓库' : `编辑 ${repo.name}`} onClose=${onClose} footer=${html`
+  return html`<${Modal} wide title=${isNew ? 'Add repository' : `Edit ${repo.name}`} onClose=${onClose} footer=${html`
     <span class="spacer"></span>
-    <button class="btn" type="button" onClick=${onClose}>取消</button>
-    <button class="btn btn-primary" type="submit" form="repo-form" disabled=${busy}>${isNew ? '添加' : '保存'}</button>`}>
+    <button class="button" type="button" onClick=${onClose}>Cancel</button>
+    <button class="button button-primary" type="submit" form="repo-form" disabled=${busy}>${isNew ? 'Add' : 'Save'}</button>`}>
     <form id="repo-form" class="form" onSubmit=${submit}>
       <${Notice} error=${error} />
       <div class="form-grid">
-        <${Field} label="名称" required>
+        <${Field} label="Name" required>
           <input class="input" required value=${r.name} onInput=${e => set({ name: e.currentTarget.value })} placeholder="ohmyserver" autofocus />
         <//>
-        <${Field} label="默认分支" hint="手动运行时构建这个分支">
+        <${Field} label="Default branch" hint="Built when you run it by hand">
           <input class="input mono" value=${r.branch} onInput=${e => set({ branch: e.currentTarget.value })} />
         <//>
       </div>
-      <${Field} label="Git 地址" required hint="HTTPS 地址；私有仓库填写下面的访问令牌">
+      <${Field} label="Git URL" required hint="An HTTPS URL; for a private repository, also give an access token">
         <input class="input mono" required value=${r.url} onInput=${e => set({ url: e.currentTarget.value })} placeholder="https://github.com/you/app.git" />
       <//>
       <div class="form-grid">
-        <${Field} label="访问令牌" hint=${!isNew && repo.has_token ? '已保存；留空则保留' : 'GitHub、Gitea 的个人访问令牌，公开仓库留空'}>
+        <${Field} label="Access token" hint=${!isNew && repo.has_token ? 'Saved; leave empty to keep it' : 'A GitHub or Gitea personal access token; empty for public repositories'}>
           <input class="input" type="password" autocomplete="new-password" value=${r.token} onInput=${e => set({ token: e.currentTarget.value })} />
         <//>
-        <${Field} label="配置文件">
+        <${Field} label="Configuration file">
           <input class="input mono" value=${r.config_path} onInput=${e => set({ config_path: e.currentTarget.value })} />
         <//>
-        <${Field} label="超时（分钟）">
+        <${Field} label="Timeout (minutes)">
           <input class="input" type="number" min="1" max="1440" value=${r.timeout} onInput=${e => set({ timeout: e.currentTarget.value })} />
         <//>
       </div>
       <fieldset class="field" style="border:0;padding:0;margin:0;display:grid;gap:8px">
-        <span class="field-label">密钥</span>
-        <span class="field-hint">步骤在 secrets 里列出名字才能拿到，日志里会打码。已保存的密钥不显示值，留空则保留。</span>
+        <span class="field-label">Secrets</span>
+        <span class="field-hint">A step gets a secret only by listing its name under secrets; logs mask the values. Saved values are not shown; leave one empty to keep it.</span>
         ${secrets.map((s, i) => html`<div class="secret-row" key=${i}>
           <input class="input mono" placeholder="NAME" value=${s.name} disabled=${s.stored} onInput=${e => setSecret(i, { name: e.currentTarget.value })} />
-          <input class="input" type="password" autocomplete="new-password" placeholder=${s.stored ? '已保存' : '值'} value=${s.value} onInput=${e => setSecret(i, { value: e.currentTarget.value })} />
-          <button type="button" class="btn btn-ghost btn-icon" aria-label="删除" onClick=${() => setSecrets(list => list.filter((_, j) => j !== i))}>✕</button>
+          <input class="input" type="password" autocomplete="new-password" placeholder=${s.stored ? 'Saved' : 'Value'} value=${s.value} onInput=${e => setSecret(i, { value: e.currentTarget.value })} />
+          <button type="button" class="button button-ghost icon-button" aria-label="Remove" onClick=${() => setSecrets(list => list.filter((_, j) => j !== i))}>✕</button>
         </div>`)}
-        <div><button type="button" class="btn btn-sm" onClick=${() => setSecrets(list => [...list, { name: '', value: '' }])}>添加密钥</button></div>
+        <div><button type="button" class="button button-small" onClick=${() => setSecrets(list => [...list, { name: '', value: '' }])}>Add secret</button></div>
       </fieldset>
     </form>
   <//>`;
