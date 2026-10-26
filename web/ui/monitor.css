@@ -29,7 +29,10 @@ a.host-card:hover { text-decoration: none; }
 .spark polyline { fill: none; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .spark polygon { opacity: .15; }
 
-.ranges { display: inline-flex; gap: 4px; }
+/* The range buttons scroll sideways rather than widen the page. */
+.ranges { display: flex; gap: 4px; min-width: 0; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: none; }
+.ranges::-webkit-scrollbar { display: none; }
+.ranges .button { flex: none; }
 .charts > .card { margin-top: 0; }
 .charts { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); }
 .chart-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
