@@ -55,7 +55,7 @@ type NavItem struct {
 // Options configures a Host.
 type Options struct {
 	Title  string            // product name shown in the shell
-	Lang   string            // interface language; "zh-CN" by default
+	Lang   string            // interface language; "en" by default
 	Auth   *Auth             // nil serves without authentication
 	Home   string            // id of the module opened at "/"; the first by default
 	Titles map[string]string // navigation titles overriding manifests, by module id
@@ -117,7 +117,7 @@ func New(opts Options, modules ...Module) (*Host, error) {
 		opts.Title = "OhMyServer"
 	}
 	if opts.Lang == "" {
-		opts.Lang = "zh-CN"
+		opts.Lang = "en"
 	}
 	h := &Host{opts: opts}
 	seen := map[string]bool{}
@@ -219,6 +219,7 @@ const indexPage = `<!doctype html>
   <meta name="color-scheme" content="light dark">
   <title>%s</title>
   <link rel="icon" href="data:image/svg+xml,%%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%%3E%%3Cpath d='M8 1l7 7-7 7-7-7z' fill='%%232563eb'/%%3E%%3C/svg%%3E">
+  <link rel="stylesheet" href="_shell/vendor/stylesheets.css">
   <link rel="stylesheet" href="_shell/style.css">
   <script type="module" src="_shell/shell.js"></script>
 </head>

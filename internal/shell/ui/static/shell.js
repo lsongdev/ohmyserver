@@ -3,7 +3,6 @@
 // receives its route through mount/update, and changes it through
 // ctx.navigate. The shell owns the address bar: "#/<module id><module path>".
 import { html, render, useState, useEffect, useRef } from './html.js';
-import { t } from './i18n.js';
 
 const url = path => new URL(path, document.baseURI);
 
@@ -103,7 +102,7 @@ class ModuleHost {
       this.current.instance = entry.mount(el, ctx);
     } catch (error) {
       if (this.token !== token) return;
-      this.element.replaceChildren(Object.assign(document.createElement('div'), { className: 'notice notice-error', textContent: t('moduleFailed', module.title, error.message) }));
+      this.element.replaceChildren(Object.assign(document.createElement('div'), { className: 'alert alert-danger', textContent: `Module ${module.title} failed to load: ${error.message}` }));
     }
   }
 
@@ -149,15 +148,15 @@ function Sidebar({ panel, path, onLogout }) {
     .sort((a, b) => b.to.length - a.to.length)[0];
   return html`
     <a class="brand" href="#/" onClick=${() => setOpen(false)}><span class="brand-mark">◆</span>${panel.title}</a>
-    <button class="button btn btn-ghost menu-toggle" ref=${toggle} aria-label=${open ? t('close') : t('menu')} aria-expanded=${open} aria-controls="panel-navigation" onClick=${() => setOpen(o => !o)}>${open ? '✕' : '☰'}</button>
-    <button class="button menu-backdrop" aria-label=${t('close')} tabindex="-1" onClick=${() => setOpen(false)}></button>
-    <nav class="nav" id="panel-navigation" aria-label=${t('menu')} onClick=${event => { if (event.target.closest('a')) setOpen(false); }}>
+    <button class="button button-ghost menu-toggle" ref=${toggle} aria-label=${open ? 'Close' : 'Menu'} aria-expanded=${open} aria-controls="panel-navigation" onClick=${() => setOpen(o => !o)}>${open ? '✕' : '☰'}</button>
+    <button class="button menu-backdrop" aria-label="Close" tabindex="-1" onClick=${() => setOpen(false)}></button>
+    <nav class="nav" id="panel-navigation" aria-label="Menu" onClick=${event => { if (event.target.closest('a')) setOpen(false); }}>
       ${panel.modules.map(m => html`<div class="nav-group">
         ${panel.modules.length > 1 ? html`<div class="nav-heading">${m.title}</div>` : null}
         ${items.filter(i => i.module === m).map(i => html`<a class=${`nav-link ${i === active ? 'active' : ''}`} href=${'#' + i.to}>
           <span class="nav-icon">${i.icon || '•'}</span>${i.title}</a>`)}
       </div>`)}
-      ${panel.auth ? html`<button class="button btn btn-ghost sidebar-logout" onClick=${onLogout}>${t('signOut')}</button>` : null}
+      ${panel.auth ? html`<button class="button button-ghost sidebar-logout" onClick=${onLogout}>Sign out</button>` : null}
     </nav>`;
 }
 
@@ -175,7 +174,7 @@ function Login({ title, onLogin }) {
       const response = await fetch(url('_auth/login'), {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ secret }),
       });
-      if (!response.ok) throw new Error(response.status === 401 ? t('wrongPassword') : t('signInFailed', response.status));
+      if (!response.ok) throw new Error(response.status === 401 ? 'Wrong password' : `Sign-in failed (HTTP ${response.status})`);
       onLogin();
     } catch (err) {
       setError(err);
@@ -186,10 +185,10 @@ function Login({ title, onLogin }) {
   return html`<main class="login">
     <form class="card login-card" onSubmit=${submit}>
       <div class="brand"><span class="brand-mark">◆</span>${title}</div>
-      <label class="field"><span class="field-label">${t('password')}</span>
+      <label class="field"><span class="field-label">Password</span>
         <input class="input" type="password" name="secret" autocomplete="current-password" autofocus required /></label>
-      ${error ? html`<div class="notice notice-error" role="alert">${error.message}</div>` : null}
-      <button class="btn btn-primary" disabled=${busy}>${t('signIn')}</button>
+      ${error ? html`<div class="alert alert-danger" role="alert">${error.message}</div>` : null}
+      <button class="button button-primary" disabled=${busy}>Sign in</button>
     </form>
   </main>`;
 }
@@ -203,7 +202,7 @@ function showMessage(text) {
   stop();
   render(null, app);
   app.innerHTML = '';
-  app.append(Object.assign(document.createElement('div'), { className: 'notice notice-error main', textContent: text }));
+  app.append(Object.assign(document.createElement('div'), { className: 'alert alert-danger main', textContent: text }));
 }
 
 function showLogin(title) {
@@ -230,7 +229,7 @@ function showPanel(panel) {
       const home = panel.modules.find(m => m.id === panel.home) || panel.modules[0];
       if (path === '/' || path === '') return go(full(home.id, home.home || home.nav?.[0]?.path || '/'), { replace: true });
       host.unmount();
-      host.element.append(Object.assign(document.createElement('div'), { className: 'notice notice-error', textContent: t('notFound') }));
+      host.element.append(Object.assign(document.createElement('div'), { className: 'alert alert-danger', textContent: 'Page not found' }));
     } else {
       host.show(target.module, target.path, query);
     }
@@ -252,7 +251,7 @@ async function boot() {
     if (session.status === 200 && !session.body.authenticated) return showLogin(document.title);
     const { status, body: panel } = await getJSON('_panel.json');
     if (status === 401) return showLogin(document.title);
-    if (status !== 200) throw new Error(t('panelFailed', status));
+    if (status !== 200) throw new Error(`Failed to load the panel (HTTP ${status})`);
     document.title = panel.title;
     showPanel(panel);
   } catch (error) {
