@@ -8,7 +8,7 @@ import { target } from './hosts.js';
 const CONNECT_FAILED = 4000;
 const HOST_KEY_CHANGED = 4001;
 
-const LABELS = { connecting: '连接中…', open: '已连接', closed: '会话已结束', error: '终端加载失败' };
+const LABELS = { connecting: 'Connecting…', open: 'Connected', closed: 'Session ended', error: 'The terminal failed to load' };
 
 export default function Terminal({ params }) {
   const { api, client, href } = usePanel();
@@ -43,7 +43,7 @@ export default function Terminal({ params }) {
       term.open(ref.current);
       fit.fit();
       setStatus('connecting');
-      term.write(`\x1b[90m正在连接 ${target(host.data)}…\x1b[0m\r\n`);
+      term.write(`\x1b[90mConnecting to ${target(host.data)}…\x1b[0m\r\n`);
       const ws = new WebSocket(client.socketURL(`hosts/${params.id}/terminal`, { cols: term.cols, rows: term.rows }));
       ws.binaryType = 'arraybuffer';
       const encoder = new TextEncoder();
@@ -52,7 +52,7 @@ export default function Terminal({ params }) {
       ws.onclose = e => {
         setStatus('closed');
         setClosed({ code: e.code, reason: e.reason });
-        const text = e.code === HOST_KEY_CHANGED ? '主机密钥已改变，连接已拒绝' : e.reason || '连接已关闭';
+        const text = e.code === HOST_KEY_CHANGED ? 'The host key changed; connection refused' : e.reason || 'Connection closed';
         term.write(`\r\n\x1b[90m[${text}]\x1b[0m\r\n`);
       };
       const input = term.onData(data => ws.readyState === 1 && ws.send(encoder.encode(data)));
@@ -65,24 +65,24 @@ export default function Terminal({ params }) {
   }, [params.id, session, ready]);
 
   const forgetKey = () => {
-    if (!confirmDanger('只有确认服务器确实重装或更换了密钥时才继续：清除已记录的主机密钥，并接受服务器现在提供的密钥？')) return;
+    if (!confirmDanger('Continue only if you know the server was reinstalled or its key replaced: forget the recorded host key and accept the one the server offers now?')) return;
     forget.run(async () => {
       await api.del(`/hosts/${params.id}/host-key`);
       setSession(s => s + 1);
     });
   };
 
-  if (!ready) return html`<${Page} title="终端">${host.error ? html`<${Notice} error=${host.error} />` : html`<${Loading} />`}<//>`;
+  if (!ready) return html`<${Page} title="Terminal">${host.error ? html`<${Notice} error=${host.error} />` : html`<${Loading} />`}<//>`;
   const h = host.data;
-  return html`<${Page} title=${h.name} subtitle=${html`<a href=${href('/')}>← 主机</a> · <span class="mono">${target(h)}</span>`}
+  return html`<${Page} title=${h.name} subtitle=${html`<a href=${href('/')}>← Hosts</a> · <span class="mono">${target(h)}</span>`}
     actions=${html`
       <${Status} state=${status === 'open' ? 'running' : status === 'connecting' ? 'starting' : 'stopped'} label=${LABELS[status]} />
-      ${status === 'closed' ? html`<button class="btn btn-sm" onClick=${() => setSession(s => s + 1)}>重新连接</button>` : null}`}>
+      ${status === 'closed' ? html`<button class="button button-small" onClick=${() => setSession(s => s + 1)}>Reconnect</button>` : null}`}>
     ${closed?.code === HOST_KEY_CHANGED ? html`<${Notice} tone="warn">
-      服务器提供的主机密钥（<span class="mono">${closed.reason}</span>）与首次连接时记录的不同。可能是服务器重装了，也可能有人在中间拦截。
-      <div style="margin-top:8px"><button class="btn btn-sm btn-danger" disabled=${forget.busy} onClick=${forgetKey}>清除记录并重新连接</button></div>
+      The host key the server offers (<span class="mono">${closed.reason}</span>) differs from the one recorded on the first connection. The server may have been reinstalled, or someone may be intercepting the connection.
+      <div style="margin-top:8px"><button class="button button-small button-danger" disabled=${forget.busy} onClick=${forgetKey}>Forget the key and reconnect</button></div>
     <//>` : null}
-    ${closed?.code === CONNECT_FAILED ? html`<${Notice}>连接失败：${closed.reason}<//>` : null}
+    ${closed?.code === CONNECT_FAILED ? html`<${Notice}>Connection failed: ${closed.reason}<//>` : null}
     <${Notice} error=${forget.error} />
     <div class="terminal" ref=${ref}></div>
   <//>`;

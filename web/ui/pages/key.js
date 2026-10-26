@@ -7,20 +7,20 @@ export default function Key() {
   const { api } = usePanel();
   const key = useResource(signal => api.get('/key', { signal }), []);
   const line = key.data?.public_key;
-  return html`<${Page} title="面板公钥" subtitle="认证方式选「面板公钥」的主机，用这把密钥登录，不必保存密码。">
+  return html`<${Page} title="Panel key" subtitle="Hosts set to authenticate with the panel key sign in with this key, so no password is stored.">
     <${Notice} error=${key.error} />
     ${!line ? (key.error ? null : html`<${Loading} />`) : html`
       <div class="card">
         <div class="card-head" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
-          <h2 style="margin:0">公钥</h2><${CopyButton} text=${line} />
+          <h2 style="margin:0">Public key</h2><${CopyButton} text=${line} />
         </div>
         <pre class="key-line">${line}</pre>
       </div>
       <div class="card section">
-        <h2>添加到主机</h2>
-        <p class="muted" style="margin-top:0">在目标主机上，以要登录的用户执行：</p>
+        <h2>Add it to a host</h2>
+        <p class="muted" style="margin-top:0">On the host, run this as the user to sign in as:</p>
         <pre class="key-line">${`mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo '${line}' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys`}</pre>
-        <div style="margin-top:10px"><${CopyButton} text=${`mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo '${line}' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys`} label="复制命令" /></div>
+        <div style="margin-top:10px"><${CopyButton} text=${`mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo '${line}' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys`} label="Copy command" /></div>
       </div>`}
   <//>`;
 }
