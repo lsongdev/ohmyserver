@@ -111,9 +111,7 @@ textarea.code { min-height: 380px; tab-size: 2; white-space: pre; }
 .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 .toolbar .input { width: auto; flex: 1 1 200px; max-width: 360px; }
 
-/* Tables: the wrapper draws the frame. */
-.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
-.table-wrap .table { --table-shadow: none; border-radius: 0; }
+/* Tables (the Table component scrolls them sideways) */
 .table .actions { text-align: right; white-space: nowrap; }
 .cell-main { font-weight: 550; overflow-wrap: anywhere; }
 .cell-sub { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
