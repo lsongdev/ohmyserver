@@ -21,61 +21,61 @@ export default function Overview({ ctx }) {
   const link = ctx.link;
   const local = s?.monitor?.local?.latest;
   const pct = (used, total) => (total ? Math.round((used / total) * 100) : 0);
-  return html`<${Page} title="概览">
+  return html`<${Page} title="Overview">
     <${Notice} error=${summary.error} />
     ${!s ? (summary.error ? null : html`<${Loading} />`) : html`
       ${local ? html`<div class="grid" style="margin-bottom:16px">
-        <${Card} title="CPU" to=${link('monitor', '/hosts/local')} value=${`${local.cpu.toFixed(1)}%`} sub=${`负载 ${local.load1.toFixed(2)}`} />
-        <${Card} title="内存" to=${link('monitor', '/hosts/local')} value=${`${pct(local.mem_used, local.mem_total)}%`}
+        <${Card} title="CPU" to=${link('monitor', '/hosts/local')} value=${`${local.cpu.toFixed(1)}%`} sub=${`Load ${local.load1.toFixed(2)}`} />
+        <${Card} title="Memory" to=${link('monitor', '/hosts/local')} value=${`${pct(local.mem_used, local.mem_total)}%`}
           sub=${`${bytes(local.mem_used)} / ${bytes(local.mem_total)}`} />
-        <${Card} title="磁盘" to=${link('monitor', '/hosts/local')} value=${`${pct(local.disk_used, local.disk_total)}%`}
+        <${Card} title="Disk" to=${link('monitor', '/hosts/local')} value=${`${pct(local.disk_used, local.disk_total)}%`}
           sub=${`${bytes(local.disk_used)} / ${bytes(local.disk_total)}`} />
-        ${s.monitor.hosts > 1 ? html`<${Card} title="监控主机" to=${link('monitor', '/')} value=${`${s.monitor.online} / ${s.monitor.hosts}`}
-          sub=${s.monitor.offline ? `${s.monitor.offline} 台离线` : '全部在线'} />` : null}
+        ${s.monitor.hosts > 1 ? html`<${Card} title="Monitored hosts" to=${link('monitor', '/')} value=${`${s.monitor.online} / ${s.monitor.hosts}`}
+          sub=${s.monitor.offline ? `${s.monitor.offline} offline` : 'All online'} />` : null}
       </div>` : null}
       <div class="grid">
         ${s.docker ? html`
-          <${Card} title="容器" to=${link('docker', '/containers')} error=${s.docker.error}
-            value=${s.docker.containers} sub=${`${s.docker.running} 运行中`} />
-          <${Card} title="应用" to=${link('docker', '/apps')}
-            value=${s.docker.apps} sub=${`${s.docker.apps_running} 运行中`} />` : null}
+          <${Card} title="Containers" to=${link('docker', '/containers')} error=${s.docker.error}
+            value=${s.docker.containers} sub=${`${s.docker.running} running`} />
+          <${Card} title="Apps" to=${link('docker', '/apps')}
+            value=${s.docker.apps} sub=${`${s.docker.apps_running} running`} />` : null}
         ${s.certificates ? html`
-          <${Card} title="证书" to=${link('acme', '/certificates')} error=${s.certificates.error}
+          <${Card} title="Certificates" to=${link('acme', '/certificates')} error=${s.certificates.error}
             value=${s.certificates.active}
-            sub=${s.certificates.expiring ? `${s.certificates.expiring} 张 30 天内到期` : s.certificates.pending ? `${s.certificates.pending} 张签发中` : '有效证书'} />` : null}
+            sub=${s.certificates.expiring ? `${s.certificates.expiring} expiring within 30 days` : s.certificates.pending ? `${s.certificates.pending} being issued` : 'Valid certificates'} />` : null}
         ${s.gateway ? html`
-          <${Card} title="网关站点" to=${link('yabber', '/sites')}
-            value=${s.gateway.sites} sub=${`${s.gateway.requests} 次请求`} />` : null}
+          <${Card} title="Gateway sites" to=${link('yabber', '/sites')}
+            value=${s.gateway.sites} sub=${`${s.gateway.requests} requests`} />` : null}
         ${s.dns ? html`
-          <${Card} title="DNS 查询" to=${link('dns', '/')}
-            value=${s.dns.queries} sub=${`${s.dns.blocked} 次拦截 · ${s.dns.zones} 个区域`} />` : null}
+          <${Card} title="DNS queries" to=${link('dns', '/')}
+            value=${s.dns.queries} sub=${`${s.dns.blocked} blocked · ${s.dns.zones} zones`} />` : null}
         ${s.forward ? html`
-          <${Card} title="端口转发" to=${link('forward', '/')}
+          <${Card} title="Port forwards" to=${link('forward', '/')}
             value=${s.forward.running}
-            sub=${s.forward.failed ? `${s.forward.failed} 条未能启动` : `${s.forward.rules} 条规则 · ${s.forward.active} 个连接`} />` : null}
+            sub=${s.forward.failed ? `${s.forward.failed} failed to start` : `${s.forward.rules} rules · ${s.forward.active} connections`} />` : null}
         ${s.cron ? html`
-          <${Card} title="定时任务" to=${link('cron', '/')}
+          <${Card} title="Scheduled jobs" to=${link('cron', '/')}
             value=${s.cron.enabled}
-            sub=${s.cron.failing ? `${s.cron.failing} 个最近一次失败` : s.cron.running ? `${s.cron.running} 个运行中` : `共 ${s.cron.jobs} 个任务`} />` : null}
+            sub=${s.cron.failing ? `${s.cron.failing} failed last run` : s.cron.running ? `${s.cron.running} running` : `${s.cron.jobs} jobs`} />` : null}
         ${s.ci ? html`
           <${Card} title="CI" to=${link('ci', '/')} value=${s.ci.repos}
-            sub=${s.ci.running || s.ci.pending ? `${s.ci.running} 个构建中 · ${s.ci.pending} 个排队` : s.ci.failing ? `${s.ci.failing} 个仓库最近构建失败` : '仓库最近构建都通过'} />` : null}
+            sub=${s.ci.running || s.ci.pending ? `${s.ci.running} building · ${s.ci.pending} queued` : s.ci.failing ? `${s.ci.failing} repositories failing` : 'All latest builds passed'} />` : null}
         ${s.ssh ? html`
-          <${Card} title="SSH 主机" to=${link('ssh', '/')}
-            value=${s.ssh.hosts} sub=${`${s.ssh.sessions} 个终端在线`} />` : null}
+          <${Card} title="SSH hosts" to=${link('ssh', '/')}
+            value=${s.ssh.hosts} sub=${`${s.ssh.sessions} open terminals`} />` : null}
       </div>
-      ${s.gateway ? html`<div class="section"><h2>网关监听</h2>
+      ${s.gateway ? html`<div class="section"><h2>Gateway listeners</h2>
         <div class="table-wrap"><table class="table">
-          <thead><tr><th>名称</th><th>地址</th><th>TLS</th><th>状态</th></tr></thead>
+          <thead><tr><th>Name</th><th>Address</th><th>TLS</th><th>Status</th></tr></thead>
           <tbody>${s.gateway.listeners.map(l => html`<tr key=${l.name}>
             <td>${l.name}</td><td class="mono">${l.address}</td><td>${l.tls ? html`<${Badge} tone="blue">TLS<//>` : '—'}</td>
-            <td>${l.running ? html`<${Status} state="running" />` : html`<${Status} state="failed" label=${l.error || '未运行'} />`}</td>
+            <td>${l.running ? html`<${Status} state="running" />` : html`<${Status} state="failed" label=${l.error || 'Not running'} />`}</td>
           </tr>`)}</tbody>
         </table></div>
       </div>` : null}
-      ${s.dns ? html`<div class="section"><h2>DNS 监听</h2>
+      ${s.dns ? html`<div class="section"><h2>DNS listeners</h2>
         <div class="table-wrap"><table class="table">
-          <thead><tr><th>协议</th><th>地址</th><th>TLS</th><th>状态</th></tr></thead>
+          <thead><tr><th>Protocol</th><th>Address</th><th>TLS</th><th>Status</th></tr></thead>
           <tbody>${s.dns.listeners.map(l => html`<tr key=${l.type + l.addr}>
             <td>${l.type.toUpperCase()}</td><td class="mono">${l.addr}</td><td>${l.tls ? html`<${Badge} tone="blue">TLS<//>` : '—'}</td>
             <td>${l.error ? html`<${Status} state="failed" label=${l.error} />` : html`<${Status} state="running" />`}</td>

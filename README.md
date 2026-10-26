@@ -24,7 +24,7 @@ This repository holds the assembly:
 - `internal/shell` mounts contract modules under one sign-in: it reads
   each manifest, serves the API at `/m/<id>/api/` and the assets at
   `/m/<id>/ui/`, and renders each module into its own shadow root, passing
-  the theme through `--panel-*` CSS variables.
+  the theme through the @lsongdev/stylesheets CSS variables.
 - `internal/stores` keeps the state of modules that use files on their own
   (docker-go's install records, yabber's configuration) in the shared
   database, by implementing their store interfaces.
@@ -62,7 +62,7 @@ The gateway listens on :80 and :443 by default; `-gateway-http` and
 the configuration is edited in the panel. Likewise the DNS server starts as
 a forwarding resolver on :53 (UDP and TCP, `-dns-listen` for a new
 installation); its listeners, upstreams and mode are then changed under
-DNS → 服务设置 and take effect at once. A listener that cannot bind (a port
+DNS → Settings and take effect at once. A listener that cannot bind (a port
 taken, or :53 without the privilege) shows in the overview instead of
 stopping the panel.
 

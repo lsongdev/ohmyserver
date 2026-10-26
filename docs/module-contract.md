@@ -84,7 +84,7 @@ standalone.
   "title": "Docker",
   "icon": "icon.svg",
   "entry": "module.js",
-  "styles": ["style.css", "docker.css"],
+  "styles": ["vendor/stylesheets.css", "style.css", "docker.css"],
   "home": "/",
   "nav": [
     { "path": "/", "title": "Dashboard", "icon": "◎", "group": "Overview" },
@@ -134,7 +134,7 @@ export function mount(el, ctx) {
 | `navigate(path, { replace })` | Go to a module path. |
 | `href(path, query)` | The URL of a module path, for `<a href>`. |
 | `link(moduleId, path, query)` | URL of a path in another module, or `null` if it is not mounted. |
-| `lang` | Interface language, e.g. `zh-CN` or `en`. |
+| `lang` | Interface language, e.g. `en` (the default) or `zh-CN`. |
 
 The shell owns the address bar. Modules route on `ctx.path`, change routes
 only through `navigate` or `href`, and never read or write `location` for
@@ -149,20 +149,19 @@ cannot affect the shell or other modules, and vice versa. Dialogs and toasts
 render inside `el`.
 
 Theme values reach modules through CSS custom properties, which inherit
-across the shadow boundary. The shell defines:
+across the shadow boundary. The shell loads
+[@lsongdev/stylesheets](https://github.com/lsongdev/stylesheets) on its
+document, so its semantic tokens (`--color-canvas`, `--color-surface`,
+`--color-text`, `--color-primary`, `--color-danger`, …, `--font-family`,
+`--radius-md`, …) and component tokens (`--button-*`, `--input-*`, …) are
+defined there, light or dark.
 
-```
---panel-bg  --panel-surface  --panel-surface-2  --panel-border
---panel-text  --panel-muted  --panel-primary  --panel-primary-text
---panel-danger  --panel-radius  --panel-font  --panel-mono
-```
-
-Modules should derive their own variables from these, with fallbacks, so
-they match the shell when mounted and keep their own look standalone:
-
-```css
-:root, :host { --primary: var(--panel-primary, #2563eb); }
-```
+A module styles itself with the same library: it lists that library's
+component rules (`.button`, `.input`, `.table`, `.dialog`, …) among its
+`styles` and uses the tokens in its own CSS. Those rules match inside the
+shadow root while the tokens come from the shell, so the module follows the
+panel's theme. Standalone, the module's `index.html` links the same file on
+its own document, which then defines the tokens too.
 
 ### Standalone
 
