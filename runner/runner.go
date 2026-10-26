@@ -54,7 +54,7 @@ func (Local) Kind() string { return "local" }
 func (Local) Targets(context.Context) ([]Target, error) {
 	name, _ := os.Hostname()
 	if name == "" {
-		name = "本机"
+		name = "localhost"
 	}
 	return []Target{{ID: "local", Name: name, Kind: "local"}}, nil
 }
