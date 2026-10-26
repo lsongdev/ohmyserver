@@ -22,14 +22,14 @@ export const fixed = v => (v == null ? '—' : v < 10 ? v.toFixed(1) : Math.roun
 export function uptime(seconds) {
   if (!seconds) return '—';
   const d = Math.floor(seconds / 86400), h = Math.floor((seconds % 86400) / 3600), m = Math.floor((seconds % 3600) / 60);
-  if (d) return `${d} 天 ${h} 小时`;
-  if (h) return `${h} 小时 ${m} 分`;
-  return `${m} 分钟`;
+  if (d) return `${d}d ${h}h`;
+  if (h) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
 const STATUS = {
-  online: ['在线', 'green'], offline: ['离线', 'red'], pending: ['采集中', 'blue'],
-  disabled: ['已停用', 'gray'], gone: ['已移除', 'gray'],
+  online: ['Online', 'green'], offline: ['Offline', 'red'], pending: ['Collecting', 'blue'],
+  disabled: ['Disabled', 'gray'], gone: ['Removed', 'gray'],
 };
 
 export function HostStatus({ host }) {
@@ -37,7 +37,7 @@ export function HostStatus({ host }) {
   return html`<${Status} state=${host.status} label=${label} tone=${tone} title=${host.error} />`;
 }
 
-export const KINDS = { local: '本机', ssh: 'SSH' };
+export const KINDS = { local: 'Local', ssh: 'SSH' };
 
 // Meter is a horizontal bar, amber from 80% and red from 90%.
 export function Meter({ value }) {
@@ -107,7 +107,7 @@ export function Chart({ title, points, series, format, max, step, from, to }) {
         ${series.map(s => html`<span key=${s.label}><i style=${`background:${s.color}`}></i>${s.label}<b>${shown ? format(s.value(shown)) : '—'}</b></span>`)}
       </div>
     </div>
-    ${!points.length ? html`<div class="chart-empty">暂无数据</div>` : html`
+    ${!points.length ? html`<div class="chart-empty">No data yet</div>` : html`
       <div class="plot" onMouseMove=${onMove} onMouseLeave=${() => setHover(null)}>
         <svg viewBox=${`0 0 ${W} ${H}`} preserveAspectRatio="none">
           <g class="grid">${[0, 0.5, 1].map(f => html`<line key=${f} x1="0" x2=${W} y1=${H * f} y2=${H * f} />`)}</g>
