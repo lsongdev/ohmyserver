@@ -11,3 +11,4 @@ export * from './log-view.js';
 export * from './toast.js';
 export * from './copy-button.js';
 export * from './confirm-button.js';
+export * from './table.js';
