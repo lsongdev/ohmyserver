@@ -3,7 +3,7 @@
 import { html, useMemo } from '../../../../_shell/html.js';
 import { useResource } from '../../../../_shell/hooks.js';
 import { createClient } from '../../../../_shell/client.js';
-import { Page, Notice, Loading, Status, Badge } from '../../../../_shell/ui.js';
+import { Page, Notice, Loading, Status, Badge, Table } from '../../../../_shell/ui.js';
 import { bytes } from '../../../../_shell/format.js';
 
 function Card({ title, to, value, sub, error }) {
@@ -65,22 +65,22 @@ export default function Overview({ ctx }) {
             value=${s.ssh.hosts} sub=${`${s.ssh.sessions} open terminals`} />` : null}
       </div>
       ${s.gateway ? html`<div class="section"><h2>Gateway listeners</h2>
-        <div class="table-wrap"><table class="table">
+        <${Table}>
           <thead><tr><th>Name</th><th>Address</th><th>TLS</th><th>Status</th></tr></thead>
           <tbody>${s.gateway.listeners.map(l => html`<tr key=${l.name}>
             <td>${l.name}</td><td class="mono">${l.address}</td><td>${l.tls ? html`<${Badge} tone="blue">TLS<//>` : '—'}</td>
             <td>${l.running ? html`<${Status} state="running" />` : html`<${Status} state="failed" label=${l.error || 'Not running'} />`}</td>
           </tr>`)}</tbody>
-        </table></div>
+        <//>
       </div>` : null}
       ${s.dns ? html`<div class="section"><h2>DNS listeners</h2>
-        <div class="table-wrap"><table class="table">
+        <${Table}>
           <thead><tr><th>Protocol</th><th>Address</th><th>TLS</th><th>Status</th></tr></thead>
           <tbody>${s.dns.listeners.map(l => html`<tr key=${l.type + l.addr}>
             <td>${l.type.toUpperCase()}</td><td class="mono">${l.addr}</td><td>${l.tls ? html`<${Badge} tone="blue">TLS<//>` : '—'}</td>
             <td>${l.error ? html`<${Status} state="failed" label=${l.error} />` : html`<${Status} state="running" />`}</td>
           </tr>`)}</tbody>
-        </table></div>
+        <//>
       </div>` : null}`}
   <//>`;
 }
