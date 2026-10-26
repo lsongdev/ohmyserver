@@ -7,7 +7,7 @@ import {
 
 export {
   Loading, Empty, Field, Check, ListInput, Tabs, LogView, CopyButton, ConfirmButton,
-  Toaster, openDialog, DialogHost,
+  Toaster, openDialog, DialogHost, Table,
 } from '../vendor/scripts/react/components/index.js';
 export { KeyValue as KV };
 

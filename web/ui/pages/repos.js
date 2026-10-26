@@ -1,6 +1,6 @@
 import { html, useState } from '../lib/html.js';
 import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Field, Modal, toast } from '../lib/ui.js';
+import { Page, Notice, Loading, Empty, Field, Modal, toast, Table } from '../lib/ui.js';
 import { usePanel } from '../lib/panel.js';
 import { useApi, BuildStatus, active, datetime, short, duration } from '../ci.js';
 
@@ -17,7 +17,7 @@ export default function Repos() {
     actions=${html`<button class="button button-primary" onClick=${() => setAdding(true)}>Add repository</button>`}>
     <${Notice} error=${repos.error || action.error} />
     ${repos.data === undefined ? (repos.error ? null : html`<${Loading} />`) : !repos.data.length ? html`<${Empty}>No repositories yet.<//>` : html`
-      <div class="table-wrap"><table class="table">
+      <${Table}>
         <thead><tr><th>Repository</th><th>Last build</th><th>Commit</th><th class="num">Duration</th><th class="actions"></th></tr></thead>
         <tbody>${repos.data.map(r => {
           const b = r.last_build;
@@ -33,7 +33,7 @@ export default function Repos() {
             </span></td>
           </tr>`;
         })}</tbody>
-      </table></div>`}
+      <//>`}
     ${adding ? html`<${RepoForm} onClose=${() => setAdding(false)} onSaved=${r => { setAdding(false); navigate(`/repos/${r.id}`); }} />` : null}
   <//>`;
 }

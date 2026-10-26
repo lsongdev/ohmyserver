@@ -1,6 +1,6 @@
 import { html, useState } from '../lib/html.js';
 import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, KV, CopyButton, confirmDanger, toast } from '../lib/ui.js';
+import { Page, Notice, Loading, Empty, KV, CopyButton, confirmDanger, toast, Table } from '../lib/ui.js';
 import { usePanel } from '../lib/panel.js';
 import { useApi, BuildStatus, EVENTS, active, datetime, short, duration } from '../ci.js';
 import { RepoForm } from './repos.js';
@@ -51,7 +51,7 @@ export default function Repo({ params }) {
     <${Notice} error=${action.error || builds.error} />
     <section>
       ${builds.data === undefined ? html`<${Loading} />` : !builds.data.length ? html`<${Empty}>No builds yet. Click Run, or set up the webhook below and push.<//>` : html`
-        <div class="table-wrap"><table class="table">
+        <${Table}>
           <thead><tr><th>Build</th><th>Status</th><th>Branch · Commit</th><th>Trigger</th><th>Created</th><th class="num">Duration</th></tr></thead>
           <tbody>${builds.data.map(b => html`<tr key=${b.id}>
             <td><a class="cell-main" href=${href(`/builds/${b.id}`)}>#${b.number}</a></td>
@@ -62,7 +62,7 @@ export default function Repo({ params }) {
             <td class="nowrap muted">${datetime(b.created_at)}</td>
             <td class="num">${duration(b.started_at, b.finished_at)}</td>
           </tr>`)}</tbody>
-        </table></div>`}
+        <//>`}
     </section>
     <div class="grid-2 section">
       <div class="card">
