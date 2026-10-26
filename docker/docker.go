@@ -294,9 +294,11 @@ func (c *Client) Wait(ctx context.Context, id string) (int, error) {
 	return out.StatusCode, nil
 }
 
-// Remove force-removes a container; removing a missing one succeeds.
+// Remove force-removes a container with its anonymous volumes (those an
+// image's VOLUME creates, such as alpine/git's /git); named volumes stay.
+// Removing a missing container succeeds.
 func (c *Client) Remove(ctx context.Context, id string) error {
-	err := c.call(ctx, "DELETE", "/containers/"+id, url.Values{"force": {"1"}}, nil, nil)
+	err := c.call(ctx, "DELETE", "/containers/"+id, url.Values{"force": {"1"}, "v": {"1"}}, nil, nil)
 	if NotFound(err) {
 		return nil
 	}
