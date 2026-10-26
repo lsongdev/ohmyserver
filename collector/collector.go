@@ -58,7 +58,7 @@ func (*Local) Kind() string { return "local" }
 func (l *Local) Hosts(context.Context) ([]Host, error) {
 	name, _ := os.Hostname()
 	if name == "" {
-		name = "本机"
+		name = "localhost"
 	}
 	return []Host{{ID: "local", Name: name, Kind: "local"}}, nil
 }
