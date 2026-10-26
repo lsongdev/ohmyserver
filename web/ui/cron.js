@@ -12,17 +12,17 @@ export function useApi(path, interval) {
 }
 
 const RUN = {
-  running: ['运行中', 'blue'], succeeded: ['成功', 'green'], failed: ['失败', 'red'],
-  timeout: ['超时', 'red'], canceled: ['已取消', 'gray'], interrupted: ['已中断', 'amber'],
+  running: ['Running', 'blue'], succeeded: ['Succeeded', 'green'], failed: ['Failed', 'red'],
+  timeout: ['Timed out', 'red'], canceled: ['Canceled', 'gray'], interrupted: ['Interrupted', 'amber'],
 };
 
 export function RunStatus({ run }) {
   const [label, tone] = RUN[run.status] || [run.status, 'gray'];
-  const title = run.status === 'failed' && !run.error ? `退出码 ${run.exit_code}` : run.error;
+  const title = run.status === 'failed' && !run.error ? `Exit code ${run.exit_code}` : run.error;
   return html`<${Status} state=${run.status} label=${label} tone=${tone} title=${title} />`;
 }
 
-export const TRIGGERS = { schedule: '定时', manual: '手动' };
+export const TRIGGERS = { schedule: 'Schedule', manual: 'Manual' };
 
 export function datetime(value) {
   if (!value) return '—';
@@ -34,15 +34,15 @@ export function duration(run) {
   const ms = new Date(run.finished_at) - new Date(run.started_at);
   if (ms < 1000) return `${ms} ms`;
   const s = Math.round(ms / 1000);
-  return s < 60 ? `${s} 秒` : s < 3600 ? `${Math.floor(s / 60)} 分 ${s % 60} 秒` : `${Math.floor(s / 3600)} 小时 ${Math.floor((s % 3600) / 60)} 分`;
+  return s < 60 ? `${s}s` : s < 3600 ? `${Math.floor(s / 60)}m ${s % 60}s` : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m`;
 }
 
-// relative formats a future time as "3 分钟后".
+// relative formats a future time as "in 3 minutes".
 export function relative(value) {
   if (!value) return '';
   const s = Math.round((new Date(value) - Date.now()) / 1000);
-  if (s < 60) return s <= 0 ? '即将' : `${s} 秒后`;
-  if (s < 3600) return `${Math.round(s / 60)} 分钟后`;
-  if (s < 86400) return `${Math.round(s / 3600)} 小时后`;
-  return `${Math.round(s / 86400)} 天后`;
+  if (s < 60) return s <= 0 ? 'now' : `in ${s} seconds`;
+  if (s < 3600) return `in ${Math.round(s / 60)} minutes`;
+  if (s < 86400) return `in ${Math.round(s / 3600)} hours`;
+  return `in ${Math.round(s / 86400)} days`;
 }
