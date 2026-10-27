@@ -25,8 +25,9 @@ state of its own.
 ## Run
 
 ```sh
-go install github.com/lsongdev/ohmyserver/modules/svcmgr/cmd/svcmgr@latest
-sudo SVCMGR_PASSWORD=secret svcmgr -listen 127.0.0.1:8080
+make deps     # at the repository root: the UI's browser dependencies
+go build -o svcmgr ./modules/svcmgr/cmd/svcmgr
+sudo SVCMGR_PASSWORD=secret ./svcmgr -listen 127.0.0.1:8080
 ```
 
 Without `SVCMGR_PASSWORD` it serves without authentication, which is only

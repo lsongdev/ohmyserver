@@ -3,7 +3,8 @@
 ci-go lives in OhMyServer's `modules/ci` while it is small and changes with
 the panel; it can move back into a project of its own as it is, since it
 imports nothing else from the repository. It still runs on its own:
-`go run ./modules/ci/cmd/ci-go` from the repository root.
+`make deps`, then `go run ./modules/ci/cmd/ci-go` from the repository
+root.
 
 A small CI for one Docker host: a push (webhook) or a click builds a
 repository by running the steps in its `.ci.yml`, each in a container of its

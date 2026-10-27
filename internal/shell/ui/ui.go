@@ -1,4 +1,4 @@
-// Package ui embeds the shell's browser code: vendored Preact and htm, the
+// Package ui embeds the shell's browser code: Preact and htm (vendor/, from npm), the
 // layout and module host, and the components and design system the shell
 // and its built-in modules use. Contract modules do not import it.
 package ui

@@ -63,29 +63,50 @@ func TestManifestFollowsContract(t *testing.T) {
 
 var importRE = regexp.MustCompile(`(?:from\s*|import\s*\(?\s*)["'](\.{1,2}/[^"']+)["']`)
 
-// Every relative import in every module must resolve to an embedded file;
-// otherwise the panel fails at load time with only a console error.
+// Every relative import the module loads must resolve to an embedded file;
+// otherwise the panel fails at load time with only a console error. The
+// check starts from the module's own scripts and follows their imports into
+// node_modules, which holds whole packages, not only the files loaded.
 func TestModuleImportsResolve(t *testing.T) {
+	var queue []string
 	err := fs.WalkDir(UI, ".", func(p string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() || !(strings.HasSuffix(p, ".js") || strings.HasSuffix(p, ".mjs")) {
-			return err
-		}
-		data, err := fs.ReadFile(UI, p)
 		if err != nil {
 			return err
 		}
-		for _, m := range importRE.FindAllStringSubmatch(string(data), -1) {
-			if _, err := fs.Stat(UI, path.Join(path.Dir(p), m[1])); err != nil {
-				t.Errorf("%s imports %s, which does not exist", p, m[1])
-			}
+		if d.IsDir() && d.Name() == "node_modules" {
+			return fs.SkipDir
+		}
+		if !d.IsDir() && (strings.HasSuffix(p, ".js") || strings.HasSuffix(p, ".mjs")) {
+			queue = append(queue, p)
 		}
 		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
+	seen := map[string]bool{}
+	for len(queue) > 0 {
+		p := queue[0]
+		queue = queue[1:]
+		if seen[p] {
+			continue
+		}
+		seen[p] = true
+		data, err := fs.ReadFile(UI, p)
+		if err != nil {
+			t.Errorf("%s: %v", p, err)
+			continue
+		}
+		for _, m := range importRE.FindAllStringSubmatch(string(data), -1) {
+			target := path.Join(path.Dir(p), m[1])
+			if _, err := fs.Stat(UI, target); err != nil {
+				t.Errorf("%s imports %s, which does not exist", p, m[1])
+			} else if strings.HasSuffix(target, ".js") || strings.HasSuffix(target, ".mjs") {
+				queue = append(queue, target)
+			}
+		}
+	}
 }
-
 func TestStatic(t *testing.T) {
 	h := Static(UI)
 	get := func(path, etag string) *httptest.ResponseRecorder {

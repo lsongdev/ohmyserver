@@ -65,6 +65,19 @@ type Options struct {
 	IDs map[string]string
 }
 
+// depsInstalled checks that a UI declaring npm dependencies (a package.json
+// beside its files) has them installed: they are embedded from its
+// node_modules, which npm ci creates before a build.
+func depsInstalled(assets fs.FS) error {
+	if _, err := fs.Stat(assets, "package.json"); err != nil {
+		return nil
+	}
+	if _, err := fs.Stat(assets, "node_modules"); err != nil {
+		return errors.New("its browser dependencies are not installed (no node_modules): run make deps before building")
+	}
+	return nil
+}
+
 // Host serves modules inside the shell.
 type Host struct {
 	opts    Options
@@ -104,6 +117,9 @@ func ReadManifest(m Module) (Manifest, error) {
 			return man, fmt.Errorf("module %q: asset %q is missing", man.ID, name)
 		}
 	}
+	if err := depsInstalled(assets); err != nil {
+		return man, fmt.Errorf("module %q: %w", man.ID, err)
+	}
 	for _, p := range man.Public {
 		if !strings.HasPrefix(p, "/") || p == "/" || strings.ContainsAny(p, " {}") || path.Clean(p) != strings.TrimSuffix(p, "/") {
 			return man, fmt.Errorf("module %q: invalid public path %q", man.ID, p)
@@ -122,6 +138,9 @@ func New(opts Options, modules ...Module) (*Host, error) {
 	}
 	if opts.Lang == "" {
 		opts.Lang = "en"
+	}
+	if err := depsInstalled(ui.FS); err != nil {
+		return nil, fmt.Errorf("shell: %w", err)
 	}
 	h := &Host{opts: opts}
 	seen := map[string]bool{}
@@ -229,7 +248,7 @@ const indexPage = `<!doctype html>
   <meta name="color-scheme" content="light dark">
   <title>%s</title>
   <link rel="icon" href="data:image/svg+xml,%%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%%3E%%3Cpath d='M8 1l7 7-7 7-7-7z' fill='%%232563eb'/%%3E%%3C/svg%%3E">
-  <link rel="stylesheet" href="_shell/vendor/stylesheets.css">
+  <link rel="stylesheet" href="_shell/stylesheets.css">
   <link rel="stylesheet" href="_shell/style.css">
   <script type="module" src="_shell/shell.js"></script>
 </head>

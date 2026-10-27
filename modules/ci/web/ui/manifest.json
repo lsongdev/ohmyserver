@@ -4,7 +4,7 @@
   "title": "CI",
   "icon": "▷",
   "entry": "module.js",
-  "styles": ["vendor/stylesheets.css", "style.css", "ci.css"],
+  "styles": ["stylesheets.css", "style.css", "ci.css"],
   "home": "/",
   "nav": [
     { "path": "/", "title": "Repositories", "icon": "▷" },

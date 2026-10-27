@@ -75,8 +75,17 @@ loopback.
   `~/.ohmyserver` unless `-data` says otherwise.
 
 ```sh
+make deps     # npm ci in each UI: its browser dependencies
 OHMYSERVER_PASSWORD=… go run ./cmd/ohmyserver -listen 127.0.0.1:8080
 ```
+
+Each UI, the shell's (`internal/shell/ui/static`) and every module's
+(`modules/*/web/ui`), declares its browser dependencies in its own
+`package.json`: @lsongdev/stylesheets, @lsongdev/scripts (with Preact and
+htm) and, for SSH, xterm.js. Go embeds them from that UI's `node_modules`,
+which is not committed, so run `make deps` (or `make build`, `make test`)
+before any `go build`, `go run` or `go test`; without it the shell refuses
+to start and says so.
 
 On a server it runs as a systemd service:
 [`contrib/systemd/ohmyserver.service`](contrib/systemd/ohmyserver.service)

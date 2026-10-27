@@ -1,5 +1,5 @@
 /* Shell layout, also used by the built-in modules. Components and the
-   theme come from @lsongdev/stylesheets (vendor/stylesheets.css), loaded on
+   theme come from @lsongdev/stylesheets (stylesheets.css), loaded on
    the document before this file. Its custom properties inherit into the
    modules' shadow roots, which is how modules follow the panel's theme
    (docs/module-contract.md). The short names below are aliases. */

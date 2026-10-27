@@ -19,8 +19,9 @@ directory and adding a go.mod.
 ## Run
 
 ```sh
-go install github.com/lsongdev/ohmyserver/modules/pkgmgr/cmd/pkgmgr@latest
-sudo PKGMGR_PASSWORD=secret pkgmgr -listen 127.0.0.1:8080
+make deps     # at the repository root: the UI's browser dependencies
+go build -o pkgmgr ./modules/pkgmgr/cmd/pkgmgr
+sudo PKGMGR_PASSWORD=secret ./pkgmgr -listen 127.0.0.1:8080
 ```
 
 Installing and removing packages needs root. Without `PKGMGR_PASSWORD` it

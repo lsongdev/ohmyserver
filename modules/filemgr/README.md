@@ -43,8 +43,9 @@ immediate and never blind (see
 ## Run
 
 ```sh
-go install github.com/lsongdev/ohmyserver/modules/filemgr/cmd/filemgr@latest
-FILEMGR_PASSWORD=secret filemgr -listen 127.0.0.1:8080 -root /srv
+make deps     # at the repository root: the UI's browser dependencies
+go build -o filemgr ./modules/filemgr/cmd/filemgr
+FILEMGR_PASSWORD=secret ./filemgr -listen 127.0.0.1:8080 -root /srv
 ```
 
 ## API

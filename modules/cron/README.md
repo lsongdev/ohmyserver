@@ -3,7 +3,8 @@
 cron-go lives in OhMyServer's `modules/cron` while it is small and changes with
 the panel; it can move back into a project of its own as it is, since it
 imports nothing else from the repository. It still runs on its own:
-`go run ./modules/cron/cmd/cron-go` from the repository root.
+`make deps`, then `go run ./modules/cron/cmd/cron-go` from the repository
+root.
 
 A job scheduler with a web UI: jobs run shell commands on a schedule,
 locally or on any target a host program adds (OhMyServer adds its saved SSH

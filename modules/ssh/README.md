@@ -3,7 +3,8 @@
 ssh-go lives in OhMyServer's `modules/ssh` while it is small and changes with
 the panel; it can move back into a project of its own as it is, since it
 imports nothing else from the repository. It still runs on its own:
-`go run ./modules/ssh/cmd/ssh-go` from the repository root.
+`make deps`, then `go run ./modules/ssh/cmd/ssh-go` from the repository
+root.
 
 Saved SSH hosts and a terminal on each, in the browser.
 

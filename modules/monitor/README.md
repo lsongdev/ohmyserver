@@ -3,7 +3,8 @@
 monitor-go lives in OhMyServer's `modules/monitor` while it is small and changes with
 the panel; it can move back into a project of its own as it is, since it
 imports nothing else from the repository. It still runs on its own:
-`go run ./modules/monitor/cmd/monitor-go` from the repository root.
+`make deps`, then `go run ./modules/monitor/cmd/monitor-go` from the repository
+root.
 
 A host monitor with a web UI: CPU, load, memory and swap, disk usage and
 I/O, network traffic, and host details, sampled every 15 seconds, kept as
