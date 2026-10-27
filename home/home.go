@@ -9,6 +9,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
+	"errors"
 	"io/fs"
 	"net/http"
 	"time"
@@ -76,6 +77,7 @@ func New(src Sources) *Home {
 // one unavailable module (e.g. a stopped Docker daemon) does not hide the
 // others.
 type dockerSummary struct {
+	State       string `json:"state,omitempty"` // not_installed or not_running when the daemon is unreachable
 	Error       string `json:"error,omitempty"`
 	Containers  int    `json:"containers"`
 	Running     int    `json:"running"`
@@ -111,7 +113,12 @@ func (src Sources) summary(ctx context.Context) map[string]any {
 	if d := src.Docker; d != nil {
 		var s dockerSummary
 		containers, err := d.Engine.ListContainers(ctx, engine.ListContainersOptions{All: true})
-		if err != nil {
+		switch {
+		case engine.NotInstalled(err):
+			s.State = "not_installed"
+		case errors.Is(err, engine.ErrUnavailable):
+			s.State, s.Error = "not_running", err.Error()
+		case err != nil:
 			s.Error = err.Error()
 		}
 		for _, c := range containers {

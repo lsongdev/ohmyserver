@@ -34,7 +34,9 @@ export default function Overview({ ctx }) {
           sub=${s.monitor.offline ? `${s.monitor.offline} offline` : 'All online'} />` : null}
       </div>` : null}
       <div class="grid">
-        ${s.docker ? html`
+        ${s.docker?.state ? html`
+          <${Card} title="Containers" to=${link('docker', '/')} value="N/A"
+            sub=${s.docker.state === 'not_installed' ? 'Docker is not installed' : 'Docker is not running'} />` : s.docker ? html`
           <${Card} title="Containers" to=${link('docker', '/containers')} error=${s.docker.error}
             value=${s.docker.containers} sub=${`${s.docker.running} running`} />
           <${Card} title="Apps" to=${link('docker', '/apps')}
