@@ -1,7 +1,7 @@
 # OhMyServer
 
-A server panel assembled from independent modules. Each module is its own
-project that also runs on its own:
+A server panel assembled from modules. Mature modules are projects of their
+own that also run on their own:
 
 | Module | Project | Standalone |
 |---|---|---|
@@ -10,19 +10,25 @@ project that also runs on its own:
 | Gateway (reverse proxy, TLS) | yabber | `yabber run -admin …` |
 | DNS (resolver, filtering, zones) | dns-go | `dns-go -config …` |
 | Port forwarding (TCP/UDP) | forward-go | `forward-go` |
-| SSH hosts and web terminal | ssh-go | `ssh-go` |
-| Scheduled jobs (cron) | cron-go | `cron-go` |
-| Host monitoring | monitor-go | `monitor-go` |
-| CI (builds and tests in Docker) | ci-go | `ci-go` |
-| Packages (dnf, apt, installing Docker) | built in: [pkgmgr](pkgmgr) | `pkgmgr` |
-| Services (systemd) and logs (journal) | built in: [svcmgr](svcmgr) | `svcmgr` |
-| Disks (capacity, RAID, SMART health) | built in: [diskmgr](diskmgr) | `diskmgr` |
 
-Modules follow the [module contract](docs/module-contract.md): an API
+Modules that are still small and change with the panel live in
+[`modules/`](modules) until they are mature enough to stand on their own:
+
+| Module | Directory | Standalone |
+|---|---|---|
+| SSH hosts and web terminal | [modules/ssh](modules/ssh) | `ssh-go` |
+| Scheduled jobs (cron) | [modules/cron](modules/cron) | `cron-go` |
+| Host monitoring | [modules/monitor](modules/monitor) | `monitor-go` |
+| CI (builds and tests in Docker) | [modules/ci](modules/ci) | `ci-go` |
+| Packages (dnf, apt, installing Docker) | [modules/pkgmgr](modules/pkgmgr) | `pkgmgr` |
+| Services (systemd) and logs (journal) | [modules/svcmgr](modules/svcmgr) | `svcmgr` |
+| Disks (capacity, RAID, SMART health) | [modules/diskmgr](modules/diskmgr) | `diskmgr` |
+
+Every module follows the [module contract](docs/module-contract.md): an API
 handler, assets with a `manifest.json`, and a `mount(el, ctx)` entry point.
-They never import this repository or each other. A module not yet mature
-enough for a project of its own lives in a directory here (`pkgmgr`, `svcmgr`, `diskmgr`),
-follows the same contract, and imports nothing else from this repository.
+Modules never import each other or the panel; the ones in `modules/` import
+nothing else from this repository either, so each directory can move out
+into a project of its own as it is.
 
 This repository holds the assembly:
 
@@ -41,21 +47,21 @@ This repository holds the assembly:
   stay manual), DoT/DoH listeners with `tls: true` serve acme-go's
   certificates, and an app domain inside a zone dns-go manages gets an
   address record pointing at `-host`.
-- `cron` lets cron-go jobs run on ssh-go's saved hosts as well as on this
+- `cron` lets scheduled jobs run on the SSH module's saved hosts as well as on this
   machine, with the hosts' stored credentials and pinned host keys.
-- `monitor` lets monitor-go read ssh-go's saved Linux hosts over SSH, with
+- `monitor` lets the monitor module read the SSH module's saved Linux hosts over SSH, with
   nothing installed on them (one kept connection per host); the overview
   shows this machine's CPU, memory and disk.
-- ci-go builds on the Docker daemon the Docker module manages, so built
+- CI builds on the Docker daemon the Docker module manages, so built
   images appear under Images; its webhook path is public in its manifest,
   so git hosts reach it without the panel's sign-in.
 - `home` is the panel's own overview module.
-- `pkgmgr` drives the system's package manager (dnf or apt) and installs
+- `modules/pkgmgr` drives the system's package manager (dnf or apt) and installs
   Docker for the modules that need it; the overview and the Docker module
   link there when Docker is missing.
-- `svcmgr` manages systemd services and reads the journal; it never stops
+- `modules/svcmgr` manages systemd services and reads the journal; it never stops
   or disables the service running the panel.
-- `diskmgr` shows file system capacity, software RAID arrays and each
+- `modules/diskmgr` shows file system capacity, software RAID arrays and each
   disk's SMART health (through smartctl-go), without waking sleeping disks.
 
 The SSH and cron modules run commands on this machine and every saved
@@ -94,7 +100,6 @@ An attempt limit of 1 disables retries at that layer. Unfinished issuances
 resume from their saved order and key after restart; the certificate panel
 shows attempt counts and the next retry time.
 
-Development uses `go.work` with sibling checkouts of the modules
-(`../docker-go`, `../acme-go`, `../yabber`, `../dns-go`, `../forward-go`,
-`../ssh-go`, `../cron-go`, `../monitor-go`, `../ci-go`). The remaining modules of the
-previous monolith (on `main`) are to be extracted the same way.
+Development uses `go.work` with sibling checkouts of the projects
+(`../docker-go`, `../acme-go`, `../yabber`, `../dns-go`, `../forward-go`)
+and of the smartctl-go library (`../smartctl-go`).
