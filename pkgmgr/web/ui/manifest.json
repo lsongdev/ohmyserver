@@ -1,0 +1,14 @@
+{
+  "contract": 1,
+  "id": "packages",
+  "title": "Packages",
+  "icon": "▦",
+  "entry": "module.js",
+  "styles": ["vendor/stylesheets.css", "style.css", "packages.css"],
+  "home": "/",
+  "nav": [
+    { "path": "/", "title": "Packages", "icon": "▦" },
+    { "path": "/recommended", "title": "Recommended", "icon": "✦" },
+    { "path": "/jobs", "title": "Jobs", "icon": "⟳" }
+  ]
+}
