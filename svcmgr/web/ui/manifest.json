@@ -1,0 +1,13 @@
+{
+  "contract": 1,
+  "id": "services",
+  "title": "Services",
+  "icon": "⚙",
+  "entry": "module.js",
+  "styles": ["vendor/stylesheets.css", "style.css", "services.css"],
+  "home": "/",
+  "nav": [
+    { "path": "/", "title": "Services", "icon": "⚙" },
+    { "path": "/logs", "title": "Logs", "icon": "☰" }
+  ]
+}

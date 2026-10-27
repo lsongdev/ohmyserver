@@ -10,7 +10,7 @@
 // connects modules through the adapters in packages gateway, dns, cron and
 // monitor, and
 // mounts them in the shell, together with the modules built in here (the
-// overview and the package manager).
+// overview, the package manager and the service manager).
 package main
 
 import (
@@ -45,6 +45,7 @@ import (
 	"github.com/lsongdev/ohmyserver/internal/stores"
 	"github.com/lsongdev/ohmyserver/monitor"
 	pkgmgr "github.com/lsongdev/ohmyserver/pkgmgr/web"
+	svcmgr "github.com/lsongdev/ohmyserver/svcmgr/web"
 	sshweb "github.com/lsongdev/ssh-go/web"
 	"github.com/lsongdev/yabber"
 	yabberapi "github.com/lsongdev/yabber/api"
@@ -241,6 +242,8 @@ func run(cfg config, logger *slog.Logger) error {
 	// Packages: the system's package manager (dnf or apt), and installing
 	// Docker for the modules that need it.
 	packages := pkgmgr.New(pkgmgr.Options{Logger: logger})
+	// Services: systemd services and the journal.
+	services := svcmgr.New(svcmgr.Options{Logger: logger})
 
 	opts := shell.Options{
 		Title: "OhMyServer", Home: "home",
@@ -259,7 +262,7 @@ func run(cfg config, logger *slog.Logger) error {
 			Forward: forwarder.Service, SSH: terminals.Service, Cron: scheduler.Service, Monitor: monitoring.Service,
 			CI: builds.Service,
 		}),
-		docker, certs, yabberweb.New(management), dnsServer, forwarder, terminals, scheduler, monitoring, builds, packages,
+		docker, certs, yabberweb.New(management), dnsServer, forwarder, terminals, scheduler, monitoring, builds, packages, services,
 	)
 	if err != nil {
 		return err
