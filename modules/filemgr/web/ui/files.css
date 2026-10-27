@@ -1,0 +1,24 @@
+/* File manager styles; everything else comes from style.css. */
+.num, .table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.small { font-size: 12.5px; }
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; font-family: var(--mono); font-size: 13px; }
+.crumbs a, .crumbs span { padding: 2px 4px; border-radius: 4px; }
+.crumbs a:hover { background: var(--surface-2); text-decoration: none; }
+.crumbs .sep { color: var(--muted); padding: 0; }
+.selection { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; padding: 8px 12px;
+  border-radius: var(--radius); background: var(--primary-soft); }
+.drop { position: relative; }
+.drop.dragging::after { content: "Drop files to upload them here"; position: absolute; inset: 0; display: grid; place-items: center;
+  border: 2px dashed var(--primary); border-radius: var(--radius); background: color-mix(in srgb, var(--surface) 85%, transparent);
+  color: var(--primary); font-weight: 600; z-index: 2; }
+.name-cell { display: flex; align-items: center; gap: 8px; }
+.icon { width: 18px; text-align: center; color: var(--muted); flex: none; }
+.icon.dir { color: var(--primary); }
+.link-button { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.link-button:hover { color: var(--primary); text-decoration: underline; }
+.link-target { color: var(--muted); font-size: 12.5px; }
+.table td.check, .table th.check { width: 32px; }
+.mode { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+textarea.input.editor { width: 100%; height: 60vh; min-height: 240px; font: 13px/1.5 var(--mono); white-space: pre; tab-size: 4; resize: vertical; }
+.preview-image { display: block; max-width: 100%; max-height: 65vh; margin: 0 auto; border-radius: var(--radius); }
+.upload-progress { margin-bottom: 12px; }
