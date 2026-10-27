@@ -47,7 +47,7 @@ export default function Overview({ ctx }) {
             value=${s.certificates.active}
             sub=${s.certificates.expiring ? `${s.certificates.expiring} expiring within 30 days` : s.certificates.pending ? `${s.certificates.pending} being issued` : 'Valid certificates'} />` : null}
         ${s.gateway ? html`
-          <${Card} title="Gateway sites" to=${link('yabber', '/sites')}
+          <${Card} title="Gateway sites" to=${link('gateway', '/sites')}
             value=${s.gateway.sites} sub=${`${s.gateway.requests} requests`} />` : null}
         ${s.dns ? html`
           <${Card} title="DNS queries" to=${link('dns', '/')}

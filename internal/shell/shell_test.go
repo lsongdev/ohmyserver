@@ -76,6 +76,29 @@ func TestMountsModulesByManifest(t *testing.T) {
 	}
 }
 
+func TestMountsUnderAnotherID(t *testing.T) {
+	h, err := New(Options{Home: "certificates", IDs: map[string]string{"acme": "certificates"}, Titles: map[string]string{"acme": "Certificates"}},
+		module("docker"), module("acme"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(h.Handler())
+	defer srv.Close()
+	if status, body := get(t, srv.Client(), srv.URL+"/m/certificates/api/hello"); status != 200 || body != "acme says hi" {
+		t.Errorf("renamed api: %d %q", status, body)
+	}
+	if status, _ := get(t, srv.Client(), srv.URL+"/m/acme/api/hello"); status == 200 {
+		t.Error("still mounted under the manifest id")
+	}
+	_, body := get(t, srv.Client(), srv.URL+"/_panel.json")
+	if !strings.Contains(body, `"id":"certificates"`) || !strings.Contains(body, `"title":"Certificates"`) {
+		t.Errorf("panel = %s", body)
+	}
+	if _, err := New(Options{IDs: map[string]string{"acme": "docker"}}, module("docker"), module("acme")); err == nil {
+		t.Error("an id clash was accepted")
+	}
+}
+
 func TestIndexHasStrictCSP(t *testing.T) {
 	h, _ := New(Options{Title: "<Panel>"}, module("docker"))
 	w := httptest.NewRecorder()
