@@ -1,0 +1,15 @@
+/* Disk module styles; everything else comes from style.css. */
+.num, .table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.small { font-size: 12.5px; }
+.fs-card .meter { height: 8px; }
+.fs-card .meter.warning > span { background: var(--amber); }
+.fs-card .meter.danger > span { background: var(--danger); }
+.fs-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.fs-head strong { overflow-wrap: anywhere; }
+.fs-numbers { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; color: var(--muted); font-size: 12.5px; }
+.array-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.array-head h3 { margin: 0; font-size: 15px; }
+.members { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.warnings { margin: 0; padding-left: 18px; }
+.attr-alert td { color: var(--danger); }
+.section-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
