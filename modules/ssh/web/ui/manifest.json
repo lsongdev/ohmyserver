@@ -4,7 +4,7 @@
   "title": "SSH",
   "icon": "▶",
   "entry": "module.js",
-  "styles": ["vendor/stylesheets.css", "style.css", "ssh.css"],
+  "styles": ["stylesheets.css", "style.css", "ssh.css"],
   "home": "/",
   "nav": [
     { "path": "/", "title": "Hosts", "icon": "▶" },

@@ -21,8 +21,9 @@ them. Health is cached for five minutes.
 ## Run
 
 ```sh
-go install github.com/lsongdev/ohmyserver/modules/diskmgr/cmd/diskmgr@latest
-sudo DISKMGR_PASSWORD=secret diskmgr -listen 127.0.0.1:8080
+make deps     # at the repository root: the UI's browser dependencies
+go build -o diskmgr ./modules/diskmgr/cmd/diskmgr
+sudo DISKMGR_PASSWORD=secret ./diskmgr -listen 127.0.0.1:8080
 ```
 
 ## API

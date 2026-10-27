@@ -4,7 +4,7 @@
   "title": "Files",
   "icon": "▤",
   "entry": "module.js",
-  "styles": ["vendor/stylesheets.css", "style.css", "files.css"],
+  "styles": ["stylesheets.css", "style.css", "files.css"],
   "home": "/",
   "nav": [
     { "path": "/", "title": "Files", "icon": "▤" },

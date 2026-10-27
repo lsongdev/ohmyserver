@@ -2,3 +2,5 @@
 /ohmyserver
 /go.work.sum
 /data.log
+# Browser dependencies, installed by make deps (npm ci in each UI).
+node_modules/

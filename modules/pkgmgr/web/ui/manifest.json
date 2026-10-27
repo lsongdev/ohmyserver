@@ -4,7 +4,7 @@
   "title": "Packages",
   "icon": "▦",
   "entry": "module.js",
-  "styles": ["vendor/stylesheets.css", "style.css", "packages.css"],
+  "styles": ["stylesheets.css", "style.css", "packages.css"],
   "home": "/",
   "nav": [
     { "path": "/", "title": "Packages", "icon": "▦" },
