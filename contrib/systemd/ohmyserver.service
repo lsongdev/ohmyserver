@@ -1,0 +1,33 @@
+[Unit]
+Description=OhMyServer panel
+Documentation=https://github.com/lsongdev/ohmyserver
+Wants=network-online.target
+After=network-online.target
+
+# Install:
+#   install -m 755 ohmyserver /usr/local/bin/
+#   install -m 644 contrib/systemd/ohmyserver.service /etc/systemd/system/
+#   install -m 600 /dev/null /etc/ohmyserver.env, then edit it (below)
+#   systemctl daemon-reload && systemctl enable --now ohmyserver
+#
+# /etc/ohmyserver.env holds the sign-in password and this machine's flags:
+#   OHMYSERVER_PASSWORD=<a long random secret>
+#   OHMYSERVER_FLAGS=-host 192.168.1.10 -dns-listen 127.0.0.1:5353
+#
+# The panel listens on loopback; reach it through its own gateway (a site
+# proxying to http://127.0.0.1:8080). The gateway's listeners (:80, :443 by
+# default) and DNS listener only apply at the first start, after which they
+# are edited in the panel. It runs as root: it manages packages, services,
+# disks and files.
+
+[Service]
+Type=simple
+Environment=OHMYSERVER_FLAGS=
+EnvironmentFile=/etc/ohmyserver.env
+ExecStart=/usr/local/bin/ohmyserver -listen 127.0.0.1:8080 -data /var/lib/ohmyserver $OHMYSERVER_FLAGS
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
