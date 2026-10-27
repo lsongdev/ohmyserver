@@ -96,7 +96,7 @@ standalone.
 | Field | Required | Meaning |
 |---|---|---|
 | `contract` | yes | Contract version. A shell refuses versions it does not support. |
-| `id` | yes | `[a-z][a-z0-9-]*`, unique within a shell; used in URLs and table names. |
+| `id` | yes | `[a-z][a-z0-9-]*`; names the module's tables, and its URLs unless the shell mounts it under another id. |
 | `title` | yes | Navigation label. A shell may override it. |
 | `icon` | no | A path inside the assets (SVG or PNG), or a short glyph. |
 | `entry` | yes | Path of the JavaScript module that exports `mount`. |
@@ -104,6 +104,12 @@ standalone.
 | `home` | no | Module path shown at the module root; defaults to the first `nav` path. |
 | `nav` | no | Navigation entries: module path, title, optional icon and group. |
 | `public` | no | API paths served without the shell's sign-in, such as webhook endpoints (`["/hooks/"]`; a trailing `/` covers everything below). The module authenticates these requests itself, e.g. by checking a signature. |
+
+A shell may mount a module under an id of its own choosing, for instance
+one that names what the module does rather than the project behind it
+(OhMyServer mounts yabber as `gateway`). Mounted ids are unique within the
+shell, and they are what URLs, `ctx.id` and `ctx.link` use. Modules
+therefore never hard-code their own id in URLs.
 
 All paths are relative to the assets root. Module paths (`home`, `nav[].path`)
 are relative to the module and start with `/`.

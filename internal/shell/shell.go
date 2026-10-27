@@ -58,7 +58,11 @@ type Options struct {
 	Lang   string            // interface language; "en" by default
 	Auth   *Auth             // nil serves without authentication
 	Home   string            // id of the module opened at "/"; the first by default
-	Titles map[string]string // navigation titles overriding manifests, by module id
+	Titles map[string]string // navigation titles overriding manifests, by manifest id
+	// IDs mounts modules under ids of the panel's choosing instead of their
+	// manifests' (e.g. "gateway" for yabber), by manifest id. The id names
+	// the module's URLs and what ctx.link and Home refer to.
+	IDs map[string]string
 }
 
 // Host serves modules inside the shell.
@@ -126,13 +130,19 @@ func New(opts Options, modules ...Module) (*Host, error) {
 		if err != nil {
 			return nil, fmt.Errorf("shell: %w", err)
 		}
+		if title := opts.Titles[man.ID]; title != "" {
+			man.Title = title
+		}
+		if id := opts.IDs[man.ID]; id != "" {
+			if !idPattern.MatchString(id) {
+				return nil, fmt.Errorf("shell: invalid id %q for module %q", id, man.ID)
+			}
+			man.ID = id
+		}
 		if seen[man.ID] {
 			return nil, fmt.Errorf("shell: duplicate module id %q", man.ID)
 		}
 		seen[man.ID] = true
-		if title := opts.Titles[man.ID]; title != "" {
-			man.Title = title
-		}
 		h.modules = append(h.modules, mounted{Module: m, manifest: man})
 	}
 	if opts.Home != "" && !seen[opts.Home] {
