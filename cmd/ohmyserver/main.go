@@ -4,12 +4,13 @@
 //
 // Each module is an independent project that also runs on its own
 // (docker-go, acme, yabber, dns-go, forward-go, ssh-go, cron-go,
-// monitor-go, ci-go, pkg-go) and follows the module contract
+// monitor-go, ci-go) and follows the module contract
 // (docs/module-contract.md). This command only assembles them: it builds
 // each module, gives it the shared database or a store backed by it,
 // connects modules through the adapters in packages gateway, dns, cron and
 // monitor, and
-// mounts them in the shell.
+// mounts them in the shell, together with the modules built in here (the
+// overview and the package manager).
 package main
 
 import (
@@ -43,7 +44,7 @@ import (
 	"github.com/lsongdev/ohmyserver/internal/shell"
 	"github.com/lsongdev/ohmyserver/internal/stores"
 	"github.com/lsongdev/ohmyserver/monitor"
-	pkgweb "github.com/lsongdev/pkg-go/web"
+	pkgmgr "github.com/lsongdev/ohmyserver/pkgmgr/web"
 	sshweb "github.com/lsongdev/ssh-go/web"
 	"github.com/lsongdev/yabber"
 	yabberapi "github.com/lsongdev/yabber/api"
@@ -239,7 +240,7 @@ func run(cfg config, logger *slog.Logger) error {
 
 	// Packages: the system's package manager (dnf or apt), and installing
 	// Docker for the modules that need it.
-	packages := pkgweb.New(pkgweb.Options{Logger: logger})
+	packages := pkgmgr.New(pkgmgr.Options{Logger: logger})
 
 	opts := shell.Options{
 		Title: "OhMyServer", Home: "home",

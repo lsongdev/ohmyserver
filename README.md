@@ -14,10 +14,13 @@ project that also runs on its own:
 | Scheduled jobs (cron) | cron-go | `cron-go` |
 | Host monitoring | monitor-go | `monitor-go` |
 | CI (builds and tests in Docker) | ci-go | `ci-go` |
+| Packages (dnf, apt, installing Docker) | built in: [pkgmgr](pkgmgr) | `pkgmgr` |
 
 Modules follow the [module contract](docs/module-contract.md): an API
 handler, assets with a `manifest.json`, and a `mount(el, ctx)` entry point.
-They never import this repository or each other.
+They never import this repository or each other. A module not yet mature
+enough for a project of its own lives in a directory here (`pkgmgr`),
+follows the same contract, and imports nothing else from this repository.
 
 This repository holds the assembly:
 
@@ -45,6 +48,9 @@ This repository holds the assembly:
   images appear under Images; its webhook path is public in its manifest,
   so git hosts reach it without the panel's sign-in.
 - `home` is the panel's own overview module.
+- `pkgmgr` drives the system's package manager (dnf or apt) and installs
+  Docker for the modules that need it; the overview and the Docker module
+  link there when Docker is missing.
 
 The SSH and cron modules run commands on this machine and every saved
 host, so set `OHMYSERVER_PASSWORD` whenever the panel listens beyond

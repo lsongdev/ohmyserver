@@ -1,0 +1,12 @@
+/* Package manager styles; everything else comes from style.css. */
+.num, .table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.tabs { margin-bottom: 16px; }
+.info-text { margin: 0; max-height: 60vh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 12.5px/1.5 var(--mono); }
+.version { font-family: var(--mono); font-size: 12.5px; }
+.recipe { display: grid; gap: 14px; max-width: 720px; }
+.recipe-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.recipe-head h2 { margin: 0; }
+.recipe p { margin: 0; }
+.small { font-size: 12.5px; }
+.link-button { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.link-button:hover { color: var(--primary); text-decoration: underline; }
