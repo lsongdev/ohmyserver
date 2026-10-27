@@ -1,0 +1,132 @@
+Unable to find image 'alpine:latest' locally
+latest: Pulling from library/alpine
+d3531b7a4f21: Pulling fs layer
+4f276f238bfa: Download complete
+2a02c517eb64: Download complete
+d3531b7a4f21: Download complete
+d3531b7a4f21: Pull complete
+Digest: sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
+Status: Downloaded newer image for alpine:latest
+@stat
+cpu  4548 0 23904 78653622 126 0 1219 0 0 0
+@loadavg
+0.12 0.03 0.01 2/302 7
+@meminfo
+MemTotal:        8195904 kB
+MemFree:         7490392 kB
+MemAvailable:    7712052 kB
+Buffers:             152 kB
+Cached:           381044 kB
+SwapCached:            0 kB
+Active:           141960 kB
+Inactive:         357376 kB
+Active(anon):     120560 kB
+Inactive(anon):    19968 kB
+Active(file):      21400 kB
+Inactive(file):   337408 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+SwapTotal:       9244472 kB
+SwapFree:        9244472 kB
+Dirty:               164 kB
+Writeback:             0 kB
+AnonPages:        108892 kB
+Mapped:            88692 kB
+Shmem:             22328 kB
+KReclaimable:      21616 kB
+Slab:              65600 kB
+SReclaimable:      21616 kB
+SUnreclaim:        43984 kB
+KernelStack:        5040 kB
+PageTables:         3496 kB
+SecPageTables:         0 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:    13342424 kB
+Committed_AS:    1048444 kB
+VmallocTotal:   135288315904 kB
+VmallocUsed:       38776 kB
+VmallocChunk:          0 kB
+Percpu:             2800 kB
+AnonHugePages:         0 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+FileHugePages:         0 kB
+FilePmdMapped:         0 kB
+Balloon:               0 kB
+GPUActive:             0 kB
+GPUReclaim:            0 kB
+@netdev
+Inter-|   Receive                                                |  Transmit
+ face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+    lo:       0       0    0    0    0     0          0         0        0       0    0    0    0     0       0          0
+  eth0:     260       2    0    0    0     0          0         0       42       1    0    0    0     0       0          0
+@diskstats
+   7       0 loop0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       1 loop1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       2 loop2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+   7       3 loop3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43       0 nbd0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43      32 nbd1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43      64 nbd2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  43      96 nbd3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 254       0 vda 199394 1449 40252472 3805 0 0 0 0 0 821006 3805 0 0 0 0 0 0
+ 254      16 vdb 22880 42 357721 508 8329 5287 635552 3251 0 21799 6600 675 0 161704 141 2992 2698
+ 254      17 vdb1 22807 42 357648 507 8329 5287 635552 3251 0 3748 3900 675 0 161704 141 0 0
+ 254      32 vdc 3 0 24 0 1 0 8 0 0 0 0 1 0 2097144 0 0 0
+ 253       0 zram0 2 0 16 0 1 0 8 1 0 1 1 0 0 0 0 0 0
+@mounts
+overlay / overlay rw,relatime,lowerdir=/var/lib/docker/containerd/daemon/io.containerd.snapshotter.v1.overlayfs/snapshots/174/fs:/var/lib/docker/containerd/daemon/io.containerd.snapshotter.v1.overlayfs/snapshots/173/fs,upperdir=/var/lib/docker/containerd/daemon/io.containerd.snapshotter.v1.overlayfs/snapshots/175/fs,workdir=/var/lib/docker/containerd/daemon/io.containerd.snapshotter.v1.overlayfs/snapshots/175/work 0 0
+proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
+tmpfs /dev tmpfs rw,nosuid,size=65536k,mode=755 0 0
+devpts /dev/pts devpts rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=666 0 0
+sysfs /sys sysfs ro,nosuid,nodev,noexec,relatime 0 0
+cgroup /sys/fs/cgroup cgroup2 ro,nosuid,nodev,noexec,relatime,nsdelegate 0 0
+mqueue /dev/mqueue mqueue rw,nosuid,nodev,noexec,relatime 0 0
+shm /dev/shm tmpfs rw,nosuid,nodev,noexec,relatime,size=4097024k 0 0
+/dev/vdb1 /etc/hostname btrfs rw,noatime,nodatasum,nodatacow,ssd,discard,space_cache=v2,subvolid=256,subvol=/docker 0 0
+/dev/vdb1 /etc/hosts btrfs rw,noatime,nodatasum,nodatacow,ssd,discard,space_cache=v2,subvolid=256,subvol=/docker 0 0
+/dev/vdb1 /etc/resolv.conf btrfs rw,noatime,nodatasum,nodatacow,ssd,discard,space_cache=v2,subvolid=256,subvol=/docker 0 0
+proc /proc/bus proc ro,nosuid,nodev,noexec,relatime 0 0
+proc /proc/fs proc ro,nosuid,nodev,noexec,relatime 0 0
+proc /proc/irq proc ro,nosuid,nodev,noexec,relatime 0 0
+proc /proc/sys proc ro,nosuid,nodev,noexec,relatime 0 0
+proc /proc/sysrq-trigger proc ro,nosuid,nodev,noexec,relatime 0 0
+tmpfs /proc/asound tmpfs ro,relatime,size=4k,nr_inodes=1 0 0
+tmpfs /proc/interrupts tmpfs rw,nosuid,size=65536k,mode=755 0 0
+tmpfs /proc/keys tmpfs rw,nosuid,size=65536k,mode=755 0 0
+tmpfs /proc/timer_list tmpfs rw,nosuid,size=65536k,mode=755 0 0
+tmpfs /sys/firmware tmpfs ro,relatime,size=4k,nr_inodes=1 0 0
+@df
+Filesystem           1024-blocks    Used Available Capacity Mounted on
+overlay                2031616    767256   1264360  38% /
+tmpfs                    65536         0     65536   0% /dev
+shm                    4097024         0   4097024   0% /dev/shm
+/dev/vdb1              2031616    767256   1264360  38% /etc/hostname
+/dev/vdb1              2031616    767256   1264360  38% /etc/hosts
+/dev/vdb1              2031616    767256   1264360  38% /etc/resolv.conf
+tmpfs                        4         0         4   0% /proc/asound
+tmpfs                    65536         0     65536   0% /proc/interrupts
+tmpfs                    65536         0     65536   0% /proc/keys
+tmpfs                    65536         0     65536   0% /proc/timer_list
+tmpfs                        4         0         4   0% /sys/firmware
+@uptime
+78712.17 786536.23
+@hostname
+11b126c12a7c
+@uname
+Linux 7.2.9-orbstack-00391-g2b298d05fbd4 aarch64
+@cpuinfo
+processor	: 0
+10
+@osrelease
+NAME="Alpine Linux"
+ID=alpine
+VERSION_ID=3.24.3
+PRETTY_NAME="Alpine Linux v3.24"
+HOME_URL="https://alpinelinux.org/"
+BUG_REPORT_URL="https://gitlab.alpinelinux.org/alpine/aports/-/issues"
+@addr
+192.168.215.2/24
+@end
