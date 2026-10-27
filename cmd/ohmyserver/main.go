@@ -10,7 +10,7 @@
 // connects modules through the adapters in packages gateway, dns, cron and
 // monitor, and
 // mounts them in the shell, together with the modules built in here (the
-// overview, packages, services and disks).
+// overview, packages, services, disks and files).
 package main
 
 import (
@@ -44,6 +44,7 @@ import (
 	"github.com/lsongdev/ohmyserver/modules/cron/runner"
 	cronweb "github.com/lsongdev/ohmyserver/modules/cron/web"
 	diskmgr "github.com/lsongdev/ohmyserver/modules/diskmgr/web"
+	filemgr "github.com/lsongdev/ohmyserver/modules/filemgr/web"
 	"github.com/lsongdev/ohmyserver/modules/monitor/collector"
 	monitorweb "github.com/lsongdev/ohmyserver/modules/monitor/web"
 	pkgmgr "github.com/lsongdev/ohmyserver/modules/pkgmgr/web"
@@ -266,6 +267,11 @@ func run(cfg config, logger *slog.Logger) error {
 	services := svcmgr.New(svcmgr.Options{Logger: logger})
 	// Disks: capacity, RAID arrays and SMART health.
 	disks := diskmgr.New(diskmgr.Options{Logger: logger})
+	// Files: browse and manage the server's files, from /.
+	fileManager, err := filemgr.New(filemgr.Options{Logger: logger})
+	if err != nil {
+		return fmt.Errorf("files: %w", err)
+	}
 
 	opts := shell.Options{
 		Title: "OhMyServer", Home: "home",
@@ -284,7 +290,7 @@ func run(cfg config, logger *slog.Logger) error {
 			Forward: forwarder.Service, SSH: terminals.Service, Cron: scheduler.Service, Monitor: monitoring.Service,
 			CI: builds.Service,
 		}),
-		docker, certs, yabberweb.New(management), dnsServer, forwarder, terminals, scheduler, monitoring, builds, packages, services, disks,
+		docker, certs, yabberweb.New(management), dnsServer, forwarder, terminals, scheduler, monitoring, builds, packages, services, disks, fileManager,
 	)
 	if err != nil {
 		return err

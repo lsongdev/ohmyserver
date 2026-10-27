@@ -23,6 +23,7 @@ Modules that are still small and change with the panel live in
 | Packages (dnf, apt, installing Docker) | [modules/pkgmgr](modules/pkgmgr) | `pkgmgr` |
 | Services (systemd) and logs (journal) | [modules/svcmgr](modules/svcmgr) | `svcmgr` |
 | Disks (capacity, RAID, SMART health) | [modules/diskmgr](modules/diskmgr) | `diskmgr` |
+| Files (browse, edit, upload, download, move, copy) | [modules/filemgr](modules/filemgr) | `filemgr` |
 
 Every module follows the [module contract](docs/module-contract.md): an API
 handler, assets with a `manifest.json`, and a `mount(el, ctx)` entry point.
@@ -63,6 +64,8 @@ This repository holds the assembly:
   or disables the service running the panel.
 - `modules/diskmgr` shows file system capacity, software RAID arrays and each
   disk's SMART health (through smartctl-go), without waking sleeping disks.
+- `modules/filemgr` manages the server's files from `/`; system top-level
+  directories cannot be deleted or moved.
 
 The SSH and cron modules run commands on this machine and every saved
 host, so set `OHMYSERVER_PASSWORD` whenever the panel listens beyond
