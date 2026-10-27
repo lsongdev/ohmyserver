@@ -1,0 +1,14 @@
+{
+  "contract": 1,
+  "id": "ci",
+  "title": "CI",
+  "icon": "▷",
+  "entry": "module.js",
+  "styles": ["vendor/stylesheets.css", "style.css", "ci.css"],
+  "home": "/",
+  "nav": [
+    { "path": "/", "title": "Repositories", "icon": "▷" },
+    { "path": "/builds", "title": "Builds", "icon": "≡" }
+  ],
+  "public": ["/hooks/"]
+}

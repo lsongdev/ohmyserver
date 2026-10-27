@@ -1,0 +1,23 @@
+/* CI styles; everything else comes from style.css. */
+.num, .table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.commit { font-family: var(--mono); font-size: 12.5px; }
+.message { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.build-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 760px) { .build-layout { grid-template-columns: 1fr; } }
+.step-list { display: grid; gap: 4px; padding: 8px; }
+.step-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; border-radius: 6px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.step-item:hover { background: var(--surface-2); }
+.step-item.active { background: var(--primary-soft); }
+.step-item .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.step-item .time { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.success { background: var(--green); }
+.dot.failure, .dot.error { background: var(--danger); }
+.dot.running, .dot.pending { background: var(--primary); }
+.dot.running { animation: pulse 1s ease-in-out infinite alternate; }
+@keyframes pulse { to { opacity: .3; } }
+.build-log .log { height: max(420px, calc(100vh - 330px)); }
+.copy-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.copy-row code { overflow-wrap: anywhere; }
+.secret-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; gap: 8px; align-items: center; }
+.example { margin: 0; padding: 12px; border-radius: var(--radius); background: var(--surface-2); font: 12.5px/1.5 var(--mono); white-space: pre; overflow-x: auto; }
