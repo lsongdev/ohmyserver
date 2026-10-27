@@ -26,6 +26,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/lsongdev/acme-go/acme"
+	acmeapi "github.com/lsongdev/acme-go/api"
 	acmeweb "github.com/lsongdev/acme-go/web"
 	ciapi "github.com/lsongdev/ci-go/api"
 	ciweb "github.com/lsongdev/ci-go/web"
@@ -69,6 +71,13 @@ func main() {
 	gatewayHTTP := flag.String("gateway-http", ":80", "gateway HTTP listener for a new installation")
 	gatewayHTTPS := flag.String("gateway-https", ":443", "gateway HTTPS listener for a new installation")
 	dnsListen := flag.String("dns-listen", ":53", "DNS listener (UDP and TCP) for a new installation")
+	acmeRequestTimeout := flag.Duration("acme-request-timeout", time.Minute, "ACME single HTTP request timeout")
+	acmeTLSTimeout := flag.Duration("acme-tls-timeout", 30*time.Second, "ACME TLS handshake timeout")
+	acmeRequestAttempts := flag.Int("acme-request-attempts", 4, "maximum attempts for a safe ACME read (1 disables retries)")
+	acmeIssuanceAttempts := flag.Int("acme-issuance-attempts", 4, "maximum background attempts per certificate issuance")
+	acmeRetryDelay := flag.Duration("acme-retry-delay", time.Minute, "initial backoff for a failed certificate issuance")
+	acmeValidationTimeout := flag.Duration("acme-validation-timeout", 5*time.Minute, "ACME authorization validation budget per attempt")
+	acmeOrderTimeout := flag.Duration("acme-order-timeout", 10*time.Minute, "ACME finalization and download budget per attempt")
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
@@ -76,6 +85,12 @@ func main() {
 	if err := run(config{
 		listen: *listen, dataDir: *dataDir, appsHost: *appsHost, catalog: *catalog,
 		gatewayHTTP: *gatewayHTTP, gatewayHTTPS: *gatewayHTTPS, dnsListen: *dnsListen,
+		acme: acmeapi.Options{
+			HTTPClient:        acme.NewHTTPClient(acme.HTTPOptions{Timeout: *acmeRequestTimeout, TLSHandshakeTimeout: *acmeTLSTimeout}),
+			RequestRetry:      acme.RetryPolicy{MaxAttempts: *acmeRequestAttempts},
+			IssuanceRetry:     acme.RetryPolicy{MaxAttempts: *acmeIssuanceAttempts, InitialDelay: *acmeRetryDelay},
+			ValidationTimeout: *acmeValidationTimeout, OrderTimeout: *acmeOrderTimeout,
+		},
 	}, logger); err != nil {
 		logger.Error("fatal", "err", err)
 		os.Exit(1)
@@ -86,6 +101,7 @@ type config struct {
 	listen, dataDir, appsHost, catalog string
 	gatewayHTTP, gatewayHTTPS          string
 	dnsListen                          string
+	acme                               acmeapi.Options
 }
 
 func run(cfg config, logger *slog.Logger) error {
@@ -123,7 +139,10 @@ func run(cfg config, logger *slog.Logger) error {
 	// Certificate manager: uses SQLite itself, so it takes the database.
 	// DNS-01 challenges for zones the DNS server serves authoritatively are
 	// published there.
-	certs, err := acmeweb.New(ctx, db, acmeweb.Options{Logger: logger, DNSProvider: dns.Challenges{Manager: dnsServer.Manager}})
+	acmeOptions := cfg.acme
+	acmeOptions.Logger = logger
+	acmeOptions.DNSProvider = dns.Challenges{Manager: dnsServer.Manager}
+	certs, err := acmeweb.New(ctx, db, acmeOptions)
 	if err != nil {
 		return fmt.Errorf("certificates: %w", err)
 	}

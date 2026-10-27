@@ -75,6 +75,17 @@ DNS → Settings and take effect at once. A listener that cannot bind (a port
 taken, or :53 without the privilege) shows in the overview instead of
 stopping the panel.
 
+ACME network and recovery settings are passed to acme-go. Defaults are a
+60-second request timeout, 30-second TLS handshake timeout, four safe-read
+attempts and four issuance attempts with backoff starting at one minute.
+Override them with `-acme-request-timeout`, `-acme-tls-timeout`,
+`-acme-request-attempts`, `-acme-issuance-attempts` and `-acme-retry-delay`.
+`-acme-validation-timeout` (5m) bounds each authorization wait;
+`-acme-order-timeout` (10m) bounds finalization and certificate download.
+An attempt limit of 1 disables retries at that layer. Unfinished issuances
+resume from their saved order and key after restart; the certificate panel
+shows attempt counts and the next retry time.
+
 Development uses `go.work` with sibling checkouts of the modules
 (`../docker-go`, `../acme-go`, `../yabber`, `../dns-go`, `../forward-go`,
 `../ssh-go`, `../cron-go`, `../monitor-go`, `../ci-go`). The remaining modules of the
