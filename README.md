@@ -66,6 +66,11 @@ loopback.
 OHMYSERVER_PASSWORD=… go run ./cmd/ohmyserver -listen 127.0.0.1:8080
 ```
 
+On a server it runs as a systemd service:
+[`contrib/systemd/ohmyserver.service`](contrib/systemd/ohmyserver.service)
+explains installing it, with the password and the machine's own flags in
+`/etc/ohmyserver.env`.
+
 The gateway listens on :80 and :443 by default; `-gateway-http` and
 `-gateway-https` choose other addresses for a new installation, after which
 the configuration is edited in the panel. Likewise the DNS server starts as
