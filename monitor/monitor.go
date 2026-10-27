@@ -13,11 +13,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lsongdev/ohmyserver/monitor-go/collector"
-	"github.com/lsongdev/ohmyserver/monitor-go/metrics"
-	"github.com/lsongdev/ohmyserver/monitor-go/procfs"
-	sshapi "github.com/lsongdev/ohmyserver/ssh-go/api"
-	"github.com/lsongdev/ohmyserver/ssh-go/hosts"
+	"github.com/lsongdev/ohmyserver/modules/monitor/collector"
+	"github.com/lsongdev/ohmyserver/modules/monitor/metrics"
+	"github.com/lsongdev/ohmyserver/modules/monitor/procfs"
+	sshapi "github.com/lsongdev/ohmyserver/modules/ssh/api"
+	"github.com/lsongdev/ohmyserver/modules/ssh/hosts"
 )
 
 // SSHHosts reads ssh-go's saved hosts. It keeps one connection per host

@@ -14,8 +14,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	sshapi "github.com/lsongdev/ohmyserver/ssh-go/api"
-	sshweb "github.com/lsongdev/ohmyserver/ssh-go/web"
+	sshapi "github.com/lsongdev/ohmyserver/modules/ssh/api"
+	sshweb "github.com/lsongdev/ohmyserver/modules/ssh/web"
 	"golang.org/x/crypto/ssh"
 	_ "modernc.org/sqlite"
 )

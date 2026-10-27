@@ -15,15 +15,15 @@ import (
 	"time"
 
 	acmeapi "github.com/lsongdev/acme-go/api"
-	ciapi "github.com/lsongdev/ohmyserver/ci-go/api"
-	cronapi "github.com/lsongdev/ohmyserver/cron-go/api"
 	dnsapi "github.com/lsongdev/dns-go/api"
 	dnsweb "github.com/lsongdev/dns-go/web"
 	"github.com/lsongdev/docker-go/engine"
 	dockerweb "github.com/lsongdev/docker-go/web"
 	forwardapi "github.com/lsongdev/forward-go/api"
-	monitorapi "github.com/lsongdev/ohmyserver/monitor-go/api"
-	sshapi "github.com/lsongdev/ohmyserver/ssh-go/api"
+	ciapi "github.com/lsongdev/ohmyserver/modules/ci/api"
+	cronapi "github.com/lsongdev/ohmyserver/modules/cron/api"
+	monitorapi "github.com/lsongdev/ohmyserver/modules/monitor/api"
+	sshapi "github.com/lsongdev/ohmyserver/modules/ssh/api"
 	"github.com/lsongdev/yabber"
 )
 
