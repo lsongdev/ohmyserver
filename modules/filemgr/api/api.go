@@ -1,6 +1,7 @@
 // Package api is the file manager's JSON API. Uploads are multipart and
 // stream to disk; downloads serve files with ranges and directories as
-// tar.gz archives built on the fly.
+// tar.gz archives built on the fly. Deleting takes a preview and moves to
+// a trash; only purging the trash removes data.
 package api
 
 import (
@@ -61,6 +62,12 @@ type pathsRequest struct {
 	To    string   `json:"to"` // the destination directory, for move and copy
 }
 
+// deleteRequest deletes (to the trash) or purges what a preview counted.
+type deleteRequest struct {
+	Paths  []string   `json:"paths"`
+	Expect files.Plan `json:"expect"` // the preview's counts; a mismatch is refused
+}
+
 // Handler serves the API. Successful responses are {"data": ...}; failures
 // are {"error": {"code": ..., "message": ...}} with a matching status.
 func (s *Service) Handler() http.Handler {
@@ -115,10 +122,53 @@ func (s *Service) Handler() http.Handler {
 			respond(w, e, err)
 		}
 	})
+	// Deleting: preview, then delete what the preview counted. Deleted
+	// items go to a trash, from which they are restored or purged.
+	mux.HandleFunc("POST /delete/preview", func(w http.ResponseWriter, r *http.Request) {
+		var req pathsRequest
+		if decode(w, r, &req, 1<<20) {
+			plan, err := s.fs.Preview(req.Paths)
+			respond(w, plan, err)
+		}
+	})
+	mux.HandleFunc("POST /delete", func(w http.ResponseWriter, r *http.Request) {
+		var req deleteRequest
+		if decode(w, r, &req, 1<<20) {
+			err := s.fs.Delete(req.Paths, req.Expect)
+			s.log(err, "delete (to trash)", "paths", req.Paths, "files", req.Expect.Files, "bytes", req.Expect.Bytes)
+			respond(w, map[string]int{"count": len(req.Paths)}, err)
+		}
+	})
+	mux.HandleFunc("GET /trash", func(w http.ResponseWriter, r *http.Request) {
+		items, err := s.fs.Trash()
+		respond(w, items, err)
+	})
+	mux.HandleFunc("POST /trash/restore", func(w http.ResponseWriter, r *http.Request) {
+		var req pathsRequest
+		if decode(w, r, &req, 1<<20) {
+			err := s.fs.Restore(req.Paths)
+			s.log(err, "restore", "items", req.Paths)
+			respond(w, map[string]int{"count": len(req.Paths)}, err)
+		}
+	})
+	mux.HandleFunc("POST /trash/preview", func(w http.ResponseWriter, r *http.Request) {
+		var req pathsRequest
+		if decode(w, r, &req, 1<<20) {
+			plan, err := s.fs.PurgePreview(req.Paths)
+			respond(w, plan, err)
+		}
+	})
+	mux.HandleFunc("POST /trash/purge", func(w http.ResponseWriter, r *http.Request) {
+		var req deleteRequest
+		if decode(w, r, &req, 1<<20) {
+			err := s.fs.Purge(req.Paths, req.Expect)
+			s.log(err, "purge", "items", req.Paths, "files", req.Expect.Files, "bytes", req.Expect.Bytes)
+			respond(w, map[string]int{"count": len(req.Paths)}, err)
+		}
+	})
 	for action, run := range map[string]func(pathsRequest) error{
-		"delete": func(req pathsRequest) error { return s.fs.Delete(req.Paths) },
-		"move":   func(req pathsRequest) error { return s.fs.Move(req.Paths, req.To) },
-		"copy":   func(req pathsRequest) error { return s.fs.Copy(req.Paths, req.To) },
+		"move": func(req pathsRequest) error { return s.fs.Move(req.Paths, req.To) },
+		"copy": func(req pathsRequest) error { return s.fs.Copy(req.Paths, req.To) },
 	} {
 		mux.HandleFunc("POST /"+action, func(w http.ResponseWriter, r *http.Request) {
 			var req pathsRequest
@@ -283,6 +333,8 @@ func respond(w http.ResponseWriter, data any, err error) {
 		writeError(w, http.StatusNotFound, "not_found", err.Error())
 	case errors.Is(err, files.ErrExists):
 		writeError(w, http.StatusConflict, "exists", err.Error())
+	case errors.Is(err, files.ErrChanged):
+		writeError(w, http.StatusConflict, "changed", err.Error())
 	case errors.Is(err, files.ErrProtected):
 		writeError(w, http.StatusForbidden, "protected", err.Error())
 	default:

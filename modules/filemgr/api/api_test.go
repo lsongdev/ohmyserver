@@ -112,7 +112,8 @@ func TestErrors(t *testing.T) {
 	}{
 		{"GET", "/list?path=/nope", "", 404},
 		{"GET", "/list?path=relative", "", 400},
-		{"POST", "/delete", `{"paths":["/"]}`, 403},
+		{"POST", "/delete/preview", `{"paths":["/"]}`, 403},
+		{"POST", "/delete", `{"paths":["/www/index.html"],"expect":{"files":0,"dirs":0}}`, 409},
 		{"POST", "/mkdir", `{"path":"/www"}`, 409},
 		{"POST", "/copy", `{"paths":["/www"],"to":"/www/css"}`, 400},
 		{"POST", "/rename", `{"path":"/www/index.html","name":"a/b"}`, 400},
@@ -122,5 +123,30 @@ func TestErrors(t *testing.T) {
 		if status, out, _ := do(t, req); status != c.status {
 			t.Errorf("%s %s: %d %s", c.method, c.path, status, out)
 		}
+	}
+}
+
+func TestDeleteGoesThroughPreviewAndTrash(t *testing.T) {
+	srv, root := newServer(t)
+	post := func(path, body string) (int, string) {
+		req, _ := http.NewRequest("POST", srv.URL+path, strings.NewReader(body))
+		status, out, _ := do(t, req)
+		return status, out
+	}
+	status, plan := post("/delete/preview", `{"paths":["/www/css"]}`)
+	if status != 200 || !strings.Contains(plan, `"files":1,"dirs":1,"bytes":6`) {
+		t.Fatalf("preview: %d %s", status, plan)
+	}
+	if status, out := post("/delete", `{"paths":["/www/css"],"expect":{"files":1,"dirs":1}}`); status != 200 {
+		t.Fatalf("delete: %d %s", status, out)
+	}
+	if _, err := os.Stat(filepath.Join(root, "www", "css")); !os.IsNotExist(err) {
+		t.Fatal("not moved to the trash")
+	}
+	resp, _ := http.Get(srv.URL + "/trash")
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !strings.Contains(string(body), `"original":"/www/css"`) {
+		t.Fatalf("trash: %s", body)
 	}
 }

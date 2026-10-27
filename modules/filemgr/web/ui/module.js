@@ -4,6 +4,7 @@ import { createMount } from './lib/mount.js';
 
 const routes = [
   { path: '/', load: () => import('./pages/browser.js') },
+  { path: '/trash', load: () => import('./pages/trash.js') },
 ];
 
 export const mount = createMount({ routes });
