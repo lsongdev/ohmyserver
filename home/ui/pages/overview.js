@@ -35,7 +35,8 @@ export default function Overview({ ctx }) {
       </div>` : null}
       <div class="grid">
         ${s.docker?.state ? html`
-          <${Card} title="Containers" to=${link('docker', '/')} value="N/A"
+          <${Card} title="Containers" value="N/A"
+            to=${(s.docker.state === 'not_installed' && link('packages', '/recommended')) || link('docker', '/')}
             sub=${s.docker.state === 'not_installed' ? 'Docker is not installed' : 'Docker is not running'} />` : s.docker ? html`
           <${Card} title="Containers" to=${link('docker', '/containers')} error=${s.docker.error}
             value=${s.docker.containers} sub=${`${s.docker.running} running`} />

@@ -10,6 +10,7 @@ use (
 	../docker-go
 	../forward-go
 	../monitor-go
+	../pkg-go
 	../ssh-go
 	../yabber
 )
@@ -23,6 +24,7 @@ replace (
 	github.com/lsongdev/docker-go v0.0.0 => ../docker-go
 	github.com/lsongdev/forward-go v0.0.0 => ../forward-go
 	github.com/lsongdev/monitor-go v0.0.0 => ../monitor-go
+	github.com/lsongdev/pkg-go v0.0.0 => ../pkg-go
 	github.com/lsongdev/ssh-go v0.0.0 => ../ssh-go
 	github.com/lsongdev/yabber v0.0.0 => ../yabber
 )
