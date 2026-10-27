@@ -1,0 +1,13 @@
+{
+  "contract": 1,
+  "id": "ssh",
+  "title": "SSH",
+  "icon": "▶",
+  "entry": "module.js",
+  "styles": ["vendor/stylesheets.css", "style.css", "ssh.css"],
+  "home": "/",
+  "nav": [
+    { "path": "/", "title": "Hosts", "icon": "▶" },
+    { "path": "/key", "title": "Panel Key", "icon": "⚿" }
+  ]
+}
