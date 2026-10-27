@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lsongdev/cron-go/runner"
-	sshapi "github.com/lsongdev/ssh-go/api"
+	"github.com/lsongdev/ohmyserver/cron-go/runner"
+	sshapi "github.com/lsongdev/ohmyserver/ssh-go/api"
 	"golang.org/x/crypto/ssh"
 )
 

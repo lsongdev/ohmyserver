@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lsongdev/ci-go/store"
+	"github.com/lsongdev/ohmyserver/ci-go/store"
 )
 
 // Handler serves the API. Successful responses are {"data": ...}; failures

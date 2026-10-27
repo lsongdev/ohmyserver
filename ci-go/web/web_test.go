@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lsongdev/ci-go/docker"
+	"github.com/lsongdev/ohmyserver/ci-go/docker"
 )
 
 // The assets satisfy the panel module contract (version 1).

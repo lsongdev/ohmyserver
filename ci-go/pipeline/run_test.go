@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lsongdev/ci-go/docker"
+	"github.com/lsongdev/ohmyserver/ci-go/docker"
 )
 
 // recorder is a Reporter that keeps everything.

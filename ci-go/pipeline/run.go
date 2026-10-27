@@ -13,7 +13,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lsongdev/ci-go/docker"
+	"github.com/lsongdev/ohmyserver/ci-go/docker"
 )
 
 // Runtime runs containers; docker.Client implements it.

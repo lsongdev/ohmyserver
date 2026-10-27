@@ -17,8 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lsongdev/ci-go/pipeline"
-	"github.com/lsongdev/ci-go/store"
+	"github.com/lsongdev/ohmyserver/ci-go/pipeline"
+	"github.com/lsongdev/ohmyserver/ci-go/store"
 )
 
 // ErrInvalid marks invalid input.

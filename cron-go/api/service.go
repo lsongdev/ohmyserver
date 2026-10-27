@@ -12,9 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lsongdev/cron-go/runner"
-	"github.com/lsongdev/cron-go/schedule"
-	"github.com/lsongdev/cron-go/store"
+	"github.com/lsongdev/ohmyserver/cron-go/runner"
+	"github.com/lsongdev/ohmyserver/cron-go/schedule"
+	"github.com/lsongdev/ohmyserver/cron-go/store"
 )
 
 var (

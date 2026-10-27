@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lsongdev/monitor-go/collector"
-	"github.com/lsongdev/monitor-go/metrics"
-	"github.com/lsongdev/monitor-go/store"
+	"github.com/lsongdev/ohmyserver/monitor-go/collector"
+	"github.com/lsongdev/ohmyserver/monitor-go/metrics"
+	"github.com/lsongdev/ohmyserver/monitor-go/store"
 )
 
 // Options configures the service; zero values select the defaults.

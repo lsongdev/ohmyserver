@@ -15,8 +15,8 @@ import (
 	"io/fs"
 	"net/http"
 
-	"github.com/lsongdev/cron-go/api"
-	"github.com/lsongdev/cron-go/store"
+	"github.com/lsongdev/ohmyserver/cron-go/api"
+	"github.com/lsongdev/ohmyserver/cron-go/store"
 )
 
 //go:embed ui

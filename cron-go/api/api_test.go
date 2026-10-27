@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lsongdev/cron-go/api"
-	"github.com/lsongdev/cron-go/runner"
-	"github.com/lsongdev/cron-go/store"
+	"github.com/lsongdev/ohmyserver/cron-go/api"
+	"github.com/lsongdev/ohmyserver/cron-go/runner"
+	"github.com/lsongdev/ohmyserver/cron-go/store"
 )
 
 // fakeRunner offers targets "fake:a" and "fake:b". A command "block" runs

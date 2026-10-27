@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/lsongdev/cron-go/store"
+	"github.com/lsongdev/ohmyserver/cron-go/store"
 )
 
 // Handler serves the API. Successful responses are {"data": ...}; failures

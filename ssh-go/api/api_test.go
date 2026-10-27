@@ -23,9 +23,9 @@ import (
 	"github.com/coder/websocket"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/lsongdev/ssh-go/api"
-	"github.com/lsongdev/ssh-go/hosts"
-	"github.com/lsongdev/ssh-go/store"
+	"github.com/lsongdev/ohmyserver/ssh-go/api"
+	"github.com/lsongdev/ohmyserver/ssh-go/hosts"
+	"github.com/lsongdev/ohmyserver/ssh-go/store"
 )
 
 // sshServer is a minimal SSH server: it accepts user "alice" with password

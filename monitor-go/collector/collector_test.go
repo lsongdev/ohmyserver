@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lsongdev/monitor-go/metrics"
+	"github.com/lsongdev/ohmyserver/monitor-go/metrics"
 )
 
 // The local collector reads this machine; two readings give a sample.
