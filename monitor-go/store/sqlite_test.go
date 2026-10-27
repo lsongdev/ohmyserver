@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lsongdev/monitor-go/metrics"
+	"github.com/lsongdev/ohmyserver/monitor-go/metrics"
 )
 
 func open(t *testing.T) *SQLite {

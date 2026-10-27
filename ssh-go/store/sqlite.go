@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lsongdev/ssh-go/hosts"
+	"github.com/lsongdev/ohmyserver/ssh-go/hosts"
 	_ "modernc.org/sqlite" // registers the "sqlite" driver for Open
 )
 

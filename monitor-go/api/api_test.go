@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lsongdev/monitor-go/api"
-	"github.com/lsongdev/monitor-go/collector"
-	"github.com/lsongdev/monitor-go/metrics"
-	"github.com/lsongdev/monitor-go/store"
+	"github.com/lsongdev/ohmyserver/monitor-go/api"
+	"github.com/lsongdev/ohmyserver/monitor-go/collector"
+	"github.com/lsongdev/ohmyserver/monitor-go/metrics"
+	"github.com/lsongdev/ohmyserver/monitor-go/store"
 )
 
 // fake offers hosts "fake:a" and "fake:b". Each reading adds 10 busy

@@ -18,10 +18,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lsongdev/ci-go/api"
-	"github.com/lsongdev/ci-go/docker"
-	"github.com/lsongdev/ci-go/pipeline"
-	"github.com/lsongdev/ci-go/store"
+	"github.com/lsongdev/ohmyserver/ci-go/api"
+	"github.com/lsongdev/ohmyserver/ci-go/docker"
+	"github.com/lsongdev/ohmyserver/ci-go/pipeline"
+	"github.com/lsongdev/ohmyserver/ci-go/store"
 )
 
 // fakeRuntime pretends to run containers: the clone succeeds, the prepare

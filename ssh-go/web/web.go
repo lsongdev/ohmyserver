@@ -16,8 +16,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/lsongdev/ssh-go/api"
-	"github.com/lsongdev/ssh-go/store"
+	"github.com/lsongdev/ohmyserver/ssh-go/api"
+	"github.com/lsongdev/ohmyserver/ssh-go/store"
 )
 
 //go:embed ui

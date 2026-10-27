@@ -16,8 +16,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lsongdev/cron-go/store"
-	"github.com/lsongdev/cron-go/web"
+	"github.com/lsongdev/ohmyserver/cron-go/store"
+	"github.com/lsongdev/ohmyserver/cron-go/web"
 )
 
 const usage = `usage: cron-go [flags]

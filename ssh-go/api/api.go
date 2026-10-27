@@ -16,8 +16,8 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"github.com/lsongdev/ssh-go/hosts"
-	"github.com/lsongdev/ssh-go/store"
+	"github.com/lsongdev/ohmyserver/ssh-go/hosts"
+	"github.com/lsongdev/ohmyserver/ssh-go/store"
 )
 
 // Input creates or updates a host. On update, empty secrets keep the

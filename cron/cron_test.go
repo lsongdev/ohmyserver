@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lsongdev/cron-go/runner"
-	sshapi "github.com/lsongdev/ssh-go/api"
-	sshweb "github.com/lsongdev/ssh-go/web"
+	"github.com/lsongdev/ohmyserver/cron-go/runner"
+	sshapi "github.com/lsongdev/ohmyserver/ssh-go/api"
+	sshweb "github.com/lsongdev/ohmyserver/ssh-go/web"
 	"golang.org/x/crypto/ssh"
 	_ "modernc.org/sqlite"
 )

@@ -15,8 +15,8 @@ import (
 	"io/fs"
 	"net/http"
 
-	"github.com/lsongdev/monitor-go/api"
-	"github.com/lsongdev/monitor-go/store"
+	"github.com/lsongdev/ohmyserver/monitor-go/api"
+	"github.com/lsongdev/ohmyserver/monitor-go/store"
 )
 
 //go:embed ui

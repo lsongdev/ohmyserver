@@ -16,10 +16,10 @@ import (
 	"io/fs"
 	"net/http"
 
-	"github.com/lsongdev/ci-go/api"
-	"github.com/lsongdev/ci-go/docker"
-	"github.com/lsongdev/ci-go/pipeline"
-	"github.com/lsongdev/ci-go/store"
+	"github.com/lsongdev/ohmyserver/ci-go/api"
+	"github.com/lsongdev/ohmyserver/ci-go/docker"
+	"github.com/lsongdev/ohmyserver/ci-go/pipeline"
+	"github.com/lsongdev/ohmyserver/ci-go/store"
 )
 
 //go:embed ui

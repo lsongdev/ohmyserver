@@ -17,8 +17,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lsongdev/monitor-go/store"
-	"github.com/lsongdev/monitor-go/web"
+	"github.com/lsongdev/ohmyserver/monitor-go/store"
+	"github.com/lsongdev/ohmyserver/monitor-go/web"
 )
 
 const usage = `usage: monitor-go [flags]

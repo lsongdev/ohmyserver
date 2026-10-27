@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lsongdev/monitor-go/metrics"
+	"github.com/lsongdev/ohmyserver/monitor-go/metrics"
 )
 
 // Script prints the sections Parse reads. LC_ALL=C keeps df's output

@@ -12,7 +12,7 @@ import (
 	"github.com/coder/websocket"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/lsongdev/ssh-go/hosts"
+	"github.com/lsongdev/ohmyserver/ssh-go/hosts"
 )
 
 // Close codes of the terminal socket beyond the standard ones, so the UI

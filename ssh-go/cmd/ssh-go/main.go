@@ -16,8 +16,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lsongdev/ssh-go/store"
-	"github.com/lsongdev/ssh-go/web"
+	"github.com/lsongdev/ohmyserver/ssh-go/store"
+	"github.com/lsongdev/ohmyserver/ssh-go/web"
 )
 
 const usage = `usage: ssh-go [flags]

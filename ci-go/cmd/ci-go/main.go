@@ -16,9 +16,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lsongdev/ci-go/api"
-	"github.com/lsongdev/ci-go/store"
-	"github.com/lsongdev/ci-go/web"
+	"github.com/lsongdev/ohmyserver/ci-go/api"
+	"github.com/lsongdev/ohmyserver/ci-go/store"
+	"github.com/lsongdev/ohmyserver/ci-go/web"
 )
 
 const usage = `usage: ci-go [flags]

@@ -19,7 +19,7 @@ import (
 	"github.com/shirou/gopsutil/v4/mem"
 	psnet "github.com/shirou/gopsutil/v4/net"
 
-	"github.com/lsongdev/monitor-go/metrics"
+	"github.com/lsongdev/ohmyserver/monitor-go/metrics"
 )
 
 // Host is a machine a collector can read. IDs are "<kind>" or

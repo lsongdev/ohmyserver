@@ -4,27 +4,19 @@ go 1.26.1
 use (
 	.
 	../acme-go
-	../ci-go
-	../cron-go
 	../dns-go
 	../docker-go
 	../forward-go
-	../monitor-go
 	../smartctl-go
-	../ssh-go
 	../yabber
 )
 
 // Modules are not tagged yet; resolve them from the checkouts above.
 replace (
 	github.com/lsongdev/acme-go v0.0.0 => ../acme-go
-	github.com/lsongdev/ci-go v0.0.0 => ../ci-go
-	github.com/lsongdev/cron-go v0.0.0 => ../cron-go
 	github.com/lsongdev/dns-go v0.0.0 => ../dns-go
 	github.com/lsongdev/docker-go v0.0.0 => ../docker-go
 	github.com/lsongdev/forward-go v0.0.0 => ../forward-go
-	github.com/lsongdev/monitor-go v0.0.0 => ../monitor-go
 	github.com/lsongdev/smartctl-go v0.0.0 => ../smartctl-go
-	github.com/lsongdev/ssh-go v0.0.0 => ../ssh-go
 	github.com/lsongdev/yabber v0.0.0 => ../yabber
 )
