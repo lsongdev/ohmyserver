@@ -3,7 +3,7 @@ import { useAction } from '../lib/hooks.js';
 import { Page, Notice, Loading, Empty, Table, Modal, Field, toast, toastError } from '../lib/ui.js';
 import { usePanel } from '../lib/panel.js';
 import { bytes, datetime } from '../lib/format.js';
-import { useApi, join, parent, isDir, isImage, icon, upload } from '../files.js';
+import { useApi, join, parent, isDir, isImage, icon, upload, ConfirmDelete } from '../files.js';
 
 // Huge directories render their first entries; the filter finds the rest.
 const SHOW = 1000;
@@ -46,11 +46,7 @@ export default function Browser() {
       setProgress(null);
     }
   };
-  const remove = list => {
-    const what = list.length === 1 ? `${list[0].name}${isDir(list[0]) && list[0].type !== 'link' ? ' and everything in it' : ''}` : `${list.length} items`;
-    if (!window.confirm(`Delete ${what}? This cannot be undone.`)) return;
-    action.run(async () => { await api.post('delete', { paths: list.map(e => e.path) }); done(`Deleted ${list.length === 1 ? list[0].name : `${list.length} items`}`); });
-  };
+  const remove = list => setDialog({ kind: 'delete', entries: list });
   const drop = e => {
     e.preventDefault();
     setDragging(false);
@@ -87,7 +83,7 @@ export default function Browser() {
       ${chosen.length === 1 ? html`<button class="button button-small" onClick=${() => download(chosen[0])}>${isDir(chosen[0]) ? 'Download .tar.gz' : 'Download'}</button>` : null}
       <button class="button button-small" onClick=${() => setDialog({ kind: 'copy' })}>Copy to…</button>
       <button class="button button-small" onClick=${() => setDialog({ kind: 'move' })}>Move to…</button>
-      <button class="button button-small button-danger" disabled=${action.busy} onClick=${() => remove(chosen)}>Delete</button>
+      <button class="button button-small button-danger" onClick=${() => remove(chosen)}>Delete</button>
       <span class="spacer"></span>
       <button class="button button-small" onClick=${() => setSelected(new Set())}>Clear</button>
     </div>` : null}
@@ -120,6 +116,8 @@ export default function Browser() {
         <//>
         ${shown.length > SHOW ? html`<p class="muted small">Showing ${SHOW} of ${shown.length}. Filter to find the others.</p>` : null}`}
     </div>
+    ${dialog?.kind === 'delete' ? html`<${ConfirmDelete} entries=${dialog.entries} onClose=${() => setDialog(null)}
+      onDone=${n => done(`Moved ${n} to the trash`)} />` : null}
     ${dialog?.kind === 'view' ? html`<${Viewer} entry=${dialog.entry} onClose=${() => setDialog(null)} onDownload=${download} onSaved=${listing.reload} />` : null}
     ${dialog?.kind === 'mkdir' ? html`<${Prompt} title="New folder" label="Name" action="Create" onClose=${() => setDialog(null)}
       onSubmit=${name => api.post('mkdir', { path: join(dir, name) }).then(() => done(`Created ${name}`))} />` : null}

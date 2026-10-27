@@ -147,13 +147,7 @@ func TestMoveCopyRenameDelete(t *testing.T) {
 	if _, err := f.Rename("/srv/old", "../x"); !errors.Is(err, ErrInvalid) {
 		t.Fatalf("bad name: %v", err)
 	}
-	if err := f.Delete([]string{"/srv/old"}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(filepath.Join(root, "srv/old")); !os.IsNotExist(err) {
-		t.Fatal("not deleted")
-	}
-	if err := f.Delete([]string{"/"}); !errors.Is(err, ErrProtected) {
+	if _, err := f.Preview([]string{"/"}); !errors.Is(err, ErrProtected) {
 		t.Fatalf("root: %v", err)
 	}
 }
@@ -161,7 +155,7 @@ func TestMoveCopyRenameDelete(t *testing.T) {
 func TestProtectsSystemDirectories(t *testing.T) {
 	f := &FS{Root: "/"}
 	for _, p := range []string{"/", "/etc", "/usr/", "/var"} {
-		if err := f.Delete([]string{p}); !errors.Is(err, ErrProtected) {
+		if _, err := f.Preview([]string{p}); !errors.Is(err, ErrProtected) {
 			t.Errorf("delete %s: %v", p, err)
 		}
 		if err := f.Move([]string{p}, "/tmp"); !errors.Is(err, ErrProtected) {

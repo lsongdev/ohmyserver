@@ -3,9 +3,9 @@
 // tar.gz), creating folders, renaming, moving, copying and deleting.
 //
 // Paths are absolute as the user sees them ("/etc/hosts") and resolved
-// under the root, which they can never leave. The root itself and the
-// system's top-level directories cannot be deleted, moved or renamed; what
-// is inside them can.
+// under the root, which they can never leave. Deleting moves to a trash
+// after a preview; see safety.go for what can never be deleted, moved or
+// renamed.
 package files
 
 import (
@@ -36,13 +36,17 @@ var (
 )
 
 // Protected are directories that are never deleted, moved or renamed: the
-// root and the usual top-level directories of a Linux system.
+// root and the usual top-level directories of a Linux system. Mount points,
+// home directories and what contains them are refused too (see guard).
 var Protected = []string{"/", "/bin", "/boot", "/dev", "/etc", "/home", "/lib", "/lib32", "/lib64", "/media",
 	"/mnt", "/opt", "/proc", "/root", "/run", "/sbin", "/srv", "/sys", "/tmp", "/usr", "/var"}
 
 // FS operates on the files under Root.
 type FS struct {
 	Root string // "/" for the whole system
+
+	devOf    func(string) (uint64, error) // nil: the real device IDs
+	mountsOf func() []string              // nil: the mount table
 
 	mu     sync.Mutex
 	owners map[uint32]string
@@ -202,7 +206,8 @@ func (f *FS) Stat(p string) (Entry, error) {
 	return e, nil
 }
 
-// List returns a directory's entries, directories first, then by name.
+// List returns a directory's entries, directories first, then by name,
+// without the trash.
 func (f *FS) List(p string) ([]Entry, error) {
 	real, err := f.real(p)
 	if err != nil {
@@ -215,6 +220,9 @@ func (f *FS) List(p string) ([]Entry, error) {
 	}
 	result := make([]Entry, 0, len(dir))
 	for _, d := range dir {
+		if d.Name() == TrashDir {
+			continue // shown on its own page
+		}
 		info, err := d.Info()
 		if err != nil {
 			continue // removed meanwhile
@@ -388,23 +396,6 @@ func (f *FS) Mkdir(p string) error {
 	return wrap(os.MkdirAll(real, 0o755), p)
 }
 
-// Delete removes paths, directories with everything in them.
-func (f *FS) Delete(paths []string) error {
-	reals, err := f.changeable(paths)
-	if err != nil {
-		return err
-	}
-	for i, real := range reals {
-		if _, err := os.Lstat(real); err != nil {
-			return wrap(err, paths[i])
-		}
-		if err := os.RemoveAll(real); err != nil {
-			return wrap(err, paths[i])
-		}
-	}
-	return nil
-}
-
 // changeable resolves paths that may be deleted or moved.
 func (f *FS) changeable(paths []string) ([]string, error) {
 	if len(paths) == 0 {
@@ -416,8 +407,8 @@ func (f *FS) changeable(paths []string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		if f.protected(clean) {
-			return nil, fmt.Errorf("%w: %s is a system directory", ErrProtected, clean)
+		if err := f.guard(clean); err != nil {
+			return nil, err
 		}
 		real, _ := f.real(clean)
 		reals = append(reals, real)
@@ -460,8 +451,16 @@ func (f *FS) Move(paths []string, dest string) error {
 	for i, real := range reals {
 		err := os.Rename(real, targets[i])
 		if errors.Is(err, syscall.EXDEV) {
-			if err = copyTree(real, targets[i]); err == nil {
-				err = os.RemoveAll(real)
+			// Across file systems: copy, then remove the original, never
+			// reaching into another file system mounted inside it.
+			clean, _ := Clean(paths[i])
+			if _, err = f.scan(clean, real); err == nil {
+				if err = copyTree(real, targets[i]); err == nil {
+					err = os.RemoveAll(real)
+				}
+			}
+			if errors.Is(err, ErrProtected) {
+				return err
 			}
 		}
 		if err != nil {

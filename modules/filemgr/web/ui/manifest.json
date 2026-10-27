@@ -7,6 +7,7 @@
   "styles": ["vendor/stylesheets.css", "style.css", "files.css"],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Files", "icon": "▤" }
+    { "path": "/", "title": "Files", "icon": "▤" },
+    { "path": "/trash", "title": "Trash", "icon": "⌫" }
   ]
 }
