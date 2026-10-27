@@ -16,11 +16,12 @@ project that also runs on its own:
 | CI (builds and tests in Docker) | ci-go | `ci-go` |
 | Packages (dnf, apt, installing Docker) | built in: [pkgmgr](pkgmgr) | `pkgmgr` |
 | Services (systemd) and logs (journal) | built in: [svcmgr](svcmgr) | `svcmgr` |
+| Disks (capacity, RAID, SMART health) | built in: [diskmgr](diskmgr) | `diskmgr` |
 
 Modules follow the [module contract](docs/module-contract.md): an API
 handler, assets with a `manifest.json`, and a `mount(el, ctx)` entry point.
 They never import this repository or each other. A module not yet mature
-enough for a project of its own lives in a directory here (`pkgmgr`, `svcmgr`),
+enough for a project of its own lives in a directory here (`pkgmgr`, `svcmgr`, `diskmgr`),
 follows the same contract, and imports nothing else from this repository.
 
 This repository holds the assembly:
@@ -54,6 +55,8 @@ This repository holds the assembly:
   link there when Docker is missing.
 - `svcmgr` manages systemd services and reads the journal; it never stops
   or disables the service running the panel.
+- `diskmgr` shows file system capacity, software RAID arrays and each
+  disk's SMART health (through smartctl-go), without waking sleeping disks.
 
 The SSH and cron modules run commands on this machine and every saved
 host, so set `OHMYSERVER_PASSWORD` whenever the panel listens beyond
