@@ -1,0 +1,20 @@
+/* Service manager styles; everything else comes from style.css. */
+.num, .table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.small { font-size: 12.5px; }
+.tabs { margin-bottom: 16px; }
+.unit-file { margin: 0; padding: 14px 16px; overflow: auto; white-space: pre; font: 12.5px/1.55 var(--mono); }
+.filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+.filters .input { width: auto; flex: 0 1 auto; }
+.filters .grow { flex: 1 1 200px; max-width: 320px; }
+.filters .field-check { margin-left: auto; }
+
+/* The journal: one entry per line, coloured by priority. */
+.journal { --log-height: 560px; white-space: normal; }
+.journal-line { white-space: pre-wrap; overflow-wrap: anywhere; }
+.journal-time { color: #7d8896; }
+.journal-ident { color: #8ab4f8; }
+.journal-line.p-error { color: #ff9b9b; }
+.journal-line.p-warning { color: #f4c06a; }
+.journal-line.p-debug { color: #8a93a0; }
+.journal-empty { color: #7d8896; }
+.journal-status { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
