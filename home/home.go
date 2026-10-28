@@ -94,6 +94,7 @@ type certificateSummary struct {
 }
 
 type gatewaySummary struct {
+	Enabled   bool                    `json:"enabled"`
 	Healthy   bool                    `json:"healthy"`
 	Sites     int                     `json:"sites"`
 	Requests  uint64                  `json:"requests"`
@@ -101,6 +102,7 @@ type gatewaySummary struct {
 }
 
 type dnsSummary struct {
+	Enabled   bool                    `json:"enabled"`
 	Mode      string                  `json:"mode"`
 	Queries   uint64                  `json:"queries"`
 	Blocked   uint64                  `json:"blocked"`
@@ -159,15 +161,17 @@ func (src Sources) summary(ctx context.Context) map[string]any {
 		out["certificates"] = s
 	}
 	if g := src.Gateway; g != nil {
+		status := g.Status()
 		out["gateway"] = gatewaySummary{
-			Healthy: g.Healthy(), Sites: len(g.Config().Sites),
-			Requests: g.Metrics().Total().Requests, Listeners: g.Status().Listeners,
+			Enabled: status.Enabled, Healthy: g.Healthy(), Sites: len(g.Config().Sites),
+			Requests: g.Metrics().Total().Requests, Listeners: status.Listeners,
 		}
 	}
 	if d := src.DNS; d != nil {
 		stats := d.Stats.Summary(0, 60)
+		settings := d.Settings()
 		out["dns"] = dnsSummary{
-			Mode: d.Settings().Mode, Queries: stats.Total, Blocked: stats.Blocked,
+			Enabled: !settings.Disabled, Mode: settings.Mode, Queries: stats.Total, Blocked: stats.Blocked,
 			Zones: len(d.Manager.Service().Zones.List()), Listeners: d.Listeners(),
 		}
 	}

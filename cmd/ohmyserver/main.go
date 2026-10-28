@@ -292,14 +292,21 @@ func run(cfg config, logger *slog.Logger) error {
 	} else if !shell.IsLoopback(cfg.listen) {
 		logger.Warn("serving without authentication on a non-loopback address; set OHMYSERVER_PASSWORD")
 	}
-	host, err := shell.New(opts,
+	modules := []shell.Module{
 		home.New(home.Sources{
 			Docker: docker, Certs: certs.Service, Gateway: gw, DNS: dnsServer,
 			Forward: forwarder.Service, SSH: terminals.Service, Cron: scheduler.Service, Monitor: monitoring.Service,
 			CI: builds.Service,
 		}),
-		docker, certs, yabberweb.New(management), dnsServer, dhcpServer, forwarder, terminals, scheduler, monitoring, builds, packages, services, disks, fileManager,
-	)
+		docker, certs, yabberweb.New(management), dnsServer, dhcpServer, forwarder, terminals, scheduler, monitoring, builds, packages,
+	}
+	// Services manages systemd: without it (macOS, for one) the module has
+	// nothing to show, so it is left out of the panel.
+	if services.API.Supported() {
+		modules = append(modules, services)
+	}
+	modules = append(modules, disks, fileManager)
+	host, err := shell.New(opts, modules...)
 	if err != nil {
 		return err
 	}
@@ -323,8 +330,11 @@ func defaultDataDir() string {
 // the local network, with a cache and encrypted upstreams first.
 func defaultDNS(listen string) dnsconfig.Server {
 	return dnsconfig.Server{
-		Mode:    dnsconfig.ModeForwarding,
-		Listens: []dnsconfig.ListenSpec{{Type: "udp", Addr: listen}, {Type: "tcp", Addr: listen}},
+		// Off until turned on in its settings: a resolver on :53 often
+		// collides with the system's own, and is rarely wanted at once.
+		Disabled: true,
+		Mode:     dnsconfig.ModeForwarding,
+		Listens:  []dnsconfig.ListenSpec{{Type: "udp", Addr: listen}, {Type: "tcp", Addr: listen}},
 		Upstreams: []dnsconfig.UpstreamSpec{
 			{Type: "doh", Addr: "https://doh.pub/dns-query"},
 			{Type: "dot", Addr: "1.1.1.1:853"},
