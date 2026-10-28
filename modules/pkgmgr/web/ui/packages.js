@@ -44,11 +44,11 @@ export function RunningJob({ job }) {
   <//>`;
 }
 
-// Unsupported explains a system without dnf or apt.
+// Unsupported explains a system without dnf, apt or brew.
 export function Unsupported({ system }) {
   return html`<${Notice} tone="info">
     No supported package manager on ${system.os?.name || 'this system'}. Packages work with dnf
-    (Fedora, RHEL, Rocky, AlmaLinux, Alibaba Cloud Linux, …) and apt (Debian, Ubuntu).
+    (Fedora, RHEL, Rocky, AlmaLinux, Alibaba Cloud Linux, …), apt (Debian, Ubuntu) and Homebrew (macOS).
   <//>`;
 }
 

@@ -37,7 +37,8 @@ function Docker({ system }) {
     ${!d ? (status.error ? null : html`<${Loading} />`) : d.installed ? html`
       <div class="button-row">
         ${open ? html`<a class="button" href=${open}>Open Docker</a>` : null}
-        ${!d.running ? html`<span class="muted small">Start it with <code>systemctl start docker</code>.</span>` : null}
+        ${!d.running ? html`<span class="muted small">${system.manager === 'brew'
+          ? 'Start Docker Desktop or OrbStack.' : html`Start it with <code>systemctl start docker</code>.`}</span>` : null}
       </div>` : d.unsupported ? html`<${Notice} tone="warn">${d.unsupported}.<//>` : html`
       <${Field} label="Download from">
         <select class="input" value=${source} onChange=${e => setSource(e.currentTarget.value)}>
