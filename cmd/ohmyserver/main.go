@@ -10,7 +10,7 @@
 // connects modules through the adapters in packages gateway, dns, cron and
 // monitor, and
 // mounts them in the shell, together with the modules built in here (the
-// overview, packages, services, disks and files).
+// overview, domains, packages, services, disks and files).
 package main
 
 import (
@@ -45,6 +45,7 @@ import (
 	"github.com/lsongdev/ohmyserver/modules/cron/runner"
 	cronweb "github.com/lsongdev/ohmyserver/modules/cron/web"
 	diskmgr "github.com/lsongdev/ohmyserver/modules/diskmgr/web"
+	domainsweb "github.com/lsongdev/ohmyserver/modules/domains/web"
 	filemgr "github.com/lsongdev/ohmyserver/modules/filemgr/web"
 	"github.com/lsongdev/ohmyserver/modules/monitor/collector"
 	monitorweb "github.com/lsongdev/ohmyserver/modules/monitor/web"
@@ -139,12 +140,19 @@ func run(cfg config, logger *slog.Logger) error {
 		return fmt.Errorf("dns: %w", err)
 	}
 
+	// Domains: DNS provider accounts (Cloudflare, …) and the zones they
+	// hold; uses SQLite itself, so it takes the database.
+	domains, err := domainsweb.New(ctx, db, domainsweb.Options{Logger: logger})
+	if err != nil {
+		return fmt.Errorf("domains: %w", err)
+	}
+
 	// Certificate manager: uses SQLite itself, so it takes the database.
-	// DNS-01 challenges for zones the DNS server serves authoritatively are
-	// published there.
+	// DNS-01 challenges are published automatically in the zones the DNS
+	// server serves authoritatively, or else in a provider account's.
 	acmeOptions := cfg.acme
 	acmeOptions.Logger = logger
-	acmeOptions.DNSProvider = dns.Challenges{Manager: dnsServer.Manager}
+	acmeOptions.DNSProvider = dns.Sources{dns.Challenges{Manager: dnsServer.Manager}, domains.Challenges()}
 	certs, err := acmeweb.New(ctx, db, acmeOptions)
 	if err != nil {
 		return fmt.Errorf("certificates: %w", err)
@@ -298,7 +306,7 @@ func run(cfg config, logger *slog.Logger) error {
 			Forward: forwarder.Service, SSH: terminals.Service, Cron: scheduler.Service, Monitor: monitoring.Service,
 			CI: builds.Service,
 		}),
-		docker, certs, yabberweb.New(management), dnsServer, dhcpServer, forwarder, terminals, scheduler, monitoring, builds, packages,
+		docker, certs, yabberweb.New(management), dnsServer, domains, dhcpServer, forwarder, terminals, scheduler, monitoring, builds, packages,
 	}
 	// Services manages systemd: without it (macOS, for one) the module has
 	// nothing to show, so it is left out of the panel.

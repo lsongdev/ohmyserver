@@ -1,0 +1,80 @@
+// UI building blocks for the pages: the @lsongdev/scripts components (in
+// @lsongdev/scripts), under the names and tone vocabulary the pages use.
+import { html } from './html.js';
+import {
+  Alert, Badge as ScriptsBadge, Dialog, Loading, Empty, PageHeader, KeyValue, toast as show,
+} from '../node_modules/@lsongdev/scripts/react/components/index.js';
+
+export {
+  Loading, Empty, Field, Check, ListInput, Tabs, LogView, CopyButton, ConfirmButton,
+  Toaster, openDialog, DialogHost, Table,
+} from '../node_modules/@lsongdev/scripts/react/components/index.js';
+export { KeyValue as KV };
+
+export function Page({ title, subtitle, actions, children }) {
+  return html`<section class="page">
+    <${PageHeader} title=${title} subtitle=${subtitle} actions=${actions} />
+    ${children}
+  </section>`;
+}
+
+// Notice tones as the pages name them, mapped onto alert variants.
+const variants = { error: 'danger', warn: 'warning', success: 'success', info: 'info' };
+
+export function Notice({ error, tone = 'error', children }) {
+  return html`<${Alert} variant=${variants[tone]} error=${error}>${children}<//>`;
+}
+
+// Resource renders the loading / error / empty states of a useResource result.
+export function Resource({ resource, empty, children }) {
+  const { data, error } = resource;
+  if (data === undefined) return error ? html`<${Notice} error=${error} />` : html`<${Loading} />`;
+  return html`${error ? html`<${Notice} error=${error} />` : null}
+    ${Array.isArray(data) && data.length === 0 && empty ? html`<${Empty}>${empty}<//>` : children(data)}`;
+}
+
+// Badge tones as colours, mapped onto badge variants; gray is the plain badge.
+const badges = { green: 'success', amber: 'warning', red: 'danger', blue: 'info' };
+
+export function Badge({ tone, title, children }) {
+  return html`<${ScriptsBadge} variant=${badges[tone]} title=${title}>${children}<//>`;
+}
+
+const tones = {
+  running: 'green', healthy: 'green', succeeded: 'green', active: 'green', valid: 'green', ok: 'green',
+  partial: 'amber', paused: 'amber', restarting: 'amber', starting: 'amber', waiting: 'amber', pending: 'blue',
+  processing: 'blue', ready: 'blue', removing: 'amber',
+  exited: 'gray', created: 'gray', stopped: 'gray', inactive: 'gray', missing: 'gray', canceled: 'gray',
+  deactivated: 'gray', revoked: 'gray',
+  dead: 'red', failed: 'red', invalid: 'red', unhealthy: 'red', error: 'red',
+};
+
+const capitalize = s => (s ? s[0].toUpperCase() + s.slice(1) : s);
+
+// Status renders a state as a badge with a dot, labelled with the state
+// unless the page passes a label. Pages pass a tone for states not listed
+// above.
+export function Status({ state, label, tone, title }) {
+  return html`<${ScriptsBadge} variant=${badges[tone || tones[state]]} dot title=${title}>${label || capitalize(state)}<//>`;
+}
+
+// Modal is a dialog shown for as long as it is rendered; onClose asks the
+// owner to stop rendering it.
+export function Modal({ title, onClose, children, footer, wide }) {
+  return html`<${Dialog} open title=${title} footer=${footer} onClose=${onClose}
+    closeOnBackdrop=${Boolean(onClose)} className=${wide ? 'dialog-wide' : ''}>${children}<//>`;
+}
+
+// toast shows a message; tone is info, success or error.
+export function toast(message, tone = 'info') {
+  show(message, tone === 'error' ? 'danger' : tone);
+}
+
+export function toastError(err) {
+  toast(err?.message || String(err), 'error');
+}
+
+// confirmDanger asks before destructive actions.
+export function confirmDanger(message) {
+  return window.confirm(message);
+}
