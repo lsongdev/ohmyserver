@@ -7,9 +7,9 @@ import { useApi, kind, uptime, usage, HealthStatus } from '../disks.js';
 export default function Overview() {
   const { href, link } = usePanel();
   const system = useApi('/system');
-  const overview = useApi(system.data?.linux ? '/overview' : null, 30000);
-  if (system.data && !system.data.linux) {
-    return html`<${Page} title="Storage"><${Notice} tone="info">Disk information needs a Linux host (lsblk was not found).<//><//>`;
+  const overview = useApi(system.data?.supported ? '/overview' : null, 30000);
+  if (system.data && !system.data.supported) {
+    return html`<${Page} title="Storage"><${Notice} tone="info">Disk information needs Linux (lsblk) or macOS (diskutil); neither was found.<//><//>`;
   }
   const o = overview.data;
   const install = link?.('packages', '/', { tab: 'search', s: 'smartmontools' });

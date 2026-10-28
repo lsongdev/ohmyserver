@@ -1,0 +1,16 @@
+Filesystem     1024-blocks      Used Available Capacity  Mounted on
+/dev/disk3s1s1   239331776  13436888  25344056    35%    /
+devfs                  221       221         0   100%    /dev
+/dev/disk3s6     239331776   2097248  25344056     8%    /System/Volumes/VM
+/dev/disk3s2     239331776   9461140  25344056    28%    /System/Volumes/Preboot
+/dev/disk3s4     239362496     27272  25347504     1%    /System/Volumes/Update
+/dev/disk1s2        512000      6164    494128     2%    /System/Volumes/xarts
+/dev/disk1s1        512000      6124    494128     2%    /System/Volumes/iSCPreboot
+/dev/disk1s3        512000       724    494128     1%    /System/Volumes/Hardware
+/dev/disk3s5     239331776 187387536  25344056    89%    /System/Volumes/Data
+map auto_home            0         0         0   100%    /System/Volumes/Data/home
+/dev/disk3s3     239331776   1470844  25344056     6%    /Volumes/Recovery
+/dev/disk5s1       8914944   8630296    256752    98%    /Library/Developer/CoreSimulator/Cryptex/Images/bundle/SimRuntimeBundle-DECF812E-6488-433E-87E7-32BD8194EC11
+/dev/disk7s1      20260864  19703564    506648    98%    /Library/Developer/CoreSimulator/Volumes/iOS_22F77
+/dev/disk9s1      18423808  17893648    482780    98%    /Library/Developer/CoreSimulator/Volumes/iOS_24A5355p
+/dev/disk11s1     18124800  17586672    491796    98%    /Library/Developer/CoreSimulator/Volumes/iOS_24A434

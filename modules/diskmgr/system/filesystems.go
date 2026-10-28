@@ -23,6 +23,9 @@ var virtual = []string{"tmpfs", "devtmpfs", "overlay", "squashfs", "efivarfs", "
 // per source (a btrfs volume mounted at several places shows once, at its
 // shortest mount point).
 func (s *Storage) FileSystems(ctx context.Context) ([]FileSystem, error) {
+	if s.os() == "darwin" {
+		return s.fileSystemsDarwin(ctx)
+	}
 	args := []string{"-B1", "--output=source,fstype,size,used,avail,target"}
 	for _, t := range virtual {
 		args = append(args, "-x", t)

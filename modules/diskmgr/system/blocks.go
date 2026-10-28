@@ -1,6 +1,7 @@
-// Package system reads a Linux host's storage: block devices (lsblk),
-// mounted file systems and their capacity (df), software RAID arrays
-// (/proc/mdstat) and disk health (smartctl, through smartctl-go).
+// Package system reads a host's storage: block devices (lsblk on Linux,
+// diskutil on macOS), mounted file systems and their capacity (df),
+// software RAID arrays (/proc/mdstat, Linux) and disk health (smartctl,
+// through smartctl-go).
 //
 // Commands run with LC_ALL=C and never through a shell. Output formats are
 // those of util-linux 2.32 (Enterprise Linux 8) and later, whose lsblk
@@ -11,13 +12,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os/exec"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 )
 
-// ErrUnsupported means the host has no lsblk (not Linux).
-var ErrUnsupported = errors.New("disk information needs Linux (lsblk was not found)")
+// ErrUnsupported means the host has neither lsblk (Linux) nor diskutil
+// (macOS).
+var ErrUnsupported = errors.New("disk information needs Linux (lsblk) or macOS (diskutil)")
 
 // ErrInvalid wraps rejected input, such as an unknown disk name.
 var ErrInvalid = errors.New("invalid")
@@ -94,6 +98,9 @@ const lsblkColumns = "NAME,TYPE,SIZE,MODEL,SERIAL,ROTA,TRAN,RM,MOUNTPOINT,FSTYPE
 // Blocks lists the block devices as a tree: disks with their partitions
 // and what is built on them. RAID arrays appear under each member disk.
 func (s *Storage) Blocks(ctx context.Context) ([]Block, error) {
+	if s.os() == "darwin" {
+		return s.blocksDarwin(ctx)
+	}
 	out, err := s.Run.Output(ctx, nil, "lsblk", "-b", "-J", "-o", lsblkColumns)
 	if err != nil {
 		return nil, err
@@ -142,4 +149,23 @@ func DiskName(name string) (string, error) {
 type Storage struct {
 	Run  Runner
 	Root string // file system root, "" on a real host
+	OS   string // runtime.GOOS unless testing
+}
+
+func (s *Storage) os() string {
+	if s.OS != "" {
+		return s.OS
+	}
+	return runtime.GOOS
+}
+
+// Supported reports whether the host has the tools this package reads:
+// lsblk on Linux, diskutil on macOS.
+func (s *Storage) Supported() bool {
+	tool := "lsblk"
+	if s.os() == "darwin" {
+		tool = "diskutil"
+	}
+	_, err := exec.LookPath(tool)
+	return err == nil
 }
