@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os/exec"
+	"runtime"
 	"sync"
 	"time"
 
@@ -61,8 +61,9 @@ func New(opts Options) *Service {
 
 // Info says what the host offers.
 type Info struct {
-	Linux    bool `json:"linux"`    // lsblk is available
-	Smartctl bool `json:"smartctl"` // smartmontools is installed
+	Supported bool   `json:"supported"` // lsblk (Linux) or diskutil (macOS) is available
+	OS        string `json:"os"`
+	Smartctl  bool   `json:"smartctl"` // smartmontools is installed
 }
 
 // Disk is a physical disk with what is on it and its health.
@@ -79,7 +80,7 @@ type Overview struct {
 }
 
 func (s *Service) need() error {
-	if _, err := exec.LookPath("lsblk"); err != nil {
+	if !s.storage.Supported() {
 		return system.ErrUnsupported
 	}
 	return nil
@@ -211,7 +212,7 @@ func (s *Service) detail(ctx context.Context, name string, wake bool) (*DiskDeta
 func (s *Service) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /system", func(w http.ResponseWriter, r *http.Request) {
-		respond(w, Info{Linux: s.need() == nil, Smartctl: system.SmartAvailable()}, nil)
+		respond(w, Info{Supported: s.need() == nil, OS: runtime.GOOS, Smartctl: system.SmartAvailable()}, nil)
 	})
 	mux.HandleFunc("GET /overview", func(w http.ResponseWriter, r *http.Request) {
 		o, err := s.overview(r.Context())
