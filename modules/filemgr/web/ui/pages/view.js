@@ -1,0 +1,58 @@
+import { html, useState } from '../lib/html.js';
+import { useAction } from '../lib/hooks.js';
+import { Page, Notice, Loading, toast } from '../lib/ui.js';
+import { usePanel } from '../lib/panel.js';
+import { returnPath, routeURL, useUnsavedChanges } from '../lib/forms.js';
+import { bytes } from '../lib/format.js';
+import { useApi, parent, isImage } from '../files.js';
+
+export default function FilePage() {
+  const { query } = usePanel();
+  return html`<${Workspace} key=${query.path} path=${query.path || ''} />`;
+}
+
+function Workspace({ path }) {
+  const { href, query, client } = usePanel();
+  const image = isImage(path);
+  const file = useApi(path && !image ? `/text?path=${encodeURIComponent(path)}` : null);
+  const back = returnPath(query, routeURL('/', { path: parent(path) }));
+  const download = client.url('download', { path }).href;
+  return html`<${Page} title=${path.split('/').pop() || 'File'}
+    back=${{ href: href(back), label: 'Files' }} subtitle=${html`<span class="mono">${path}</span>`}
+    actions=${path ? html`<a class="button" href=${download} download>Download</a>` : null}>
+    ${!path ? html`<${Notice}>Choose a file to open.<//>`
+      : image ? html`<img class="preview-image" src=${client.url('download', { path, inline: 1 }).href} alt=${path} />`
+      : file.error ? html`<${Notice} error=${file.error} />`
+      : !file.data ? html`<${Loading} />`
+      : file.data.binary || file.data.too_large ? html`<${Notice} tone="info">
+        ${file.data.too_large ? `This file is ${bytes(file.data.size)}, too large to open here.` : 'This file is not text.'} Download it instead.
+      <//>` : html`<${Editor} path=${path} content=${file.data.text || ''} />`}
+  <//>`;
+}
+
+function Editor({ path, content }) {
+  const { api } = usePanel();
+  const [text, setText] = useState(content);
+  const [baseline, setBaseline] = useState(content);
+  const save = useAction();
+  const dirty = text !== baseline;
+  const saved = useUnsavedChanges(dirty, { pending: save.busy });
+  const submit = event => {
+    event.preventDefault();
+    save.run(async () => {
+      await api.put('text', { path, text });
+      setBaseline(text);
+      saved();
+      toast('File saved', 'success');
+    });
+  };
+  return html`<form class="form file-workspace" onSubmit=${submit}>
+    <div class="form-actions">
+      <button class="button button-primary" disabled=${!dirty || save.busy}>${save.busy ? 'Saving…' : 'Save'}</button>
+      <span class="muted small" role="status">${dirty ? 'Unsaved changes' : 'Saved'}</span>
+    </div>
+    <${Notice} error=${save.error} />
+    <textarea class="input editor" aria-label=${`Contents of ${path}`} spellcheck="false" autofocus
+      disabled=${save.busy} value=${text} onInput=${event => setText(event.currentTarget.value)} />
+  </form>`;
+}

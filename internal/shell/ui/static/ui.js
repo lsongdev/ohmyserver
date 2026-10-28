@@ -1,8 +1,8 @@
 // UI building blocks for the pages: the @lsongdev/scripts components (in
 // @lsongdev/scripts), under the names and tone vocabulary the pages use.
-import { html } from './html.js';
+import { html, useLayoutEffect } from './html.js';
 import {
-  Alert, Badge as ScriptsBadge, Dialog, Loading, Empty, PageHeader, KeyValue, toast as show,
+  Alert, Badge as ScriptsBadge, Dialog, Loading, Empty, KeyValue, toast as show,
 } from './node_modules/@lsongdev/scripts/react/components/index.js';
 
 export {
@@ -11,9 +11,17 @@ export {
 } from './node_modules/@lsongdev/scripts/react/components/index.js';
 export { KeyValue as KV };
 
-export function Page({ title, subtitle, actions, children }) {
+// Page-level navigation has its own slot, separate from metadata/actions.
+export function Page({ title, subtitle, actions, back, children }) {
   return html`<section class="page">
-    <${PageHeader} title=${title} subtitle=${subtitle} actions=${actions} />
+    <header class=${back ? 'page-header page-header-with-back' : 'page-header'}>
+      <div class="page-title">
+        <h1>${title}</h1>
+        ${subtitle ? html`<div class="page-subtitle">${subtitle}</div>` : null}
+      </div>
+      ${actions ? html`<div class="page-actions">${actions}</div>` : null}
+      ${back ? html`<a class="page-back" href=${back.href} title=${back.label || 'Back'}><span aria-hidden="true">←</span> ${back.label || 'Back'}</a>` : null}
+    </header>
     ${children}
   </section>`;
 }
@@ -60,9 +68,22 @@ export function Status({ state, label, tone, title }) {
 
 // Modal is a dialog shown for as long as it is rendered; onClose asks the
 // owner to stop rendering it.
-export function Modal({ title, onClose, children, footer, wide }) {
-  return html`<${Dialog} open title=${title} footer=${footer} onClose=${onClose}
-    closeOnBackdrop=${Boolean(onClose)} className=${wide ? 'dialog-wide' : ''}>${children}<//>`;
+export function Modal({ title, onClose, children, footer, wide, closeOnBackdrop = false }) {
+  useLayoutEffect(() => {
+    // document.activeElement is the shadow host for mounted modules.
+    let previous = document.activeElement;
+    while (previous?.shadowRoot?.activeElement) previous = previous.shadowRoot.activeElement;
+    return () => queueMicrotask(() => { if (previous?.isConnected) previous.focus(); });
+  }, []);
+  // Native close controls fire after closing. Reopen if the owner vetoes
+  // dismissal (unsaved input or a pending request). Escape can be stopped
+  // before the native dialog closes at all.
+  const close = event => {
+    if (onClose?.() === false && event.currentTarget.isConnected) event.currentTarget.showModal();
+  };
+  const cancel = event => { event.preventDefault(); onClose?.(); };
+  return html`<${Dialog} open title=${title} footer=${footer} onClose=${close} onCancel=${cancel}
+    closeOnBackdrop=${closeOnBackdrop} className=${wide ? 'dialog-wide' : ''}>${children}<//>`;
 }
 
 // toast shows a message; tone is info, success or error.

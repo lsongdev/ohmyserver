@@ -3,7 +3,6 @@ import { useAction } from '../lib/hooks.js';
 import { Page, Notice, Loading, Empty, KV, CopyButton, confirmDanger, toast, Table } from '../lib/ui.js';
 import { usePanel } from '../lib/panel.js';
 import { useApi, BuildStatus, EVENTS, active, datetime, short, duration } from '../ci.js';
-import { RepoForm } from './repos.js';
 
 const EXAMPLE = `when:
   branch: [main]
@@ -23,10 +22,9 @@ export default function Repo({ params }) {
   const repo = useApi(`/repos/${params.id}`);
   const builds = useApi(`/repos/${params.id}/builds`, list => (list?.some(b => active(b.status)) ? 2000 : 10000));
   const action = useAction();
-  const [editing, setEditing] = useState(false);
   const [branch, setBranch] = useState('');
 
-  if (!repo.data) return html`<${Page} title="Repository">${repo.error ? html`<${Notice} error=${repo.error} />` : html`<${Loading} />`}<//>`;
+  if (!repo.data) return html`<${Page} title="Repository" back=${{ href: href('/'), label: 'Repositories' }}>${repo.error ? html`<${Notice} error=${repo.error} />` : html`<${Loading} />`}<//>`;
   const r = repo.data;
   const hook = client.url(`hooks/${r.id}`).href;
   const run = () => action.run(async () => {
@@ -42,11 +40,11 @@ export default function Repo({ params }) {
     action.run(async () => { await api.del(`/repos/${r.id}`); navigate('/'); });
   };
 
-  return html`<${Page} title=${r.name} subtitle=${html`<a href=${href('/')}>← Repositories</a> · <span class="mono">${r.url}</span>`}
+  return html`<${Page} title=${r.name} back=${{ href: href('/'), label: 'Repositories' }} subtitle=${html`<span class="mono">${r.url}</span>`}
     actions=${html`
       <input class="input mono" style="width:160px" placeholder=${r.branch} value=${branch} onInput=${e => setBranch(e.currentTarget.value)} aria-label="Branch" />
       <button class="button button-primary" disabled=${action.busy} onClick=${run}>Run</button>
-      <button class="button" onClick=${() => setEditing(true)}>Edit</button>
+      <a class="button" href=${href(`/repos/${r.id}/edit`)}>Edit</a>
       <button class="button button-danger" onClick=${remove}>Delete</button>`}>
     <${Notice} error=${action.error || builds.error} />
     <section>
@@ -80,6 +78,5 @@ export default function Repo({ params }) {
         <pre class="example">${EXAMPLE}</pre>
       </div>
     </div>
-    ${editing ? html`<${RepoForm} repo=${r} onClose=${() => setEditing(false)} onSaved=${() => { setEditing(false); repo.reload(); }} />` : null}
   <//>`;
 }

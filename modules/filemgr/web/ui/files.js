@@ -20,10 +20,11 @@ const IMAGES = /\.(png|jpe?g|gif|webp|avif|bmp|ico|svg)$/i;
 export const isImage = name => IMAGES.test(name);
 
 export function icon(e) {
-  if (isDir(e)) return '▸';
-  if (e.type === 'link') return '↪';
-  if (isImage(e.name)) return '◩';
-  return '▫';
+  if (isDir(e)) return '📁';
+  if (e.type === 'link') return '🔗';
+  if (isImage(e.name)) return '🖼️';
+  if (/\.(zip|tar|gz|bz2|xz|rar|7z|tgz|zst)$/i.test(e.name)) return '📦';
+  return '📄';
 }
 
 // upload sends files to dir with progress (0..1), resolving with the API's
@@ -64,6 +65,10 @@ export function ConfirmDelete({ entries, purge = false, onClose, onDone }) {
   const [typed, setTyped] = useState('');
   const preview = useAction();
   const run = useAction();
+  const close = () => {
+    if (run.busy) return false;
+    onClose();
+  };
   useEffect(() => {
     preview.run(async () => setPlan(await api.post(purge ? 'trash/preview' : 'delete/preview', { paths })));
   }, []);
@@ -78,8 +83,8 @@ export function ConfirmDelete({ entries, purge = false, onClose, onDone }) {
       onDone(label);
     });
   };
-  return html`<${Modal} title=${purge ? `Delete ${label} for good` : `Delete ${label}`} onClose=${onClose} footer=${html`<span class="spacer"></span>
-    <button class="button" type="button" onClick=${onClose}>Cancel</button>
+  return html`<${Modal} title=${purge ? `Delete ${label} for good` : `Delete ${label}`} onClose=${close} footer=${html`<span class="spacer"></span>
+    <button class="button" type="button" autofocus=${!big && !purge} disabled=${run.busy} onClick=${close}>Cancel</button>
     <button class="button button-danger" type="submit" form="delete-form" disabled=${!ready || run.busy}>${purge ? 'Delete for good' : 'Move to trash'}</button>`}>
     <form id="delete-form" class="form" onSubmit=${submit}>
       <${Notice} error=${preview.error || run.error} />
@@ -88,7 +93,7 @@ export function ConfirmDelete({ entries, purge = false, onClose, onDone }) {
         <ul class="small muted" style="margin:0;padding-left:18px">${plan.items.slice(0, 8).map(i => html`<li key=${i.path} class="mono">${i.path}</li>`)}
           ${plan.items.length > 8 ? html`<li>and ${plan.items.length - 8} more</li>` : null}</ul>
         ${big || purge ? html`<${Field} label=${html`Type <strong>${word}</strong> to confirm`}>
-          <input class="input" autofocus value=${typed} onInput=${e => setTyped(e.currentTarget.value)} autocomplete="off" />
+          <input class="input" autofocus disabled=${run.busy} value=${typed} onInput=${e => setTyped(e.currentTarget.value)} autocomplete="off" />
         <//>` : null}`}
     </form>
   <//>`;

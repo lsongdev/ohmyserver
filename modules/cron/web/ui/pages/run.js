@@ -11,11 +11,11 @@ export default function Run({ params }) {
   const job = useApi(run.data ? `/jobs/${run.data.job_id}` : null);
   const cancel = useAction();
 
-  if (!run.data) return html`<${Page} title="Run">${run.error ? html`<${Notice} error=${run.error} />` : html`<${Loading} />`}<//>`;
+  if (!run.data) return html`<${Page} title="Run" back=${{ href: href('/'), label: 'Jobs' }}>${run.error ? html`<${Notice} error=${run.error} />` : html`<${Loading} />`}<//>`;
   const r = run.data;
   const lines = r.output ? r.output.replace(/\n$/, '').split('\n') : [];
   return html`<${Page} title=${job.data ? `${job.data.name} · #${r.id}` : `#${r.id}`}
-    subtitle=${html`<a href=${href(`/jobs/${r.job_id}`)}>← Job</a>`}
+    back=${{ href: href(`/jobs/${r.job_id}`), label: 'Job' }}
     actions=${r.status === 'running' ? html`<button class="button button-danger" disabled=${cancel.busy}
       onClick=${() => cancel.run(async () => { await api.post(`/runs/${r.id}/cancel`); run.reload(); })}>Cancel run</button>` : null}>
     <${Notice} error=${cancel.error} />

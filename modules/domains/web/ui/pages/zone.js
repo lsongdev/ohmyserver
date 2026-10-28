@@ -19,7 +19,7 @@ export default function Zone({ params }) {
   const [busy, run] = useBusy(toastError);
   const z = zone.data;
   if (!z) {
-    return html`<${Page} title="Domain" subtitle=${html`<a href=${href('/')}>← Domains</a>`}>
+    return html`<${Page} title="Domain" back=${{ href: href('/'), label: 'Domains' }}>
       ${zone.error ? html`<${Notice} error=${zone.error} />` : html`<${Loading} />`}<//>`;
   }
   const type = query.type || '';
@@ -29,7 +29,7 @@ export default function Zone({ params }) {
     if (!confirmDanger(`Delete the ${r.type} record ${short(r.name, z.name)} → ${r.content}?`)) return;
     run(r.id, async () => { await api.del(`${base}/records/${encodeURIComponent(r.id)}`); toast('Record deleted', 'success'); zone.reload(); });
   };
-  return html`<${Page} title=${z.name} subtitle=${html`<a href=${href('/')}>← Domains</a> · ${z.account_name}`}
+  return html`<${Page} title=${z.name} back=${{ href: href('/'), label: 'Domains' }} subtitle=${z.account_name}
     actions=${editing ? null : html`<button class="button button-primary" onClick=${() => setEditing({})}>Add record</button>`}>
     ${editing ? html`<${RecordForm} key=${editing.id || 'new'} base=${base} zone=${z} record=${editing}
       onDone=${saved => { setEditing(null); if (saved) zone.reload(); }} />` : null}

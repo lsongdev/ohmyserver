@@ -3,6 +3,9 @@
 // receives its route through mount/update, and changes it through
 // ctx.navigate. The shell owns the address bar: "#/<module id><module path>".
 import { html, render, useState, useEffect, useRef } from './html.js';
+import { createNavigation } from './navigation.js';
+
+const navigation = createNavigation();
 
 const url = path => new URL(path, document.baseURI);
 
@@ -27,11 +30,7 @@ const searchString = query => {
 // full joins a module id and a module path ("/" is the module root).
 const full = (id, path) => '/' + id + (path === '/' ? '' : path);
 
-function go(to, { replace = false } = {}) {
-  if (replace) history.replaceState(null, '', '#' + to);
-  else history.pushState(null, '', '#' + to);
-  dispatchEvent(new HashChangeEvent('hashchange'));
-}
+const go = navigation.navigate;
 
 // split finds the module a shell path belongs to and its module path.
 function split(panel, path) {
@@ -58,6 +57,7 @@ class ModuleHost {
       assetsBase: url(module.ui).href,
       path, query,
       navigate: (to, opts) => go(full(module.id, to), opts),
+      beforeLeave: navigation.beforeLeave,
       href: (to, q) => '#' + full(module.id, to) + searchString(q),
       link: (id, to, q) => (this.panel.modules.some(m => m.id === id) ? '#' + full(id, to) + searchString(q) : null),
       lang: this.panel.lang,
@@ -218,6 +218,7 @@ function showPanel(panel) {
   const sidebar = app.querySelector('.sidebar');
   const host = new ModuleHost(panel, app.querySelector('.main'));
   const logout = async () => {
+    if (!navigation.canLeave()) return;
     await fetch(url('_auth/logout'), { method: 'POST' }).catch(() => {});
     showLogin(panel.title);
   };
@@ -235,11 +236,9 @@ function showPanel(panel) {
     }
     render(html`<${Sidebar} panel=${panel} path=${path} onLogout=${logout} />`, sidebar);
   };
-  addEventListener('hashchange', update);
-  addEventListener('popstate', update);
+  addEventListener('panel:routechange', update);
   stop = () => {
-    removeEventListener('hashchange', update);
-    removeEventListener('popstate', update);
+    removeEventListener('panel:routechange', update);
     host.unmount();
   };
   update();

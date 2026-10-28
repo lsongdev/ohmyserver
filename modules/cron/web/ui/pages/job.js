@@ -1,9 +1,8 @@
-import { html, useState } from '../lib/html.js';
+import { html } from '../lib/html.js';
 import { useAction } from '../lib/hooks.js';
 import { Page, Notice, Loading, Empty, KV, Table } from '../lib/ui.js';
 import { usePanel } from '../lib/panel.js';
 import { useApi, RunStatus, TRIGGERS, datetime, duration, relative } from '../cron.js';
-import { JobForm } from './jobs.js';
 
 export default function Job({ params }) {
   const { api, href, navigate } = usePanel();
@@ -11,19 +10,18 @@ export default function Job({ params }) {
   const runs = useApi(`/jobs/${params.id}/runs`, () => (job.data?.running ? 2000 : 10000));
   const targets = useApi('/targets');
   const action = useAction();
-  const [editing, setEditing] = useState(false);
 
-  if (!job.data) return html`<${Page} title="Job">${job.error ? html`<${Notice} error=${job.error} />` : html`<${Loading} />`}<//>`;
+  if (!job.data) return html`<${Page} title="Job" back=${{ href: href('/'), label: 'Jobs' }}>${job.error ? html`<${Notice} error=${job.error} />` : html`<${Loading} />`}<//>`;
   const j = job.data;
   const target = targets.data?.find(t => t.id === j.target);
   const runNow = () => action.run(async () => {
     const r = await api.post(`/jobs/${j.id}/run`);
     navigate(`/runs/${r.id}`);
   });
-  return html`<${Page} title=${j.name} subtitle=${html`<a href=${href('/')}>← Jobs</a>`}
+  return html`<${Page} title=${j.name} back=${{ href: href('/'), label: 'Jobs' }}
     actions=${html`
       <button class="button button-primary" disabled=${action.busy || j.running} onClick=${runNow}>Run now</button>
-      <button class="button" onClick=${() => setEditing(true)}>Edit</button>`}>
+      <a class="button" href=${href(`/jobs/${j.id}/edit`)}>Edit</a>`}>
     <${Notice} error=${action.error} />
     <div class="card">
       <${KV} items=${[
@@ -49,7 +47,5 @@ export default function Job({ params }) {
           </tr>`)}</tbody>
         <//>`}
     </section>
-    ${editing ? html`<${JobForm} job=${j} targets=${targets.data || []}
-      onClose=${() => setEditing(false)} onSaved=${() => { setEditing(false); job.reload(); }} />` : null}
   <//>`;
 }

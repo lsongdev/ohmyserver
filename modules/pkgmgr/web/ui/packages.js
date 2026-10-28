@@ -2,7 +2,7 @@
 import { html } from './lib/html.js';
 import { useResource } from './lib/hooks.js';
 import { usePanel } from './lib/panel.js';
-import { Modal, Notice, Loading, Status, toastError } from './lib/ui.js';
+import { Notice, Loading, Status, toastError } from './lib/ui.js';
 
 // useApi loads a GET endpoint, polling every interval(data) milliseconds
 // while that returns a positive number. A null path loads nothing yet.
@@ -52,14 +52,14 @@ export function Unsupported({ system }) {
   <//>`;
 }
 
-// PackageInfo shows what the package manager knows about a package.
+// PackageInfo expands above the list without blocking browsing or actions.
 export function PackageInfo({ name, onClose }) {
   const info = useApi(`/info?name=${encodeURIComponent(name)}`);
-  return html`<${Modal} title=${name} onClose=${onClose} wide footer=${html`
-    <span class="spacer"></span><button class="button" type="button" onClick=${onClose}>Close</button>`}>
+  return html`<section class="card package-info" aria-label=${`Package information: ${name}`}>
+    <div class="recipe-head"><h2>${name}</h2><button class="button button-small" type="button" onClick=${onClose}>Close details</button></div>
     ${info.data ? html`<pre class="info-text">${info.data.text || 'No information'}</pre>`
       : info.error ? html`<${Notice} error=${info.error} />` : html`<${Loading} />`}
-  <//>`;
+  </section>`;
 }
 
 // duration formats how long a job ran, or has been running.

@@ -4,6 +4,8 @@ import { createMount } from './lib/mount.js';
 
 const routes = [
   { path: '/', load: () => import('./pages/jobs.js') },
+  { path: '/jobs/new', load: () => import('./pages/job-form.js') },
+  { path: '/jobs/:id/edit', load: () => import('./pages/job-form.js') },
   { path: '/jobs/:id', load: () => import('./pages/job.js') },
   { path: '/runs/:id', load: () => import('./pages/run.js') },
 ];

@@ -138,6 +138,7 @@ export function mount(el, ctx) {
 | `path` | The current module path, e.g. `/containers/abc`. |
 | `query` | The current query parameters, as an object. |
 | `navigate(path, { replace })` | Go to a module path. |
+| `beforeLeave(guard)` | Optional: register a synchronous navigation guard; return `false` to cancel leaving. Returns an unsubscribe function, called on page unmount. Hosts check guards for links, programmatic navigation, browser Back/Forward, and sign-out. Modules separately use `beforeunload` for reload/close. |
 | `href(path, query)` | The URL of a module path, for `<a href>`. |
 | `link(moduleId, path, query)` | URL of a path in another module, or `null` if it is not mounted. |
 | `lang` | Interface language, e.g. `en` (the default) or `zh-CN`. |

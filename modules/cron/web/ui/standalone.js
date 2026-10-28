@@ -3,6 +3,9 @@
 // panel shell would.
 import { html, render } from './lib/html.js';
 import { mount } from './module.js';
+import { createNavigation } from './lib/navigation.js';
+
+const navigation = createNavigation();
 
 const manifest = await (await fetch('manifest.json')).json();
 document.title = manifest.title;
@@ -18,11 +21,7 @@ const href = (path, query) => {
   return '#' + path + (s ? '?' + s : '');
 };
 
-function navigate(to, { replace = false } = {}) {
-  if (replace) history.replaceState(null, '', '#' + to);
-  else history.pushState(null, '', '#' + to);
-  dispatchEvent(new HashChangeEvent('hashchange'));
-}
+const navigate = navigation.navigate;
 
 function context() {
   return {
@@ -31,6 +30,7 @@ function context() {
     assetsBase: new URL('./', document.baseURI).href,
     ...location(),
     navigate, href,
+    beforeLeave: navigation.beforeLeave,
     link: () => null, // no other modules standalone
     lang: document.documentElement.lang,
   };
@@ -55,6 +55,5 @@ const update = () => {
   render(html`<${TopBar} path=${ctx.path} />`, topbar);
   instance.update(ctx);
 };
-addEventListener('hashchange', update);
-addEventListener('popstate', update);
+addEventListener('panel:routechange', update);
 update();

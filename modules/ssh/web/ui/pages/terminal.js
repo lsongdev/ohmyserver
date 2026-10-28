@@ -74,7 +74,7 @@ export default function Terminal({ params }) {
 
   if (!ready) return html`<${Page} title="Terminal">${host.error ? html`<${Notice} error=${host.error} />` : html`<${Loading} />`}<//>`;
   const h = host.data;
-  return html`<${Page} title=${h.name} subtitle=${html`<a href=${href('/')}>← Hosts</a> · <span class="mono">${target(h)}</span>`}
+  return html`<${Page} title=${h.name} back=${{ href: href('/'), label: 'Hosts' }} subtitle=${html`<span class="mono">${target(h)}</span>`}
     actions=${html`
       <${Status} state=${status === 'open' ? 'running' : status === 'connecting' ? 'starting' : 'stopped'} label=${LABELS[status]} />
       ${status === 'closed' ? html`<button class="button button-small" onClick=${() => setSession(s => s + 1)}>Reconnect</button>` : null}`}>
