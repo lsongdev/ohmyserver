@@ -48,10 +48,10 @@ export default function Overview({ ctx }) {
             sub=${s.certificates.expiring ? `${s.certificates.expiring} expiring within 30 days` : s.certificates.pending ? `${s.certificates.pending} being issued` : 'Valid certificates'} />` : null}
         ${s.gateway ? html`
           <${Card} title="Gateway sites" to=${link('gateway', '/sites')}
-            value=${s.gateway.sites} sub=${`${s.gateway.requests} requests`} />` : null}
+            value=${s.gateway.sites} sub=${s.gateway.enabled ? `${s.gateway.requests} requests` : 'Off: serving nothing'} />` : null}
         ${s.dns ? html`
           <${Card} title="DNS queries" to=${link('dns', '/')}
-            value=${s.dns.queries} sub=${`${s.dns.blocked} blocked · ${s.dns.zones} zones`} />` : null}
+            value=${s.dns.queries} sub=${s.dns.enabled ? `${s.dns.blocked} blocked · ${s.dns.zones} zones` : 'Off: not answering queries'} />` : null}
         ${s.forward ? html`
           <${Card} title="Port forwards" to=${link('forward', '/')}
             value=${s.forward.running}
@@ -67,7 +67,7 @@ export default function Overview({ ctx }) {
           <${Card} title="SSH hosts" to=${link('ssh', '/')}
             value=${s.ssh.hosts} sub=${`${s.ssh.sessions} open terminals`} />` : null}
       </div>
-      ${s.gateway ? html`<div class="section"><h2>Gateway listeners</h2>
+      ${s.gateway?.enabled ? html`<div class="section"><h2>Gateway listeners</h2>
         <${Table}>
           <thead><tr><th>Name</th><th>Address</th><th>TLS</th><th>Status</th></tr></thead>
           <tbody>${s.gateway.listeners.map(l => html`<tr key=${l.name}>
@@ -76,7 +76,7 @@ export default function Overview({ ctx }) {
           </tr>`)}</tbody>
         <//>
       </div>` : null}
-      ${s.dns ? html`<div class="section"><h2>DNS listeners</h2>
+      ${s.dns?.enabled ? html`<div class="section"><h2>DNS listeners</h2>
         <${Table}>
           <thead><tr><th>Protocol</th><th>Address</th><th>TLS</th><th>Status</th></tr></thead>
           <tbody>${s.dns.listeners.map(l => html`<tr key=${l.type + l.addr}>

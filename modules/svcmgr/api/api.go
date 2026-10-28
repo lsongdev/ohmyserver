@@ -40,6 +40,11 @@ type Service struct {
 	logger  *slog.Logger
 }
 
+// Supported reports whether systemd manages this system. Without it every
+// endpoint but /system answers 503 "unsupported", so a shell may leave the
+// module out.
+func (s *Service) Supported() bool { return s.running }
+
 // New checks for systemd and finds the unit running this process.
 func New(opts Options) *Service {
 	run := opts.Runner
