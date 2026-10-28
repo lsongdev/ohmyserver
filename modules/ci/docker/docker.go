@@ -252,7 +252,10 @@ func (c *Client) Create(ctx context.Context, spec Container) (string, error) {
 	body := map[string]any{
 		"Image": spec.Image, "Entrypoint": spec.Entrypoint, "Cmd": spec.Cmd, "Env": spec.Env,
 		"WorkingDir": spec.WorkingDir, "Labels": spec.Labels, "Tty": true,
-		"HostConfig": map[string]any{"Mounts": spec.Mounts, "Memory": spec.Memory, "NanoCpus": spec.NanoCPUs},
+		// host.docker.internal reaches the Docker host, as Docker Desktop
+		// already provides; Docker Engine on Linux needs it mapped.
+		"HostConfig": map[string]any{"Mounts": spec.Mounts, "Memory": spec.Memory, "NanoCpus": spec.NanoCPUs,
+			"ExtraHosts": []string{"host.docker.internal:host-gateway"}},
 	}
 	var q url.Values
 	if spec.Name != "" {
