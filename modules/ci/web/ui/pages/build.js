@@ -11,7 +11,7 @@ export default function Build({ params }) {
   const action = useAction();
   const [chosen, setChosen] = useState(null);
 
-  if (!build.data) return html`<${Page} title="Build">${build.error ? html`<${Notice} error=${build.error} />` : html`<${Loading} />`}<//>`;
+  if (!build.data) return html`<${Page} title="Build" back=${{ href: href('/'), label: 'Repositories' }}>${build.error ? html`<${Notice} error=${build.error} />` : html`<${Loading} />`}<//>`;
   const b = build.data;
   const steps = b.steps || [];
   // Follow the running step until one is chosen; otherwise show the failing
@@ -24,7 +24,8 @@ export default function Build({ params }) {
   const restart = () => action.run(async () => { const nb = await api.post(`/builds/${b.id}/restart`); navigate(`/builds/${nb.id}`); });
 
   return html`<${Page} title=${`${repo.data?.name || ''} #${b.number}`}
-    subtitle=${html`<a href=${href(`/repos/${b.repo_id}`)}>← ${repo.data?.name || 'Repository'}</a> · <${BuildStatus} status=${b.status} /> · <span class="mono">${b.branch}</span>${b.commit ? html` · <span class="commit">${short(b.commit)}</span>` : null}${
+    back=${{ href: href(`/repos/${b.repo_id}`), label: repo.data?.name || 'Repository' }}
+    subtitle=${html`<${BuildStatus} status=${b.status} /> · <span class="mono">${b.branch}</span>${b.commit ? html` · <span class="commit">${short(b.commit)}</span>` : null}${
       ' · ' + [b.message, EVENTS[b.event] || b.event, b.author, datetime(b.created_at), duration(b.started_at, b.finished_at)].filter(Boolean).join(' · ')}`}
     actions=${active(b.status)
       ? html`<button class="button button-danger" disabled=${action.busy} onClick=${cancel}>Cancel</button>`

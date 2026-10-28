@@ -54,7 +54,10 @@ export function useBusy(onError) {
 export function useAction() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const pending = useRef(false);
   const run = useCallback(async fn => {
+    if (pending.current) return undefined;
+    pending.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -63,6 +66,7 @@ export function useAction() {
       setError(err);
       return undefined;
     } finally {
+      pending.current = false;
       setBusy(false);
     }
   }, []);

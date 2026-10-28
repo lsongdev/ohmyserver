@@ -14,9 +14,9 @@ export default function Disk({ params }) {
   // Poll faster while a self-test runs.
   const disk = useApi(path, d => (d?.health?.testing != null ? 15000 : 60000));
   const action = useAction();
-  const back = html`<a href=${href('/')}>← Storage</a>`;
+  const back = { href: href('/'), label: 'Storage' };
   if (!disk.data) {
-    return html`<${Page} title=${params.name} subtitle=${back}>${disk.error ? html`<${Notice} error=${disk.error} />` : html`<${Loading}>Reading the disk…<//>`}<//>`;
+    return html`<${Page} title=${params.name} back=${back}>${disk.error ? html`<${Notice} error=${disk.error} />` : html`<${Loading}>Reading the disk…<//>`}<//>`;
   }
   const d = disk.data, h = d.health || {}, r = d.report;
   const test = (kind, confirm) => {
@@ -37,7 +37,7 @@ export default function Disk({ params }) {
       <button class="button" disabled=${action.busy} onClick=${() => test('long', `Run an extended self-test? It reads the whole disk${polling?.extended ? `, about ${Math.round(polling.extended / 60)} hours` : ''}; the disk stays usable meanwhile.`)}>Extended test</button>`}
   </span>` : null;
 
-  return html`<${Page} title=${`${d.name}${d.model ? ` · ${d.model}` : ''}`} subtitle=${back} actions=${actions}>
+  return html`<${Page} title=${`${d.name}${d.model ? ` · ${d.model}` : ''}`} back=${back} actions=${actions}>
     <${Notice} error=${action.error} />
     ${h.error ? html`<${Notice} tone="info">No SMART data: ${h.error}<//>` : null}
     ${h.asleep ? html`<${Notice} tone="info">The disk is in standby, so it was left alone${r ? '' : ' and nothing new was read'}.

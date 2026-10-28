@@ -51,12 +51,12 @@ export function createMount({ routes, api: wrap, envelope = true }) {
     }
     const props = match && {
       api, client, params: match.params, query: ctx.query,
-      navigate: ctx.navigate, href: ctx.href, link: ctx.link,
+      navigate: ctx.navigate, href: ctx.href, link: ctx.link, beforeLeave: ctx.beforeLeave,
       // Filters live in the query string so views are shareable.
       setQuery: patch => ctx.navigate(ctx.path + search({ ...ctx.query, ...patch }), { replace: true }),
     };
     return html`<div class="module-root">
-      ${match ? html`<${Lazy} key=${match.route.path} route=${match.route} loaded=${loaded} props=${props} />` : html`<${Notice}>Page not found<//>`}
+      ${match ? html`<${Lazy} key=${ctx.path} route=${match.route} loaded=${loaded} props=${props} />` : html`<${Notice}>Page not found<//>`}
       <${DialogHost} />
       <${Toaster} />
     </div>`;

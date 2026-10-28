@@ -24,14 +24,17 @@ PLATFORMS := \
 	darwin/arm64 \
 	freebsd/amd64
 
-.PHONY: build test deps dist clean $(PLATFORMS)
+.PHONY: build test test-ui deps dist clean $(PLATFORMS)
 
 build: deps
 	CGO_ENABLED=0 go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o ohmyserver ./cmd/ohmyserver
 
-test: deps
+test: deps test-ui
 	go vet ./...
 	go test ./...
+
+test-ui:
+	node --test internal/shell/ui/navigation.test.mjs
 
 deps: $(addsuffix /node_modules,$(UIS))
 

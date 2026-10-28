@@ -13,7 +13,8 @@ export default function Packages() {
   const system = useSystem();
   const s = system.data;
   const tab = query.tab || 'installed';
-  const [info, setInfo] = useState(null);
+  const info = query.info || '';
+  const setInfo = name => setQuery({ info: name || '' });
   const busy = Boolean(s?.running);
 
   if (!s) return html`<${Page} title="Packages">${system.error ? html`<${Notice} error=${system.error} />` : html`<${Loading} />`}<//>`;
@@ -23,10 +24,10 @@ export default function Packages() {
     <${RunningJob} job=${s.running} />
     <${Tabs} active=${tab} onChange=${id => setQuery({ tab: id === 'installed' ? '' : id })}
       tabs=${[['installed', 'Installed'], ['updates', 'Updates'], ['search', 'Search']]} />
+    ${info ? html`<${PackageInfo} key=${info} name=${info} onClose=${() => setInfo(null)} />` : null}
     ${tab === 'updates' ? html`<${Updates} ...${props} />`
       : tab === 'search' ? html`<${Search} ...${props} />`
       : html`<${Installed} ...${props} />`}
-    ${info ? html`<${PackageInfo} name=${info} onClose=${() => setInfo(null)} />` : null}
   <//>`;
 }
 

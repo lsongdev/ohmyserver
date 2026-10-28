@@ -15,7 +15,7 @@ export default function Service({ params }) {
   const title = unitLabel(name);
 
   if (!service.data) {
-    return html`<${Page} title=${title} subtitle=${html`<a href=${href('/')}>← Services</a>`}>
+    return html`<${Page} title=${title} back=${{ href: href('/'), label: 'Services' }}>
       ${service.error?.code === 'unsupported' ? html`<${Unsupported} />` : service.error ? html`<${Notice} error=${service.error} />` : html`<${Loading} />`}
     <//>`;
   }
@@ -48,7 +48,7 @@ export default function Service({ params }) {
   }
   const exit = s.result && s.result !== 'success' ? `${s.result}${s.exit_status ? ` (exit status ${s.exit_status})` : ''}` : null;
 
-  return html`<${Page} title=${title} subtitle=${html`<a href=${href('/')}>← Services</a>${s.description ? ` · ${s.description}` : ''}`}
+  return html`<${Page} title=${title} back=${{ href: href('/'), label: 'Services' }} subtitle=${s.description}
     actions=${html`<span class="button-row">${buttons}</span>`}>
     ${s.guarded ? html`<${Notice} tone="info">Starting this service shuts down, reboots or switches the system to rescue mode, so the panel leaves it to a shell.<//>` : null}
     ${s.self ? html`<${Notice} tone="info">This service runs the panel. It can be restarted from here; stop or disable it from a shell.<//>` : null}

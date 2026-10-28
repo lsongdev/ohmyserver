@@ -20,4 +20,8 @@
 .copy-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .copy-row code { overflow-wrap: anywhere; }
 .secret-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; gap: 8px; align-items: center; }
+@media (max-width: 600px) {
+  .secret-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .secret-row > input:first-child { grid-column: 1 / -1; }
+}
 .example { margin: 0; padding: 12px; border-radius: var(--radius); background: var(--surface-2); font: 12.5px/1.5 var(--mono); white-space: pre; overflow-x: auto; }

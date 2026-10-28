@@ -11,12 +11,12 @@ export default function Account({ params }) {
   const kinds = useApi('/kinds');
   const account = useApi(isNew ? null : `/accounts/${params.id}`);
   const title = isNew ? 'Add account' : account.data ? account.data.name : 'Account';
-  const back = html`<a href=${href('/accounts')}>← Accounts</a>`;
+  const back = { href: href('/accounts'), label: 'Accounts' };
   if (!kinds.data || (!isNew && !account.data)) {
-    return html`<${Page} title=${title} subtitle=${back}>${kinds.error || account.error
+    return html`<${Page} title=${title} back=${back}>${kinds.error || account.error
       ? html`<${Notice} error=${kinds.error || account.error} />` : html`<${Loading} />`}<//>`;
   }
-  return html`<${Page} title=${title} subtitle=${back}><${AccountForm} kinds=${kinds.data} account=${account.data} /><//>`;
+  return html`<${Page} title=${title} back=${back}><${AccountForm} kinds=${kinds.data} account=${account.data} /><//>`;
 }
 
 function AccountForm({ kinds, account }) {
