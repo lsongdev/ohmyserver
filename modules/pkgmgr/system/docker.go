@@ -66,7 +66,13 @@ func (d *Docker) Status(ctx context.Context) DockerStatus {
 			s.Version = version
 		}
 	}
-	if out, err := d.Run.Output(ctx, nil, "systemctl", "is-active", "docker"); err == nil || len(out) > 0 {
+	if d.Manager != nil && d.Manager.Name() == "brew" {
+		// No systemd: ask the daemon (Docker Desktop, OrbStack, colima).
+		if s.Installed {
+			_, err := d.Run.Output(ctx, nil, "docker", "info", "--format", "{{.ServerVersion}}")
+			s.Running = err == nil
+		}
+	} else if out, err := d.Run.Output(ctx, nil, "systemctl", "is-active", "docker"); err == nil || len(out) > 0 {
 		s.Running = strings.TrimSpace(string(out)) == "active"
 	}
 	return s
@@ -102,6 +108,8 @@ enabled=1
 gpgcheck=1
 gpgkey=%[1]s/linux/%[2]s/gpg
 `, base, distro, release)}, nil
+	case d.Manager.Name() == "brew":
+		return repository{}, errors.New("Docker Engine runs on Linux; on macOS install Docker Desktop or OrbStack (brew install --cask orbstack)")
 	default: // apt
 		distro := "debian"
 		if d.OS.Is("ubuntu") {

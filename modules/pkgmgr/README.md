@@ -1,11 +1,14 @@
 # pkgmgr
 
-Manage a Linux server's packages from the browser: list what is installed,
+Manage a server's packages from the browser: list what is installed,
 check for and apply updates, search the repositories, install and remove
 packages, and install Docker Engine the way Docker recommends.
 
 It drives the system's own package manager: **dnf** (Fedora, RHEL, Rocky,
-AlmaLinux, Alibaba Cloud Linux, …) or **apt** (Debian, Ubuntu). Changes run
+AlmaLinux, Alibaba Cloud Linux, …), **apt** (Debian, Ubuntu) or
+**Homebrew** (macOS; formulae and casks). Homebrew refuses to run as root,
+so on macOS the panel runs as the user who owns the installation, and the
+Docker recipe points to Docker Desktop or OrbStack instead. Changes run
 as jobs, one at a time, and the UI follows their output. A package
 transaction is never interrupted: stopping the server waits for the running
 job.

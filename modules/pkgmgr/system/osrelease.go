@@ -21,13 +21,31 @@ type OS struct {
 	PrettyName string   `json:"name"`
 }
 
-// ReadOS reads root/etc/os-release (or root/usr/lib/os-release).
+// ReadOS reads root/etc/os-release (or root/usr/lib/os-release), or on
+// macOS its SystemVersion.plist.
 func ReadOS(root string) OS {
 	data, err := os.ReadFile(filepath.Join(root, "etc", "os-release"))
 	if err != nil {
-		data, _ = os.ReadFile(filepath.Join(root, "usr", "lib", "os-release"))
+		data, err = os.ReadFile(filepath.Join(root, "usr", "lib", "os-release"))
+	}
+	if err != nil {
+		if mac, err := os.ReadFile(filepath.Join(root, "System", "Library", "CoreServices", "SystemVersion.plist")); err == nil {
+			return parseMacOS(mac)
+		}
 	}
 	return parseOS(data)
+}
+
+var plistString = regexp.MustCompile(`<key>(ProductName|ProductVersion)</key>\s*<string>([^<]*)</string>`)
+
+// parseMacOS reads ProductName and ProductVersion from SystemVersion.plist.
+func parseMacOS(data []byte) OS {
+	values := map[string]string{}
+	for _, m := range plistString.FindAllSubmatch(data, -1) {
+		values[string(m[1])] = string(m[2])
+	}
+	name := cmpOr(values["ProductName"], "macOS")
+	return OS{ID: "macos", Version: values["ProductVersion"], PrettyName: strings.TrimSpace(name + " " + values["ProductVersion"])}
 }
 
 func parseOS(data []byte) OS {

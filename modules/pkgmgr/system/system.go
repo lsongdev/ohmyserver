@@ -1,6 +1,6 @@
 // Package system drives the host's package manager through its command-line
 // tools: dnf on Fedora and Enterprise Linux (RHEL, Rocky, AlmaLinux, Alibaba
-// Cloud Linux, …) and apt on Debian and Ubuntu.
+// Cloud Linux, …), apt on Debian and Ubuntu, and Homebrew on macOS.
 //
 // Commands run with LC_ALL=C so their output parses the same everywhere,
 // and never through a shell: package names are validated and passed as
@@ -40,7 +40,7 @@ type Update struct {
 // Manager is a package manager. Methods that change the system stream
 // their output, one line at a time, to out.
 type Manager interface {
-	Name() string // "dnf" or "apt"
+	Name() string // "dnf", "apt" or "brew"
 	Installed(ctx context.Context) ([]Package, error)
 	// Updates lists newer versions from the cached repository metadata;
 	// Refresh downloads fresh metadata.
@@ -58,7 +58,7 @@ type Manager interface {
 }
 
 // ErrUnsupported means no supported package manager was found.
-var ErrUnsupported = errors.New("no supported package manager (dnf or apt) on this system")
+var ErrUnsupported = errors.New("no supported package manager (dnf, apt or brew) on this system")
 
 // ErrInvalid wraps rejected input, such as a malformed package name.
 var ErrInvalid = errors.New("invalid")
@@ -72,6 +72,10 @@ func Detect(run Runner) (Manager, error) {
 		if _, err := exec.LookPath("dpkg-query"); err == nil {
 			return &APT{run: run}, nil
 		}
+	}
+	// Homebrew last: on Linux the system's own manager comes first.
+	if _, err := exec.LookPath("brew"); err == nil {
+		return &Brew{run: run}, nil
 	}
 	return nil, ErrUnsupported
 }
