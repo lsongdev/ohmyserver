@@ -1,0 +1,13 @@
+{
+  "contract": 1,
+  "id": "domains",
+  "title": "Domains",
+  "icon": "◎",
+  "entry": "module.js",
+  "styles": ["stylesheets.css", "style.css", "domains.css"],
+  "home": "/",
+  "nav": [
+    { "path": "/", "title": "Domains", "icon": "◎" },
+    { "path": "/accounts", "title": "Accounts", "icon": "⚿" }
+  ]
+}

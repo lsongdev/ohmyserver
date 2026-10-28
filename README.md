@@ -25,6 +25,7 @@ Modules that are still small and change with the panel live in
 | Services (systemd) and logs (journal) | [modules/svcmgr](modules/svcmgr) | `svcmgr` |
 | Disks (capacity, RAID, SMART health) | [modules/diskmgr](modules/diskmgr) | `diskmgr` |
 | Files (browse, edit, upload, download, move, copy) | [modules/filemgr](modules/filemgr) | `filemgr` |
+| Domains at DNS providers (Cloudflare), and DNS-01 for certificates | [modules/domains](modules/domains) | `domains` |
 
 Every module follows the [module contract](docs/module-contract.md): an API
 handler, assets with a `manifest.json`, and a `mount(el, ctx)` entry point.
@@ -45,8 +46,8 @@ This repository holds the assembly:
   serves acme-go's certificates and answers its HTTP-01 challenges, and
   docker-go apps with a domain become gateway sites with a certificate.
 - `dns` connects dns-go the same way: DNS-01 challenges for zones dns-go
-  serves authoritatively are published there automatically (other names
-  stay manual), DoT/DoH listeners with `tls: true` serve acme-go's
+  serves authoritatively are published there automatically, and for zones
+  a domains account (Cloudflare) holds, there (other names stay manual), DoT/DoH listeners with `tls: true` serve acme-go's
   certificates, and an app domain inside a zone dns-go manages gets an
   address record pointing at `-host`.
 - `cron` lets scheduled jobs run on the SSH module's saved hosts as well as on this

@@ -4,7 +4,9 @@
 //
 //   - acme-go's api.DNSProvider (and api.DNSScope): DNS-01 challenges for
 //     names in a zone dns-go serves authoritatively are published as TXT
-//     records automatically; other names stay manual.
+//     records automatically. Sources combines that with other sources,
+//     such as the domains module's provider accounts (Cloudflare, …);
+//     names none covers stay manual.
 //   - dns-go's certificate source: DoT and DoH listeners with "tls: true"
 //     serve the certificates acme-go issues.
 //   - gateway.Records: a docker-go app's domain gets an address record when
