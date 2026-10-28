@@ -80,7 +80,7 @@ func respond(w http.ResponseWriter, status int, data any, err error) {
 	case errors.Is(err, ErrBusy):
 		writeError(w, http.StatusConflict, "busy", "Another job is running: wait for it to finish")
 	case errors.Is(err, system.ErrUnsupported):
-		writeError(w, http.StatusServiceUnavailable, "unsupported", "No supported package manager (dnf, apt or brew) on this system")
+		writeError(w, http.StatusServiceUnavailable, "unsupported", "No supported package manager (dnf, apt, pacman or brew) on this system")
 	default:
 		writeError(w, http.StatusBadGateway, "command_failed", err.Error())
 	}

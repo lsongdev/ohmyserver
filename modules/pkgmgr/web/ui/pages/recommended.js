@@ -40,11 +40,11 @@ function Docker({ system }) {
         ${!d.running ? html`<span class="muted small">${system.manager === 'brew'
           ? 'Start Docker Desktop or OrbStack.' : html`Start it with <code>systemctl start docker</code>.`}</span>` : null}
       </div>` : d.unsupported ? html`<${Notice} tone="warn">${d.unsupported}.<//>` : html`
-      <${Field} label="Download from">
+      ${system.manager === 'pacman' ? html`<p class="muted small">Arch Linux packages Docker in its own repositories.</p>` : html`<${Field} label="Download from">
         <select class="input" value=${source} onChange=${e => setSource(e.currentTarget.value)}>
           ${d.sources.map(s => html`<option key=${s.id} value=${s.id}>${s.title}</option>`)}
         </select>
-      <//>
+      <//>`}
       <div class="button-row">
         <button class="button button-primary" disabled=${Boolean(system.running)} onClick=${install}>Install Docker</button>
       </div>`}

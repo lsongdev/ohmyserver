@@ -31,6 +31,9 @@ var DockerSources = []DockerSource{
 // and Compose plugins.
 var dockerPackages = []string{"docker-ce", "docker-ce-cli", "containerd.io", "docker-buildx-plugin", "docker-compose-plugin"}
 
+// archDockerPackages are the same from Arch Linux's own repositories.
+var archDockerPackages = []string{"docker", "docker-buildx", "docker-compose"}
+
 // Docker installs Docker Engine from Docker's repositories, following
 // https://docs.docker.com/engine/install/.
 type Docker struct {
@@ -108,6 +111,8 @@ enabled=1
 gpgcheck=1
 gpgkey=%[1]s/linux/%[2]s/gpg
 `, base, distro, release)}, nil
+	case d.Manager.Name() == "pacman":
+		return repository{}, nil // Arch packages Docker in its own repositories
 	case d.Manager.Name() == "brew":
 		return repository{}, errors.New("Docker Engine runs on Linux; on macOS install Docker Desktop or OrbStack (brew install --cask orbstack)")
 	default: // apt
@@ -160,16 +165,21 @@ func (d *Docker) Install(ctx context.Context, sourceID string, out func(string))
 			return err
 		}
 	}
-	out("Adding the repository /" + repo.file)
-	if err := d.write(repo.file, []byte(repo.content)); err != nil {
-		return err
+	packages := dockerPackages
+	if repo.file != "" {
+		out("Adding the repository /" + repo.file)
+		if err := d.write(repo.file, []byte(repo.content)); err != nil {
+			return err
+		}
+	} else {
+		packages = archDockerPackages
 	}
 	if d.Manager.Name() == "apt" {
 		if err := d.Manager.Refresh(ctx, out); err != nil {
 			return err
 		}
 	}
-	if err := d.Manager.Install(ctx, dockerPackages, out); err != nil {
+	if err := d.Manager.Install(ctx, packages, out); err != nil {
 		return err
 	}
 	if _, err := os.Stat(filepath.Join(d.Root, "run", "systemd", "system")); err != nil {
