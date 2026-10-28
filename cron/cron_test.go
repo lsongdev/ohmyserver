@@ -102,7 +102,7 @@ func TestSSHHosts(t *testing.T) {
 	}
 
 	var out bytes.Buffer
-	code, err := r.Run(ctx, target, runner.Command{Script: "pwd; echo $((6*7)); exit 5", Dir: "/tmp/it's here/.."}, &out)
+	code, err := r.Run(ctx, target, runner.Command{Script: "pwd; echo $((6*7)); exit 5", Dir: "/nonexistent/it's here"}, &out)
 	// The directory does not exist: nothing of the script runs.
 	if err != nil || code != 1 || bytes.Contains(out.Bytes(), []byte("42")) {
 		t.Fatalf("missing directory: code %d err %v out %q", code, err, out.String())
