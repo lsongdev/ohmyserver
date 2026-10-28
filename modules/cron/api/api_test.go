@@ -179,8 +179,14 @@ func TestCancelTimeoutAndOverlap(t *testing.T) {
 	var run store.Run
 	e.call("POST", "/jobs/1/run", nil, 202, &run)
 	e.call("POST", "/jobs/1/run", nil, 409, nil) // already running
+	// The runner writes its first line in the background.
 	var live store.Run
-	e.call("GET", fmt.Sprintf("/runs/%d", run.ID), nil, 200, &live)
+	for deadline := time.Now().Add(5 * time.Second); ; time.Sleep(10 * time.Millisecond) {
+		e.call("GET", fmt.Sprintf("/runs/%d", run.ID), nil, 200, &live)
+		if live.Output != "" || time.Now().After(deadline) {
+			break
+		}
+	}
 	if live.Status != store.StatusRunning || live.Output != "block on fake:a\n" {
 		t.Fatalf("live %+v", live)
 	}
