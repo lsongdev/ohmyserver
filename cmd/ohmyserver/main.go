@@ -59,6 +59,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+// version is set at build time: -ldflags "-X main.version=2026.10.28".
+var version = "dev"
+
 const usage = `usage: ohmyserver [flags]
 
 Serves the OhMyServer panel. Set OHMYSERVER_PASSWORD to require signing in.
@@ -82,7 +85,12 @@ func main() {
 	acmeRetryDelay := flag.Duration("acme-retry-delay", time.Minute, "initial backoff for a failed certificate issuance")
 	acmeValidationTimeout := flag.Duration("acme-validation-timeout", 5*time.Minute, "ACME authorization validation budget per attempt")
 	acmeOrderTimeout := flag.Duration("acme-order-timeout", 10*time.Minute, "ACME finalization and download budget per attempt")
+	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
+	if *showVersion {
+		fmt.Println(version)
+		return
+	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
@@ -320,7 +328,7 @@ func run(cfg config, logger *slog.Logger) error {
 	}
 	defer host.Close() // closes the modules after the server stops
 
-	logger.Info("panel listening", "url", "http://"+cfg.listen, "data", dataDir)
+	logger.Info("panel listening", "url", "http://"+cfg.listen, "data", dataDir, "version", version)
 	return shell.ListenAndServe(ctx, cfg.listen, host.Handler())
 }
 

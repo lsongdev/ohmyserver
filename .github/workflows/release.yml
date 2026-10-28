@@ -1,0 +1,76 @@
+name: release
+
+# Every push to master publishes binaries as a release tagged with the UTC
+# date (2026.10.28); a later push on the same day replaces that day's
+# release. Pull requests only run the tests. Tags have no "v" prefix on
+# purpose: Go would read v2026.x.y as major version 2026.
+#
+# The panel builds against sibling checkouts of the modules that are
+# projects of their own (go.work), so each is checked out next to this
+# repository at its default branch; the release notes record their
+# commits. Those repositories are public, so no token is needed.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      MODULES: acme-go dhcp-go dns-go docker-go forward-go smartctl-go yabber
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ohmyserver
+      - uses: actions/checkout@v4
+        with: { repository: lsongdev/acme-go, path: acme-go }
+      - uses: actions/checkout@v4
+        with: { repository: lsongdev/dhcp-go, path: dhcp-go }
+      - uses: actions/checkout@v4
+        with: { repository: lsongdev/dns-go, path: dns-go }
+      - uses: actions/checkout@v4
+        with: { repository: lsongdev/docker-go, path: docker-go }
+      - uses: actions/checkout@v4
+        with: { repository: lsongdev/forward-go, path: forward-go }
+      - uses: actions/checkout@v4
+        with: { repository: lsongdev/smartctl-go, path: smartctl-go }
+      - uses: actions/checkout@v4
+        with: { repository: lsongdev/yabber, path: yabber }
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ohmyserver/go.mod
+          cache-dependency-path: ohmyserver/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test
+        working-directory: ohmyserver
+        run: make test
+      - name: Build
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        working-directory: ohmyserver
+        run: |
+          echo "VERSION=$(date -u +%Y.%m.%d)" >> "$GITHUB_ENV"
+          make -j4 dist VERSION="$(date -u +%Y.%m.%d)"
+      - name: Publish
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        working-directory: ohmyserver
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="Built from ${GITHUB_SHA::7}, with:"
+          for m in $MODULES; do notes="$notes"$'\n'"- $m $(git -C ../$m rev-parse --short HEAD)"; done
+          notes="$notes"$'\n\n'"SHA256SUMS lists every file."
+          gh release delete "$VERSION" --cleanup-tag --yes 2>/dev/null || true
+          git push --delete origin "refs/tags/$VERSION" 2>/dev/null || true
+          gh release create "$VERSION" dist/* --target "$GITHUB_SHA" --title "$VERSION" --notes "$notes"
