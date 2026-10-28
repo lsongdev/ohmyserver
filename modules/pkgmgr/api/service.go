@@ -226,6 +226,9 @@ func (s *Service) Start(req JobRequest) (*Job, error) {
 			return m.Remove(ctx, req.Packages, out)
 		}
 	case "upgrade":
+		if len(req.Packages) > 0 && m.Name() == "pacman" {
+			return nil, fmt.Errorf("%w upgrade: %v", system.ErrInvalid, system.ErrPartialUpgrade)
+		}
 		title = "Upgrade " + names
 		if len(req.Packages) == 0 {
 			title = "Upgrade all packages"

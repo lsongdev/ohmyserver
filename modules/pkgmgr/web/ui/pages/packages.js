@@ -69,9 +69,15 @@ function Installed({ busy, onInfo }) {
 
 function Updates({ busy, onInfo }) {
   const list = useApi('/updates');
+  const system = useSystem();
   const start = useStartJob();
   const updates = list.data || [];
-  const all = () => confirmDanger(`Upgrade all ${updates.length} packages?`) && start({ action: 'upgrade', packages: [] });
+  // Arch upgrades the whole system at once (pacman -Syu), never some
+  // packages only.
+  const whole = system.data?.manager === 'pacman';
+  const all = () => confirmDanger(whole
+    ? `Upgrade the whole system (pacman -Syu), ${updates.length} packages including the kernel if listed? Packages tied to the kernel, such as ZFS modules from other repositories, can block or break the upgrade.`
+    : `Upgrade all ${updates.length} packages?`) && start({ action: 'upgrade', packages: [] });
   return html`
     <div class="toolbar">
       <button class="button" disabled=${busy} onClick=${() => start({ action: 'refresh' })}
@@ -79,6 +85,7 @@ function Updates({ busy, onInfo }) {
       ${updates.length ? html`<button class="button button-primary" disabled=${busy} onClick=${all}>Upgrade all (${updates.length})</button>` : null}
     </div>
     <${Notice} error=${list.error} />
+    ${whole && updates.length ? html`<p class="muted small">Arch Linux upgrades the whole system at once; single packages cannot be upgraded.</p>` : null}
     ${!list.data ? (list.error ? null : html`<${Loading}>Reading the package lists…<//>`) : updates.length === 0
       ? html`<${Empty}>Everything is up to date, as of the last package list refresh.<//>` : html`
       <${Table}>
@@ -88,8 +95,8 @@ function Updates({ busy, onInfo }) {
           <td class="version muted">${u.current || '—'}</td>
           <td class="version">${u.version}</td>
           <td class="muted">${u.repo}</td>
-          <td class="actions"><button class="button button-small" disabled=${busy}
-            onClick=${() => start({ action: 'upgrade', packages: [u.arch ? `${u.name}.${u.arch}` : u.name] })}>Upgrade</button></td>
+          <td class="actions">${whole ? null : html`<button class="button button-small" disabled=${busy}
+            onClick=${() => start({ action: 'upgrade', packages: [u.arch ? `${u.name}.${u.arch}` : u.name] })}>Upgrade</button>`}</td>
         </tr>`)}</tbody>
       <//>`}`;
 }
