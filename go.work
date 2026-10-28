@@ -4,6 +4,7 @@ go 1.26.1
 use (
 	.
 	../acme-go
+	../dhcp-go
 	../dns-go
 	../docker-go
 	../forward-go
@@ -14,6 +15,7 @@ use (
 // Modules are not tagged yet; resolve them from the checkouts above.
 replace (
 	github.com/lsongdev/acme-go v0.0.0 => ../acme-go
+	github.com/lsongdev/dhcp-go v0.0.0 => ../dhcp-go
 	github.com/lsongdev/dns-go v0.0.0 => ../dns-go
 	github.com/lsongdev/docker-go v0.0.0 => ../docker-go
 	github.com/lsongdev/forward-go v0.0.0 => ../forward-go

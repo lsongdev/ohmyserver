@@ -10,6 +10,7 @@ own that also run on their own:
 | Gateway (reverse proxy, TLS) | yabber | `yabber run -admin …` |
 | DNS (resolver, filtering, zones) | dns-go | `dns-go -config …` |
 | Port forwarding (TCP/UDP) | forward-go | `forward-go` |
+| DHCP server (leases, reservations) | dhcp-go | `dhcp-go -config …` |
 
 Modules that are still small and change with the panel live in
 [`modules/`](modules) until they are mature enough to stand on their own:

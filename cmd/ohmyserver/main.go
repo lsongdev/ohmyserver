@@ -3,7 +3,7 @@
 // cooperate.
 //
 // Each module is an independent project that also runs on its own
-// (docker-go, acme, yabber, dns-go, forward-go, ssh-go, cron-go,
+// (docker-go, acme, yabber, dns-go, dhcp-go, forward-go, ssh-go, cron-go,
 // monitor-go, ci-go) and follows the module contract
 // (docs/module-contract.md). This command only assembles them: it builds
 // each module, gives it the shared database or a store backed by it,
@@ -29,6 +29,7 @@ import (
 	"github.com/lsongdev/acme-go/acme"
 	acmeapi "github.com/lsongdev/acme-go/api"
 	acmeweb "github.com/lsongdev/acme-go/web"
+	dhcpweb "github.com/lsongdev/dhcp-go/web"
 	dnsconfig "github.com/lsongdev/dns-go/config"
 	dnsweb "github.com/lsongdev/dns-go/web"
 	dockerweb "github.com/lsongdev/docker-go/web"
@@ -273,6 +274,13 @@ func run(cfg config, logger *slog.Logger) error {
 		return fmt.Errorf("files: %w", err)
 	}
 
+	// DHCP server: off until it is turned on in its settings, since a
+	// second DHCP server on a network hands out conflicting addresses.
+	dhcpServer, err := dhcpweb.New(ctx, db, dhcpweb.Options{Logger: logger})
+	if err != nil {
+		return fmt.Errorf("dhcp: %w", err)
+	}
+
 	opts := shell.Options{
 		Title: "OhMyServer", Home: "home",
 		Titles: map[string]string{"acme": "Certificates", "yabber": "Gateway"},
@@ -290,7 +298,7 @@ func run(cfg config, logger *slog.Logger) error {
 			Forward: forwarder.Service, SSH: terminals.Service, Cron: scheduler.Service, Monitor: monitoring.Service,
 			CI: builds.Service,
 		}),
-		docker, certs, yabberweb.New(management), dnsServer, forwarder, terminals, scheduler, monitoring, builds, packages, services, disks, fileManager,
+		docker, certs, yabberweb.New(management), dnsServer, dhcpServer, forwarder, terminals, scheduler, monitoring, builds, packages, services, disks, fileManager,
 	)
 	if err != nil {
 		return err
