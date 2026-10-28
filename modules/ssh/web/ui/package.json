@@ -4,7 +4,7 @@
   "description": "Browser dependencies of this UI, embedded by Go from node_modules (npm ci).",
   "dependencies": {
     "@lsongdev/scripts": "0.1.0-rc.4",
-    "@lsongdev/stylesheets": "1.2.0",
+    "@lsongdev/stylesheets": "1.2.1",
     "@xterm/addon-fit": "0.11.0",
     "@xterm/xterm": "6.0.0"
   }
