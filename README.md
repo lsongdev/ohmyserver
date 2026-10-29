@@ -40,7 +40,8 @@ This repository holds the assembly:
   `/m/<id>/ui/`, and renders each module into its own shadow root, passing
   the theme through the @lsongdev/stylesheets CSS variables.
 - `internal/stores` keeps the state of modules that use files on their own
-  (docker-go's install records, yabber's configuration) in the shared
+  (docker-go's install records, yabber's configuration, forward-go's
+  rules, dhcp-go's settings, reservations and leases) in the shared
   database, by implementing their store interfaces.
 - `gateway` connects modules through interfaces they define: the gateway
   serves acme-go's certificates and answers its HTTP-01 challenges, and

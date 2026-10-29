@@ -29,6 +29,7 @@ import (
 	"github.com/lsongdev/acme-go/acme"
 	acmeapi "github.com/lsongdev/acme-go/api"
 	acmeweb "github.com/lsongdev/acme-go/web"
+	dhcpweb "github.com/lsongdev/dhcp-go/web"
 	dnsconfig "github.com/lsongdev/dns-go/config"
 	dnsweb "github.com/lsongdev/dns-go/web"
 	dockerweb "github.com/lsongdev/docker-go/web"
@@ -43,7 +44,6 @@ import (
 	ciweb "github.com/lsongdev/ohmyserver/modules/ci/web"
 	"github.com/lsongdev/ohmyserver/modules/cron/runner"
 	cronweb "github.com/lsongdev/ohmyserver/modules/cron/web"
-	"github.com/lsongdev/ohmyserver/modules/dhcp"
 	diskmgr "github.com/lsongdev/ohmyserver/modules/diskmgr/web"
 	domainsweb "github.com/lsongdev/ohmyserver/modules/domains/web"
 	filemgr "github.com/lsongdev/ohmyserver/modules/filemgr/web"
@@ -277,7 +277,11 @@ func run(cfg Config, logger *slog.Logger) error {
 
 	// DHCP server: off until it is turned on in its settings, since a
 	// second DHCP server on a network hands out conflicting addresses.
-	dhcpServer, err := dhcp.New(ctx, db, dhcp.Options{Logger: logger})
+	dhcpState, err := stores.NewDHCP(ctx, db)
+	if err != nil {
+		return err
+	}
+	dhcpServer, err := dhcpweb.New(ctx, dhcpState, dhcpweb.Options{Logger: logger})
 	if err != nil {
 		return fmt.Errorf("dhcp: %w", err)
 	}
