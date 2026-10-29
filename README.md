@@ -49,7 +49,7 @@ This repository holds the assembly:
   serves authoritatively are published there automatically, and for zones
   a domains account (Cloudflare) holds, there (other names stay manual), DoT/DoH listeners with `tls: true` serve acme-go's
   certificates, and an app domain inside a zone dns-go manages gets an
-  address record pointing at `-host`.
+  address record pointing at `host` (config.yaml).
 - `cron` lets scheduled jobs run on the SSH module's saved hosts as well as on this
   machine, with the hosts' stored credentials and pinned host keys.
 - `monitor` lets the monitor module read the SSH module's saved Linux hosts over SSH, with
@@ -70,15 +70,23 @@ This repository holds the assembly:
   directories cannot be deleted or moved.
 
 The SSH and cron modules run commands on this machine and every saved
-host, so set `OHMYSERVER_PASSWORD` whenever the panel listens beyond
+host, so set a `password` whenever the panel listens beyond
 loopback.
 - `cmd/ohmyserver` opens the shared SQLite database (`<data>/ohmyserver.db`),
-  builds every module and mounts them. The data directory is
-  `~/.ohmyserver` unless `-data` says otherwise.
+  builds every module and mounts them.
+
+Settings come from `<dir>/config.yaml`, where `<dir>` is `-d` (default
+`~/.ohmyserver`); without the file every setting takes its default.
+[`config.yaml.example`](config.yaml.example) documents each one: the
+panel's `listen` address, `data` directory (`<dir>` itself by default),
+sign-in `password` (`OHMYSERVER_PASSWORD` overrides it), apps `host`, the
+first-run gateway and DNS listeners, and the ACME timeouts and retries.
+For development, copy it to `config.yaml` in the checkout (git-ignored):
 
 ```sh
 make deps     # npm ci in each UI: its browser dependencies
-OHMYSERVER_PASSWORD=… go run ./cmd/ohmyserver -listen 127.0.0.1:8080
+cp config.yaml.example config.yaml   # then set data: ./data
+go run ./cmd/ohmyserver -d .
 ```
 
 Each UI, the shell's (`internal/shell/ui/static`) and every module's
@@ -91,26 +99,24 @@ to start and says so.
 
 On a server it runs as a systemd service:
 [`contrib/systemd/ohmyserver.service`](contrib/systemd/ohmyserver.service)
-explains installing it, with the password and the machine's own flags in
-`/etc/ohmyserver.env`.
+explains installing it, with its configuration in
+`/var/lib/ohmyserver/config.yaml`.
 
-The gateway listens on :80 and :443 by default; `-gateway-http` and
-`-gateway-https` choose other addresses for a new installation, after which
+The gateway listens on :80 and :443 by default; `gateway.http` and
+`gateway.https` choose other addresses for a new installation, after which
 the configuration is edited in the panel. Likewise the DNS server starts as
-a forwarding resolver on :53 (UDP and TCP, `-dns-listen` for a new
+a forwarding resolver on :53 (UDP and TCP, `dns.listen` for a new
 installation); its listeners, upstreams and mode are then changed under
 DNS → Settings and take effect at once. A listener that cannot bind (a port
 taken, or :53 without the privilege) shows in the overview instead of
 stopping the panel.
 
-ACME network and recovery settings are passed to acme-go. Defaults are a
-60-second request timeout, 30-second TLS handshake timeout, four safe-read
-attempts and four issuance attempts with backoff starting at one minute.
-Override them with `-acme-request-timeout`, `-acme-tls-timeout`,
-`-acme-request-attempts`, `-acme-issuance-attempts` and `-acme-retry-delay`.
-`-acme-validation-timeout` (5m) bounds each authorization wait;
-`-acme-order-timeout` (10m) bounds finalization and certificate download.
-An attempt limit of 1 disables retries at that layer. Unfinished issuances
+ACME network and recovery settings (the `acme` section) are passed to
+acme-go. Defaults are a 60-second request timeout, 30-second TLS handshake
+timeout, four safe-read attempts and four issuance attempts with backoff
+starting at one minute; `validation_timeout` (5m) bounds each
+authorization wait and `order_timeout` (10m) finalization and certificate
+download. An attempt limit of 1 disables retries at that layer. Unfinished issuances
 resume from their saved order and key after restart; the certificate panel
 shows attempt counts and the next retry time.
 

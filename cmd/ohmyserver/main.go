@@ -62,29 +62,20 @@ import (
 // version is set at build time: -ldflags "-X main.version=2026.10.28".
 var version = "dev"
 
-const usage = `usage: ohmyserver [flags]
+const defaultCatalog = dockerweb.DefaultCatalog
 
-Serves the OhMyServer panel. Set OHMYSERVER_PASSWORD to require signing in.
+const usage = `usage: ohmyserver [-d dir]
+
+Serves the OhMyServer panel with the settings in <dir>/config.yaml (see
+config.yaml.example); without that file every setting takes its default.
+Set OHMYSERVER_PASSWORD to require signing in instead of setting password.
 
 Flags:
 `
 
 func main() {
 	flag.Usage = func() { fmt.Fprint(flag.CommandLine.Output(), usage); flag.PrintDefaults() }
-	listen := flag.String("listen", "127.0.0.1:8080", "panel listen address")
-	dataDir := flag.String("data", defaultDataDir(), "data directory: the shared database and one subdirectory per module")
-	appsHost := flag.String("host", "", "address users reach installed apps at (default: derived from -listen)")
-	catalog := flag.String("catalog", dockerweb.DefaultCatalog, `app catalog git repository ("-": use the local copy as is)`)
-	gatewayHTTP := flag.String("gateway-http", ":80", "gateway HTTP listener for a new installation")
-	gatewayHTTPS := flag.String("gateway-https", ":443", "gateway HTTPS listener for a new installation")
-	dnsListen := flag.String("dns-listen", ":53", "DNS listener (UDP and TCP) for a new installation")
-	acmeRequestTimeout := flag.Duration("acme-request-timeout", time.Minute, "ACME single HTTP request timeout")
-	acmeTLSTimeout := flag.Duration("acme-tls-timeout", 30*time.Second, "ACME TLS handshake timeout")
-	acmeRequestAttempts := flag.Int("acme-request-attempts", 4, "maximum attempts for a safe ACME read (1 disables retries)")
-	acmeIssuanceAttempts := flag.Int("acme-issuance-attempts", 4, "maximum background attempts per certificate issuance")
-	acmeRetryDelay := flag.Duration("acme-retry-delay", time.Minute, "initial backoff for a failed certificate issuance")
-	acmeValidationTimeout := flag.Duration("acme-validation-timeout", 5*time.Minute, "ACME authorization validation budget per attempt")
-	acmeOrderTimeout := flag.Duration("acme-order-timeout", 10*time.Minute, "ACME finalization and download budget per attempt")
+	dir := flag.String("d", defaultDir(), "configuration directory, holding config.yaml and, unless it says otherwise, the data")
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
 	if *showVersion {
@@ -94,35 +85,20 @@ func main() {
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
-	if err := run(config{
-		listen: *listen, dataDir: *dataDir, appsHost: *appsHost, catalog: *catalog,
-		gatewayHTTP: *gatewayHTTP, gatewayHTTPS: *gatewayHTTPS, dnsListen: *dnsListen,
-		acme: acmeapi.Options{
-			HTTPClient:        acme.NewHTTPClient(acme.HTTPOptions{Timeout: *acmeRequestTimeout, TLSHandshakeTimeout: *acmeTLSTimeout}),
-			RequestRetry:      acme.RetryPolicy{MaxAttempts: *acmeRequestAttempts},
-			IssuanceRetry:     acme.RetryPolicy{MaxAttempts: *acmeIssuanceAttempts, InitialDelay: *acmeRetryDelay},
-			ValidationTimeout: *acmeValidationTimeout, OrderTimeout: *acmeOrderTimeout,
-		},
-	}, logger); err != nil {
+	cfg, err := loadConfig(*dir)
+	if err == nil {
+		err = run(cfg, logger)
+	}
+	if err != nil {
 		logger.Error("fatal", "err", err)
 		os.Exit(1)
 	}
 }
 
-type config struct {
-	listen, dataDir, appsHost, catalog string
-	gatewayHTTP, gatewayHTTPS          string
-	dnsListen                          string
-	acme                               acmeapi.Options
-}
-
-func run(cfg config, logger *slog.Logger) error {
+func run(cfg Config, logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	dataDir, err := filepath.Abs(cfg.dataDir)
-	if err != nil {
-		return err
-	}
+	dataDir := cfg.Data
 	if err := os.MkdirAll(dataDir, 0o700); err != nil {
 		return err
 	}
@@ -141,7 +117,7 @@ func run(cfg config, logger *slog.Logger) error {
 	// before any listener starts.
 	var certificateSource func(*tls.ClientHelloInfo) (*tls.Certificate, error)
 	dnsServer, err := dnsweb.New(ctx, db, dnsweb.Options{
-		Server: defaultDNS(cfg.dnsListen), DataDir: filepath.Join(dataDir, "dns"), Logger: logger,
+		Server: defaultDNS(cfg.DNS.Listen), DataDir: filepath.Join(dataDir, "dns"), Logger: logger,
 		Certificates: func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) { return certificateSource(hello) },
 	})
 	if err != nil {
@@ -158,7 +134,12 @@ func run(cfg config, logger *slog.Logger) error {
 	// Certificate manager: uses SQLite itself, so it takes the database.
 	// DNS-01 challenges are published automatically in the zones the DNS
 	// server serves authoritatively, or else in a provider account's.
-	acmeOptions := cfg.acme
+	acmeOptions := acmeapi.Options{
+		HTTPClient:        acme.NewHTTPClient(acme.HTTPOptions{Timeout: cfg.ACME.RequestTimeout, TLSHandshakeTimeout: cfg.ACME.TLSTimeout}),
+		RequestRetry:      acme.RetryPolicy{MaxAttempts: cfg.ACME.RequestAttempts},
+		IssuanceRetry:     acme.RetryPolicy{MaxAttempts: cfg.ACME.IssuanceAttempts, InitialDelay: cfg.ACME.RetryDelay},
+		ValidationTimeout: cfg.ACME.ValidationTimeout, OrderTimeout: cfg.ACME.OrderTimeout,
+	}
 	acmeOptions.Logger = logger
 	acmeOptions.DNSProvider = dns.Sources{dns.Challenges{Manager: dnsServer.Manager}, domains.Challenges()}
 	certs, err := acmeweb.New(ctx, db, acmeOptions)
@@ -186,12 +167,12 @@ func run(cfg config, logger *slog.Logger) error {
 	}
 	if !ok {
 		gatewayConfig = yabber.Config{
-			Listeners: []yabber.Listener{{Name: "http", Address: cfg.gatewayHTTP}, {Name: "https", Address: cfg.gatewayHTTPS, TLS: true}},
+			Listeners: []yabber.Listener{{Name: "http", Address: cfg.Gateway.HTTP}, {Name: "https", Address: cfg.Gateway.HTTPS, TLS: true}},
 		}
 		if err := gatewayStore.Save(gatewayConfig); err != nil {
 			return err
 		}
-		logger.Info("created the gateway configuration", "http", cfg.gatewayHTTP, "https", cfg.gatewayHTTPS)
+		logger.Info("created the gateway configuration", "http", cfg.Gateway.HTTP, "https", cfg.Gateway.HTTPS)
 	}
 	gatewayDir := filepath.Join(dataDir, "yabber")
 	if err := os.MkdirAll(gatewayDir, 0o700); err != nil {
@@ -222,9 +203,9 @@ func run(cfg config, logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
-	appsHost := cfg.appsHost
+	appsHost := cfg.Host
 	if appsHost == "" {
-		appsHost = defaultHost(cfg.listen)
+		appsHost = defaultHost(cfg.Listen)
 	}
 	exposer := &gateway.AppExposer{
 		Gateway: management, Server: gw, Certs: certs.Service,
@@ -232,16 +213,20 @@ func run(cfg config, logger *slog.Logger) error {
 	}
 	go exposer.RunReconcile(ctx, time.Minute, logger)
 	docker, err := dockerweb.New(ctx, dockerweb.Options{
-		DataDir: filepath.Join(dataDir, "docker"), CatalogRepo: cfg.catalog, AppsHost: appsHost, Logger: logger,
+		DataDir: filepath.Join(dataDir, "docker"), CatalogRepo: cfg.Catalog, AppsHost: appsHost, Logger: logger,
 		Store: dockerApps, Exposer: exposer,
 	})
 	if err != nil {
 		return fmt.Errorf("docker: %w", err)
 	}
 
-	// Port forwarder and SSH terminal: both use SQLite themselves, so they
-	// take the database.
-	forwarder, err := forwardweb.New(ctx, db, forwardweb.Options{Logger: logger})
+	// Port forwarder: rules in the database instead of its YAML file.
+	// SSH terminal: uses SQLite itself, so it takes the database.
+	forwardRules, err := stores.NewForwardRules(ctx, db)
+	if err != nil {
+		return err
+	}
+	forwarder, err := forwardweb.NewWithStore(ctx, forwardRules, forwardweb.Options{Logger: logger})
 	if err != nil {
 		return fmt.Errorf("forward: %w", err)
 	}
@@ -303,10 +288,10 @@ func run(cfg config, logger *slog.Logger) error {
 		// Named for what it does, not the project that does it.
 		IDs: map[string]string{"yabber": "gateway"},
 	}
-	if password := os.Getenv("OHMYSERVER_PASSWORD"); password != "" {
-		opts.Auth = &shell.Auth{Secret: password}
-	} else if !shell.IsLoopback(cfg.listen) {
-		logger.Warn("serving without authentication on a non-loopback address; set OHMYSERVER_PASSWORD")
+	if cfg.Password != "" {
+		opts.Auth = &shell.Auth{Secret: cfg.Password}
+	} else if !shell.IsLoopback(cfg.Listen) {
+		logger.Warn("serving without authentication on a non-loopback address; set a password in config.yaml")
 	}
 	modules := []shell.Module{
 		home.New(home.Sources{
@@ -328,13 +313,13 @@ func run(cfg config, logger *slog.Logger) error {
 	}
 	defer host.Close() // closes the modules after the server stops
 
-	logger.Info("panel listening", "url", "http://"+cfg.listen, "data", dataDir, "version", version)
-	return shell.ListenAndServe(ctx, cfg.listen, host.Handler())
+	logger.Info("panel listening", "url", "http://"+cfg.Listen, "data", dataDir, "version", version)
+	return shell.ListenAndServe(ctx, cfg.Listen, host.Handler())
 }
 
-// defaultDataDir is ~/.ohmyserver, or ./data when there is no home
-// directory (e.g. a service user without one).
-func defaultDataDir() string {
+// defaultDir is ~/.ohmyserver, or ./data when there is no home directory
+// (e.g. a service user without one).
+func defaultDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "./data"

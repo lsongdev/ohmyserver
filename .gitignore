@@ -5,3 +5,4 @@
 # Browser dependencies, installed by make deps (npm ci in each UI).
 node_modules/
 /dist/
+/config.yaml

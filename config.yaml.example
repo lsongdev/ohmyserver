@@ -1,0 +1,38 @@
+# OhMyServer reads <dir>/config.yaml, where <dir> is -d (default
+# ~/.ohmyserver). Copy this file there and keep only what you change:
+# every setting left out takes the default shown here.
+
+# Panel address. Set a password whenever it listens beyond loopback.
+listen: 127.0.0.1:8080
+
+# Shared database and module data; relative to <dir>, which is the default.
+data: .
+
+# Requires signing in. OHMYSERVER_PASSWORD overrides it. Keep this file
+# private (chmod 600) when it holds one.
+password: ""
+
+# Address users reach installed apps at (default: derived from listen).
+host: ""
+
+# App catalog git repository ("-": use the local copy as is).
+catalog: https://github.com/lsongdev/ohmyserver-apps.git
+
+# Gateway and DNS listeners for a new installation; afterwards they are
+# edited in the panel.
+gateway:
+  http: ":80"
+  https: ":443"
+dns:
+  listen: ":53"
+
+# Certificate (ACME) network and recovery settings. An attempt limit of 1
+# disables retries at that layer.
+acme:
+  request_timeout: 1m
+  tls_timeout: 30s
+  request_attempts: 4
+  issuance_attempts: 4
+  retry_delay: 1m
+  validation_timeout: 5m   # each authorization wait
+  order_timeout: 10m       # finalization and certificate download
