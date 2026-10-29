@@ -14,5 +14,7 @@
 @import url(node_modules/@lsongdev/stylesheets/spinner.css);
 @import url(node_modules/@lsongdev/stylesheets/log.css);
 @import url(node_modules/@lsongdev/stylesheets/toast.css);
+@import url(node_modules/@lsongdev/stylesheets/menu.css);
+@import url(node_modules/@lsongdev/stylesheets/sidebar.css);
 @import url(node_modules/@lsongdev/stylesheets/theme/light.css);
 @import url(node_modules/@lsongdev/stylesheets/theme/dark.css);
