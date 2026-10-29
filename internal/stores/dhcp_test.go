@@ -1,4 +1,4 @@
-package dhcp
+package stores
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/lsongdev/dhcp-go/server"
 	"github.com/lsongdev/dhcp-go/store"
+	dhcpweb "github.com/lsongdev/dhcp-go/web"
 	_ "modernc.org/sqlite"
 )
 
@@ -26,7 +27,7 @@ func TestSharedDatabaseSurvivesReopen(t *testing.T) {
 		return db
 	}
 	db := open()
-	st, err := NewStore(ctx, db)
+	st, err := NewDHCP(ctx, db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +50,7 @@ func TestSharedDatabaseSurvivesReopen(t *testing.T) {
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
-	st, err = NewStore(ctx, open())
+	st, err = NewDHCP(ctx, open())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +66,7 @@ func TestSharedDatabaseSurvivesReopen(t *testing.T) {
 	if err != nil || len(leases) != 1 || leases[0].IP != lease.IP || !leases[0].ExpiresAt.Equal(lease.ExpiresAt) {
 		t.Fatalf("leases: %+v %v", leases, err)
 	}
-	module, err := New(ctx, st.db, Options{})
+	module, err := dhcpweb.New(ctx, st, dhcpweb.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

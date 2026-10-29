@@ -1,5 +1,4 @@
-// Package dhcp adapts the DHCP module to OhMyServer's shared database.
-package dhcp
+package stores
 
 import (
 	"context"
@@ -14,25 +13,21 @@ import (
 	"github.com/lsongdev/dhcp-go/store"
 )
 
-// SQLite stores the module's state. Its tables are prefixed "dhcp_", so
-// the database can be shared with other modules.
-type SQLite struct {
-	db *sql.DB
-}
+// DHCP keeps the DHCP server's settings, reservations and leases in the
+// shared database (dhcp-go keeps them in YAML files when it runs on its
+// own). The tables are the ones dhcp-go's own SQLite store created, so
+// existing state carries over.
+type DHCP struct{ db *sql.DB }
 
-// NewStore migrates the dhcp_ tables in db, which the caller owns and may share
-// with other modules.
-func NewStore(ctx context.Context, db *sql.DB) (*SQLite, error) {
-	s := &SQLite{db: db}
-	if err := s.migrate(ctx); err != nil {
-		return nil, fmt.Errorf("migrate database: %w", err)
+// NewDHCP migrates the dhcp_ tables in db.
+func NewDHCP(ctx context.Context, db *sql.DB) (*DHCP, error) {
+	if err := migrate(ctx, db, "dhcp_schema", dhcpMigrations); err != nil {
+		return nil, fmt.Errorf("dhcp: %w", err)
 	}
-	return s, nil
+	return &DHCP{db: db}, nil
 }
 
-// migrations are applied in order; dhcp_schema records how many have run.
-// Append new migrations, never edit old ones.
-var migrations = []string{`
+var dhcpMigrations = []string{`
 CREATE TABLE dhcp_settings (
 	key   TEXT PRIMARY KEY,
 	value TEXT NOT NULL
@@ -54,46 +49,13 @@ CREATE TABLE dhcp_leases (
 	updated_at INTEGER NOT NULL
 )`}
 
-func (s *SQLite) migrate(ctx context.Context) error {
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-	if _, err := tx.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS dhcp_schema (version INTEGER NOT NULL)`); err != nil {
-		return err
-	}
-	var version int
-	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(MAX(version), 0) FROM dhcp_schema`).Scan(&version); err != nil {
-		return err
-	}
-	if version > len(migrations) {
-		return fmt.Errorf("schema version %d is newer than this program (%d)", version, len(migrations))
-	}
-	if version == len(migrations) {
-		return nil
-	}
-	for i := version; i < len(migrations); i++ {
-		if _, err := tx.ExecContext(ctx, migrations[i]); err != nil {
-			return fmt.Errorf("migration %d: %w", i+1, err)
-		}
-	}
-	if _, err := tx.ExecContext(ctx, `DELETE FROM dhcp_schema`); err != nil {
-		return err
-	}
-	if _, err := tx.ExecContext(ctx, `INSERT INTO dhcp_schema (version) VALUES (?)`, len(migrations)); err != nil {
-		return err
-	}
-	return tx.Commit()
-}
-
-const configKey = "config"
+const dhcpConfigKey = "config"
 
 // Config returns the saved configuration; ok is false before the first
 // save.
-func (s *SQLite) Config(ctx context.Context) (cfg server.Config, ok bool, err error) {
+func (s *DHCP) Config(ctx context.Context) (cfg server.Config, ok bool, err error) {
 	var v string
-	err = s.db.QueryRowContext(ctx, `SELECT value FROM dhcp_settings WHERE key = ?`, configKey).Scan(&v)
+	err = s.db.QueryRowContext(ctx, `SELECT value FROM dhcp_settings WHERE key = ?`, dhcpConfigKey).Scan(&v)
 	if errors.Is(err, sql.ErrNoRows) {
 		return cfg, false, nil
 	}
@@ -104,13 +66,13 @@ func (s *SQLite) Config(ctx context.Context) (cfg server.Config, ok bool, err er
 }
 
 // SaveConfig stores the configuration.
-func (s *SQLite) SaveConfig(ctx context.Context, cfg server.Config) error {
+func (s *DHCP) SaveConfig(ctx context.Context, cfg server.Config) error {
 	v, err := json.Marshal(cfg)
 	if err != nil {
 		return err
 	}
 	_, err = s.db.ExecContext(ctx, `INSERT INTO dhcp_settings (key, value) VALUES (?, ?)
-		ON CONFLICT (key) DO UPDATE SET value = excluded.value`, configKey, string(v))
+		ON CONFLICT (key) DO UPDATE SET value = excluded.value`, dhcpConfigKey, string(v))
 	return err
 }
 
@@ -123,12 +85,12 @@ func scanReservation(row interface{ Scan(...any) error }) (server.Reservation, e
 	if errors.Is(err, sql.ErrNoRows) {
 		return r, store.ErrNotFound
 	}
-	r.CreatedAt, r.UpdatedAt = time.Unix(0, created), time.Unix(0, updated)
+	r.CreatedAt, r.UpdatedAt = time.Unix(0, created).UTC(), time.Unix(0, updated).UTC()
 	return r, err
 }
 
 // Reservations returns every reservation.
-func (s *SQLite) Reservations(ctx context.Context) ([]server.Reservation, error) {
+func (s *DHCP) Reservations(ctx context.Context) ([]server.Reservation, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT `+reservationColumns+` FROM dhcp_reservations ORDER BY id`)
 	if err != nil {
 		return nil, err
@@ -146,17 +108,17 @@ func (s *SQLite) Reservations(ctx context.Context) ([]server.Reservation, error)
 }
 
 // Reservation returns one reservation.
-func (s *SQLite) Reservation(ctx context.Context, id int64) (server.Reservation, error) {
+func (s *DHCP) Reservation(ctx context.Context, id int64) (server.Reservation, error) {
 	return scanReservation(s.db.QueryRowContext(ctx, `SELECT `+reservationColumns+` FROM dhcp_reservations WHERE id = ?`, id))
 }
 
 // CreateReservation inserts r and sets its ID and timestamps.
-func (s *SQLite) CreateReservation(ctx context.Context, r *server.Reservation) error {
-	now := time.Now()
+func (s *DHCP) CreateReservation(ctx context.Context, r *server.Reservation) error {
+	now := time.Now().UTC()
 	res, err := s.db.ExecContext(ctx, `INSERT INTO dhcp_reservations (mac, ip, hostname, description, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?)`, r.MAC, r.IP, r.Hostname, r.Description, now.UnixNano(), now.UnixNano())
 	if err != nil {
-		return conflict(err)
+		return dhcpConflict(err)
 	}
 	r.ID, err = res.LastInsertId()
 	r.CreatedAt, r.UpdatedAt = now, now
@@ -164,12 +126,12 @@ func (s *SQLite) CreateReservation(ctx context.Context, r *server.Reservation) e
 }
 
 // UpdateReservation replaces r's fields.
-func (s *SQLite) UpdateReservation(ctx context.Context, r *server.Reservation) error {
-	now := time.Now()
+func (s *DHCP) UpdateReservation(ctx context.Context, r *server.Reservation) error {
+	now := time.Now().UTC()
 	res, err := s.db.ExecContext(ctx, `UPDATE dhcp_reservations SET mac = ?, ip = ?, hostname = ?, description = ?, updated_at = ?
 		WHERE id = ?`, r.MAC, r.IP, r.Hostname, r.Description, now.UnixNano(), r.ID)
 	if err != nil {
-		return conflict(err)
+		return dhcpConflict(err)
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
 		return store.ErrNotFound
@@ -179,13 +141,13 @@ func (s *SQLite) UpdateReservation(ctx context.Context, r *server.Reservation) e
 }
 
 // DeleteReservation removes a reservation; removing a missing one succeeds.
-func (s *SQLite) DeleteReservation(ctx context.Context, id int64) error {
+func (s *DHCP) DeleteReservation(ctx context.Context, id int64) error {
 	_, err := s.db.ExecContext(ctx, `DELETE FROM dhcp_reservations WHERE id = ?`, id)
 	return err
 }
 
 // Leases returns every stored lease.
-func (s *SQLite) Leases(ctx context.Context) ([]server.Lease, error) {
+func (s *DHCP) Leases(ctx context.Context) ([]server.Lease, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT ip, mac, hostname, expires_at, updated_at FROM dhcp_leases`)
 	if err != nil {
 		return nil, err
@@ -198,14 +160,14 @@ func (s *SQLite) Leases(ctx context.Context) ([]server.Lease, error) {
 		if err := rows.Scan(&l.IP, &l.MAC, &l.Hostname, &expires, &updated); err != nil {
 			return nil, err
 		}
-		l.ExpiresAt, l.UpdatedAt = time.Unix(0, expires), time.Unix(0, updated)
+		l.ExpiresAt, l.UpdatedAt = time.Unix(0, expires).UTC(), time.Unix(0, updated).UTC()
 		list = append(list, l)
 	}
 	return list, rows.Err()
 }
 
 // SaveLease implements server.LeaseStore.
-func (s *SQLite) SaveLease(l server.Lease) error {
+func (s *DHCP) SaveLease(l server.Lease) error {
 	_, err := s.db.Exec(`INSERT INTO dhcp_leases (ip, mac, hostname, expires_at, updated_at) VALUES (?, ?, ?, ?, ?)
 		ON CONFLICT (ip) DO UPDATE SET mac = excluded.mac, hostname = excluded.hostname,
 		expires_at = excluded.expires_at, updated_at = excluded.updated_at`,
@@ -214,22 +176,22 @@ func (s *SQLite) SaveLease(l server.Lease) error {
 }
 
 // DeleteLease implements server.LeaseStore.
-func (s *SQLite) DeleteLease(ip string) error {
+func (s *DHCP) DeleteLease(ip string) error {
 	_, err := s.db.Exec(`DELETE FROM dhcp_leases WHERE ip = ?`, ip)
 	return err
 }
 
 // PruneLeases deletes leases that expired before t.
-func (s *SQLite) PruneLeases(ctx context.Context, t time.Time) error {
+func (s *DHCP) PruneLeases(ctx context.Context, t time.Time) error {
 	_, err := s.db.ExecContext(ctx, `DELETE FROM dhcp_leases WHERE expires_at < ?`, t.UnixNano())
 	return err
 }
 
-func conflict(err error) error {
+func dhcpConflict(err error) error {
 	if strings.Contains(err.Error(), "UNIQUE constraint failed") {
 		return store.ErrConflict
 	}
 	return err
 }
 
-var _ store.Store = (*SQLite)(nil)
+var _ store.Store = (*DHCP)(nil)
