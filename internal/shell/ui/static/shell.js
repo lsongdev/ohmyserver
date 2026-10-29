@@ -2,10 +2,11 @@
 // (docs/module-contract.md). Each module renders into its own shadow root,
 // receives its route through mount/update, and changes it through
 // ctx.navigate. The shell owns the address bar: "#/<module id><module path>".
-import { html, render, useState, useEffect, useRef } from './html.js';
-import { createNavigation } from './navigation.js';
+import { html, render, useState } from './html.js';
+import { Sidebar } from './node_modules/@lsongdev/scripts/react/components/index.js';
+import { createHashNavigation } from './node_modules/@lsongdev/scripts/navigation/hash.js';
 
-const navigation = createNavigation();
+const navigation = createHashNavigation({ event: 'panel:routechange', stateKey: 'panelNavigation' });
 
 const url = path => new URL(path, document.baseURI);
 
@@ -115,49 +116,20 @@ class ModuleHost {
 
 // ---- Layout -----------------------------------------------------------------
 
-function Sidebar({ panel, path, onLogout }) {
-  const [open, setOpen] = useState(false);
-  const toggle = useRef(null);
-  useEffect(() => setOpen(false), [path]);
-  useEffect(() => {
-    const media = matchMedia('(max-width: 760px)');
-    const close = () => setOpen(false);
-    const escape = event => {
-      if (event.key === 'Escape' && open) {
-        close();
-        toggle.current?.focus();
-      }
-    };
-    const layout = document.querySelector('.layout');
-    const main = layout?.querySelector('.main');
-    layout?.classList.toggle('menu-open', open);
-    if (main) main.inert = open && media.matches;
-    media.addEventListener('change', close);
-    addEventListener('keydown', escape);
-    return () => {
-      layout?.classList.remove('menu-open');
-      if (main) main.inert = false;
-      media.removeEventListener('change', close);
-      removeEventListener('keydown', escape);
-    };
-  }, [open]);
+function Navigation({ panel, path, onLogout }) {
   const items = panel.modules.flatMap(m => (m.nav || []).map(item => ({ ...item, module: m, to: full(m.id, item.path), root: item.path === '/' })));
   // The longest matching entry is active; module roots only match exactly.
   const active = items
     .filter(i => path === i.to || (!i.root && path.startsWith(i.to + '/')))
     .sort((a, b) => b.to.length - a.to.length)[0];
-  return html`
-    <a class="brand" href="#/" onClick=${() => setOpen(false)}><span class="brand-mark">◆</span>${panel.title}</a>
-    <button class="button button-ghost menu-toggle" ref=${toggle} aria-label=${open ? 'Close' : 'Menu'} aria-expanded=${open} aria-controls="panel-navigation" onClick=${() => setOpen(o => !o)}>${open ? '✕' : '☰'}</button>
-    <button class="button menu-backdrop" aria-label="Close" tabindex="-1" onClick=${() => setOpen(false)}></button>
-    <nav class="nav" id="panel-navigation" aria-label="Menu" onClick=${event => { if (event.target.closest('a')) setOpen(false); }}>
-      ${panel.modules.map(m => html`<div class="nav-group">
-        ${panel.modules.length > 1 ? html`<div class="nav-heading">${m.title}</div>` : null}
-        ${items.filter(i => i.module === m).map(i => html`<a class=${`nav-link ${i === active ? 'active' : ''}`} href=${'#' + i.to}>
-          <span class="nav-icon">${i.icon || '•'}</span>${i.title}</a>`)}
-      </div>`)}
-      ${panel.auth ? html`<button class="button button-ghost sidebar-logout" onClick=${onLogout}>Sign out</button>` : null}
-    </nav>`;
+  const groups = panel.modules.map(m => ({
+    title: panel.modules.length > 1 ? m.title : null,
+    items: items.filter(i => i.module === m).map(i => ({ href: '#' + i.to, title: i.title, icon: i.icon, active: i === active })),
+  }));
+  const logout = panel.auth
+    ? html`<button class="button button-ghost sidebar-logout" onClick=${onLogout}><i aria-hidden="true">⏻</i><span>Sign out</span></button>`
+    : null;
+  return html`<${Sidebar} brand=${panel.title} mark="◆" groups=${groups} footer=${logout} />`;
 }
 
 function Login({ title, onLogin }) {
@@ -214,8 +186,8 @@ function showLogin(title) {
 function showPanel(panel) {
   stop();
   render(null, app);
-  app.innerHTML = '<div class="layout"><aside class="sidebar"></aside><main class="main"></main></div>';
-  const sidebar = app.querySelector('.sidebar');
+  app.innerHTML = '<div class="layout"><div class="layout-nav"></div><main class="main"></main></div>';
+  const sidebar = app.querySelector('.layout-nav');
   const host = new ModuleHost(panel, app.querySelector('.main'));
   const logout = async () => {
     if (!navigation.canLeave()) return;
@@ -234,7 +206,7 @@ function showPanel(panel) {
     } else {
       host.show(target.module, target.path, query);
     }
-    render(html`<${Sidebar} panel=${panel} path=${path} onLogout=${logout} />`, sidebar);
+    render(html`<${Navigation} panel=${panel} path=${path} onLogout=${logout} />`, sidebar);
   };
   addEventListener('panel:routechange', update);
   stop = () => {

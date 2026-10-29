@@ -1,4 +1,4 @@
-import { html, useLayoutEffect, useRef } from './html.js';
+import { useLayoutEffect, useRef } from './html.js';
 import { usePanel } from './panel.js';
 
 export function routeURL(path, query = {}) {
@@ -30,10 +30,4 @@ export function useUnsavedChanges(dirty, { pending = false } = {}) {
   return () => { changed.current = { dirty: false, pending: false }; };
 }
 
-export function FormSection({ title, description, children }) {
-  return html`<fieldset class="form-section">
-    <legend>${title}</legend>
-    ${description ? html`<p class="muted form-help">${description}</p>` : null}
-    ${children}
-  </fieldset>`;
-}
+export { FormSection } from '../node_modules/@lsongdev/scripts/react/components/index.js';
