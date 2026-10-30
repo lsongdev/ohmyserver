@@ -1,4 +1,5 @@
 /* The parts of @lsongdev/stylesheets this UI uses, from node_modules (npm ci, see package.json). */
+@import url(node_modules/@lsongdev/stylesheets/icon.css);
 @import url(node_modules/@lsongdev/stylesheets/base.css);
 @import url(node_modules/@lsongdev/stylesheets/card.css);
 @import url(node_modules/@lsongdev/stylesheets/input.css);
