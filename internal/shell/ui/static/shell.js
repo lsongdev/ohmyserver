@@ -5,6 +5,7 @@
 import { html, render, useState } from './html.js';
 import { Sidebar } from './node_modules/@lsongdev/scripts/react/components/index.js';
 import { createHashNavigation } from './node_modules/@lsongdev/scripts/navigation/hash.js';
+import { faIcon, navigationIcon } from './navigation-icons.js';
 
 const navigation = createHashNavigation({ event: 'panel:routechange', stateKey: 'panelNavigation' });
 
@@ -124,12 +125,12 @@ function Navigation({ panel, path, onLogout }) {
     .sort((a, b) => b.to.length - a.to.length)[0];
   const groups = panel.modules.map(m => ({
     title: panel.modules.length > 1 ? m.title : null,
-    items: items.filter(i => i.module === m).map(i => ({ href: '#' + i.to, title: i.title, icon: i.icon, active: i === active })),
+    items: items.filter(i => i.module === m).map(i => ({ href: '#' + i.to, title: i.title, icon: navigationIcon(m, i), active: i === active })),
   }));
   const logout = panel.auth
-    ? html`<button class="button button-ghost sidebar-logout" onClick=${onLogout}><i aria-hidden="true">⏻</i><span>Sign out</span></button>`
+    ? html`<button class="button button-ghost sidebar-logout" onClick=${onLogout}><i aria-hidden="true">${faIcon('right-from-bracket')}</i><span>Sign out</span></button>`
     : null;
-  return html`<${Sidebar} brand=${panel.title} mark="◆" groups=${groups} footer=${logout} />`;
+  return html`<${Sidebar} brand=${panel.title} mark=${faIcon('server')} groups=${groups} footer=${logout} />`;
 }
 
 function Login({ title, onLogin }) {
