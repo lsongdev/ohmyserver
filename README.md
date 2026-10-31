@@ -24,6 +24,7 @@ Modules that are still small and change with the panel live in
 | Packages (dnf, apt, installing Docker) | [modules/pkgmgr](modules/pkgmgr) | `pkgmgr` |
 | Services (systemd) and logs (journal) | [modules/svcmgr](modules/svcmgr) | `svcmgr` |
 | Disks (capacity, RAID, SMART health) | [modules/diskmgr](modules/diskmgr) | `diskmgr` |
+| Samba shares, settings and users (smb.conf) | [modules/smbmgr](modules/smbmgr) | `smbmgr` |
 | Files (browse, edit, upload, download, move, copy) | [modules/filemgr](modules/filemgr) | `filemgr` |
 | Domains at DNS providers (Cloudflare), and DNS-01 for certificates | [modules/domains](modules/domains) | `domains` |
 
@@ -67,6 +68,9 @@ This repository holds the assembly:
   or disables the service running the panel.
 - `modules/diskmgr` shows file system capacity, software RAID arrays and each
   disk's SMART health (through smartctl-go), without waking sleeping disks.
+- `modules/smbmgr` edits Samba's smb.conf (shares, server settings, or the
+  file as text) and its users; testparm checks every change before it
+  replaces the file, and smbd reloads it. It is left out without Samba.
 - `modules/filemgr` manages the server's files from `/`; system top-level
   directories cannot be deleted or moved.
 

@@ -29,6 +29,7 @@ const icons = {
   ci: { '/': 'code-branch', '/builds': 'hammer' },
   packages: { '/': 'box', '/recommended': 'star', '/jobs': 'list-check' },
   disks: { '/': 'hard-drive' },
+  samba: { '/': 'share-nodes', '/users': 'users', '/sessions': 'plug', '/global': 'gear', '/config': 'file-code' },
   files: { '/': 'folder', '/trash': 'trash-can' },
 };
 
