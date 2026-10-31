@@ -10,7 +10,7 @@
 // connects modules through the adapters in packages gateway, dns, cron and
 // monitor, and
 // mounts them in the shell, together with the modules built in here (the
-// overview, domains, packages, services, disks and files).
+// overview, domains, packages, services, disks, Samba and files).
 package main
 
 import (
@@ -50,6 +50,7 @@ import (
 	"github.com/lsongdev/ohmyserver/modules/monitor/collector"
 	monitorweb "github.com/lsongdev/ohmyserver/modules/monitor/web"
 	pkgmgr "github.com/lsongdev/ohmyserver/modules/pkgmgr/web"
+	smbmgr "github.com/lsongdev/ohmyserver/modules/smbmgr/web"
 	sshweb "github.com/lsongdev/ohmyserver/modules/ssh/web"
 	svcmgr "github.com/lsongdev/ohmyserver/modules/svcmgr/web"
 	"github.com/lsongdev/ohmyserver/monitor"
@@ -269,6 +270,9 @@ func run(cfg Config, logger *slog.Logger) error {
 	services := svcmgr.New(svcmgr.Options{Logger: logger})
 	// Disks: capacity, RAID arrays and SMART health.
 	disks := diskmgr.New(diskmgr.Options{Logger: logger})
+	// Samba: shares, server settings and users in smb.conf, and who is
+	// connected.
+	samba := smbmgr.New(smbmgr.Options{Logger: logger})
 	// Files: browse and manage the server's files, from /.
 	fileManager, err := filemgr.New(filemgr.Options{Logger: logger})
 	if err != nil {
@@ -310,7 +314,12 @@ func run(cfg Config, logger *slog.Logger) error {
 	if services.API.Supported() {
 		modules = append(modules, services)
 	}
-	modules = append(modules, disks, fileManager)
+	modules = append(modules, disks)
+	// Likewise Samba, without smbd and testparm.
+	if samba.API.Supported() {
+		modules = append(modules, samba)
+	}
+	modules = append(modules, fileManager)
 	host, err := shell.New(opts, modules...)
 	if err != nil {
 		return err
