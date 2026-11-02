@@ -25,7 +25,7 @@ export default function Accounts() {
           <td>${a.error ? html`<${Status} state="failed" label="Failing" title=${a.error} />`
             : a.zones >= 0 ? html`<${Status} state="ok" label=${`${a.zones} ${a.zones === 1 ? 'domain' : 'domains'}`} />` : html`<span class="muted">—</span>`}</td>
           <td class="nowrap muted">${ago(a.created_at)}</td>
-          <td class="actions"><span class="button-row">
+          <td class="actions"><span class="row-actions">
             <a class="button button-small" href=${href(`/accounts/${a.id}`)}>Edit</a>
             <button class="button button-small button-danger" disabled=${busy[a.id]} onClick=${() => remove(a)}>Remove</button>
           </span></td>

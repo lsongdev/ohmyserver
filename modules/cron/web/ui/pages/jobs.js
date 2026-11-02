@@ -35,7 +35,7 @@ export default function Jobs() {
           <td>${targetName(j.target)}</td>
           <td>${j.last_run ? html`<a href=${href(`/runs/${j.last_run.id}`)}><${RunStatus} run=${j.last_run} /></a>
             <div class="cell-sub">${datetime(j.last_run.started_at)}</div>` : html`<span class="muted">—</span>`}</td>
-          <td class="actions"><span class="button-row">
+          <td class="actions"><span class="row-actions">
             <button class="button button-small" disabled=${action.busy || j.running} onClick=${() => run(j)}>Run now</button>
             <button class="button button-small" disabled=${action.busy} onClick=${() => toggle(j)}>${j.enabled ? 'Disable' : 'Enable'}</button>
             <a class="button button-small" href=${href(`/jobs/${j.id}/edit`, { return: routeURL('/', query) })}>Edit</a>

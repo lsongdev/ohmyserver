@@ -59,7 +59,7 @@ function AccountForm({ kinds, account }) {
     ${zones ? html`<${Notice} tone="success">Connected. ${zones.length
       ? html`It reaches ${zones.length} ${zones.length === 1 ? 'domain' : 'domains'}: ${zones.map(z => z.name).join(', ')}.`
       : 'It reaches no domains yet: check the token\'s zone permissions.'}<//>` : null}
-    <div class="form-actions">
+    <div class="button-actions">
       <button class="button button-primary" disabled=${save.busy}>${save.busy ? 'Checking…' : isNew ? 'Add account' : 'Save'}</button>
       <button class="button" type="button" disabled=${test.busy} onClick=${runTest}>${test.busy ? 'Testing…' : 'Test connection'}</button>
     </div>

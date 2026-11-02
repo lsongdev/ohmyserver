@@ -91,7 +91,7 @@ function HostForm({ host, back }) {
         <span class="mono">${tested.host_key_sha256}</span>${tested.pinned ? '' : ' (recorded on the first connection after saving)'}</span><//>` : null}
       <//>
       </fieldset>
-      <div class="form-actions">
+      <div class="button-actions">
         <button class="button button-primary" disabled=${save.busy || test.busy}>${save.busy ? 'Saving…' : isNew ? 'Add host' : 'Save changes'}</button>
         <a class="button" href=${href(back)}>Cancel</a>
       </div>

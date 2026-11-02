@@ -12,7 +12,9 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/lsongdev/ohmyserver/modules/smbmgr/system"
 )
@@ -167,6 +169,11 @@ type textBody struct {
 	Version string `json:"version"`
 }
 
+type configFile struct {
+	system.File
+	Params []system.Param `json:"params"`
+}
+
 type userBody struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
@@ -197,7 +204,32 @@ func (s *Service) Handler() http.Handler {
 	})
 
 	// smb.conf as text.
-	handle("GET /config", func(r *http.Request) (any, error) { return s.samba.Read() })
+	handle("GET /config", func(r *http.Request) (any, error) {
+		file, err := s.samba.Read()
+		if err != nil {
+			return nil, err
+		}
+		return configFile{File: file, Params: system.Parse(file.Text).Global().Params()}, nil
+	})
+	// Convert the in-browser draft between form and text without saving it.
+	handle("POST /config/preview", func(r *http.Request) (any, error) {
+		var body struct {
+			Text   string         `json:"text"`
+			Params []system.Param `json:"params"`
+		}
+		if err := decode(r, &body); err != nil {
+			return nil, err
+		}
+		conf := system.Parse(body.Text)
+		if body.Params != nil {
+			if err := conf.Global().SetParams(body.Params); err != nil {
+				return nil, err
+			}
+			body.Text = conf.String()
+		}
+		body.Params = conf.Global().Params()
+		return body, nil
+	})
 	handle("POST /config/check", func(r *http.Request) (any, error) {
 		var body textBody
 		if err := decode(r, &body); err != nil {
@@ -351,6 +383,19 @@ func (s *Service) Handler() http.Handler {
 	})
 
 	handle("GET /status", func(r *http.Request) (any, error) { return s.samba.Status(r.Context()) })
+	handle("GET /logs", func(r *http.Request) (any, error) {
+		limit := 500
+		if value := r.URL.Query().Get("limit"); value != "" {
+			var err error
+			limit, err = strconv.Atoi(value)
+			if err != nil || limit < 1 || limit > 5000 {
+				return nil, fmt.Errorf("%w: limit must be an integer from 1 to 5000", system.ErrInvalid)
+			}
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+		return s.samba.Logs(ctx, system.LogQuery{Search: r.URL.Query().Get("q"), Limit: limit})
+	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint", nil)
 	})

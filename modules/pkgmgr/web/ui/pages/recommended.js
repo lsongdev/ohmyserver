@@ -35,7 +35,7 @@ function Docker({ system }) {
       Containers, apps and CI builds need it.</p>
     <${Notice} error=${status.error} />
     ${!d ? (status.error ? null : html`<${Loading} />`) : d.installed ? html`
-      <div class="button-row">
+      <div class="button-actions">
         ${open ? html`<a class="button" href=${open}>Open Docker</a>` : null}
         ${!d.running ? html`<span class="muted small">${system.manager === 'brew'
           ? 'Start Docker Desktop or OrbStack.' : html`Start it with <code>systemctl start docker</code>.`}</span>` : null}
@@ -45,7 +45,7 @@ function Docker({ system }) {
           ${d.sources.map(s => html`<option key=${s.id} value=${s.id}>${s.title}</option>`)}
         </select>
       <//>`}
-      <div class="button-row">
+      <div class="button-actions">
         <button class="button button-primary" disabled=${Boolean(system.running)} onClick=${install}>Install Docker</button>
       </div>`}
   </div>`;

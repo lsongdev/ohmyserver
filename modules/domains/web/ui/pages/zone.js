@@ -50,7 +50,7 @@ export default function Zone({ params }) {
             ${r.comment ? html`<div class="cell-sub">${r.comment}</div>` : null}</td>
           <td class="nowrap">${ttl(r.ttl)}</td>
           ${z.proxy ? html`<td>${r.proxied ? html`<span class="proxied" title="Proxied through Cloudflare">● Proxied</span>` : html`<span class="muted">DNS only</span>`}</td>` : null}
-          <td class="actions"><span class="button-row">
+          <td class="actions"><span class="row-actions">
             <button class="button button-small" onClick=${() => setEditing(r)}>Edit</button>
             <button class="button button-small button-danger" disabled=${busy[r.id]} onClick=${() => remove(r)}>Delete</button>
           </span></td>
@@ -106,14 +106,14 @@ function RecordForm({ base, zone, record, onDone }) {
         </select>
       <//>
     </div>
-    <div class="form-actions">
+    <div class="button-actions">
       ${r.type === 'MX' || r.type === 'SRV' ? html`<${Field} label="Priority"><input class="input" type="number" min="0" max="65535" style="width:110px"
         value=${r.priority} onInput=${e => set({ priority: e.currentTarget.value })} /><//>` : null}
       ${zone.proxy && PROXIABLE.has(r.type) ? html`<${Check} label="Proxy through Cloudflare (hides the address; HTTP and HTTPS only)"
         checked=${r.proxied} onChange=${e => set({ proxied: e.currentTarget.checked })} />` : null}
     </div>
     <${Field} label="Comment"><input class="input" value=${r.comment} onInput=${e => set({ comment: e.currentTarget.value })} /><//>
-    <div class="form-actions">
+    <div class="button-actions">
       <button class="button button-primary" disabled=${save.busy}>${isNew ? 'Add' : 'Save'}</button>
       <button class="button" type="button" onClick=${() => onDone(false)}>Cancel</button>
     </div>

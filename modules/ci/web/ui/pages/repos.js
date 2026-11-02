@@ -27,7 +27,7 @@ export default function Repos() {
               <div class="cell-sub">#${b.number} · ${b.branch} · ${datetime(b.created_at)}</div>` : html`<span class="muted">No builds yet</span>`}</td>
             <td>${b?.commit ? html`<span class="commit">${short(b.commit)}</span><div class="cell-sub message" title=${b.message}>${b.message}</div>` : '—'}</td>
             <td class="num">${b ? duration(b.started_at, b.finished_at) : '—'}</td>
-            <td class="actions"><span class="button-row">
+            <td class="actions"><span class="row-actions">
               <button class="button button-small button-primary" disabled=${action.busy} onClick=${() => run(r)}>Run</button>
               <a class="button button-small" href=${href(`/repos/${r.id}`)}>Details</a>
             </span></td>

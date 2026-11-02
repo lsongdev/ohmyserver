@@ -84,7 +84,7 @@ function RepoForm({ repo, back }) {
       </fieldset>
       <//>
       </fieldset>
-      <div class="form-actions">
+      <div class="button-actions">
         <button class="button button-primary" disabled=${busy}>${busy ? 'Saving…' : isNew ? 'Add repository' : 'Save changes'}</button>
         <a class="button" href=${href(back)}>Cancel</a>
       </div>

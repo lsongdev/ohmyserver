@@ -250,6 +250,7 @@ const indexPage = `<!doctype html>
   <link rel="icon" href="data:image/svg+xml,%%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%%3E%%3Cpath d='M8 1l7 7-7 7-7-7z' fill='%%232563eb'/%%3E%%3C/svg%%3E">
   <link rel="stylesheet" href="_shell/stylesheets.css">
   <link rel="stylesheet" href="_shell/style.css">
+  <link rel="stylesheet" href="_shell/actions.css">
   <script type="module" src="_shell/shell.js"></script>
 </head>
 <body>

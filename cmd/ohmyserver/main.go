@@ -307,7 +307,7 @@ func run(cfg Config, logger *slog.Logger) error {
 			Forward: forwarder.Service, SSH: terminals.Service, Cron: scheduler.Service, Monitor: monitoring.Service,
 			CI: builds.Service,
 		}),
-		docker, certs, yabberweb.New(management), dnsServer, domains, dhcpServer, forwarder, terminals, scheduler, monitoring, builds, packages,
+		monitoring, docker, certs, yabberweb.New(management), dnsServer, domains, dhcpServer, forwarder, terminals, scheduler, builds, packages,
 	}
 	// Services manages systemd: without it (macOS, for one) the module has
 	// nothing to show, so it is left out of the panel.

@@ -33,7 +33,7 @@ export default function Hosts() {
             ? html`<span class="mono cell-sub" title=${`${h.host_key_type} ${h.host_key_sha256}`}>${h.host_key_sha256.slice(0, 19)}…</span>`
             : html`<span class="muted">Recorded on first connection</span>`}</td>
           <td class="nowrap muted">${h.last_connected_at ? ago(h.last_connected_at) : '—'}</td>
-          <td class="actions"><span class="button-row">
+          <td class="actions"><span class="row-actions">
             <a class="button button-small button-primary" href=${href(`/hosts/${h.id}/terminal`)}>Terminal</a>
             <a class="button button-small" href=${href(`/hosts/${h.id}/edit`, { return: routeURL('/', query) })}>Edit</a>
             <button class="button button-small button-danger" disabled=${action.busy} onClick=${() => remove(h)}>Delete</button>

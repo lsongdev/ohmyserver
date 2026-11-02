@@ -19,3 +19,13 @@
 /* testparm reports one problem per line. */
 .alert { white-space: pre-line; }
 .section-title { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+
+.samba-log-filters { display: flex; gap: 12px 16px; align-items: end; flex-wrap: wrap; margin-bottom: 16px; }
+.samba-log-filters > .field { flex: 1 1 240px; min-width: 0; }
+.samba-log-filters select { max-width: 100%; }
+.samba-log-output { --log-height: 560px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.samba-log-status { margin: 8px 0; }
+
+.samba-editor-mode { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.samba-editor-mode .button { border: 0; border-radius: 0; }
+.samba-editor-mode .button.active { background: var(--primary-soft); color: var(--primary); }

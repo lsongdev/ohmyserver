@@ -28,7 +28,7 @@ export default function Trash() {
           <td><button class="link-button mono small" type="button" onClick=${() => navigate(`/?path=${encodeURIComponent(folder(item.original))}`)}>${folder(item.original)}</button></td>
           <td class="num">${bytes(item.bytes)}<div class="cell-sub">${count(item.files, 'file')}</div></td>
           <td class="nowrap muted">${datetime(item.deleted_at)}</td>
-          <td class="actions"><span class="button-row">
+          <td class="actions"><span class="row-actions">
             <button class="button button-small" disabled=${action.busy} onClick=${() => restore(item)}>Restore</button>
             <button class="button button-small button-danger" onClick=${() => setPurging([item])}>Delete for good</button>
           </span></td>

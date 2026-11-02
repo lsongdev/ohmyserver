@@ -5,6 +5,11 @@ shares, edit the server settings ([global]) or smb.conf as text, give
 system users a Samba password, enable, disable or remove them, and see who
 is connected and which files they hold open.
 
+The Logs page reads `smbd.log` from Samba's log directory. It can search
+recent entries by IP, user, or error text and refresh every five seconds.
+Reads are limited to the latest 1 MiB. It does not change the logging level
+or create logs.
+
 This module (id `samba`, shown as Samba) is built into OhMyServer for now,
 and will become a project of its own once it matures. It follows the
 [module contract](../../docs/module-contract.md) and imports nothing else
@@ -18,6 +23,9 @@ Samba, restart the panel.
 
 ## Editing smb.conf
 
+- Server settings offers Form and smb.conf modes in the same page. Mode
+  switches carry unsaved changes across, including share edits in the full
+  file; switching modes never writes or reloads the server configuration.
 - Shares and the server settings are edited as parameters. Only the lines
   of the section that changes are rewritten: comments, the order of
   sections and parameters, and parameters the forms have no field for stay
@@ -53,6 +61,7 @@ reload_error}`.
 |---|---|---|
 | GET | `/api/info` | Whether Samba is installed, its version, smb.conf's path, smbd's systemd unit |
 | GET | `/api/config` | smb.conf as text, with its version |
+| POST | `/api/config/preview` | Convert an unsaved draft: `{text, params?}` returns `{text, params}`; params edits only [global], retaining shares and comments |
 | POST | `/api/config/check` | testparm's verdict on `{text}`: `{ok, errors, warnings}` |
 | PUT | `/api/config` | Replace smb.conf: `{text, version}` |
 | POST | `/api/reload` | Ask smbd to reload smb.conf |
@@ -68,3 +77,4 @@ reload_error}`.
 | POST | `/api/users/{name}/{action}` | `enable` or `disable` |
 | DELETE | `/api/users/{name}` | Remove a user from Samba; the system account stays |
 | GET | `/api/status` | Sessions, shares in use and open files (smbstatus) |
+| GET | `/api/logs` | Recent smbd.log entries: `q` (case-insensitive text), `limit` (1–5000, default 500) |
