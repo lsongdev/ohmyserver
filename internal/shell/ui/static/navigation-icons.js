@@ -30,6 +30,7 @@ const icons = {
   packages: { '/': 'box', '/recommended': 'star', '/jobs': 'list-check' },
   disks: { '/': 'hard-drive' },
   samba: { '/': 'share-nodes', '/users': 'users', '/sessions': 'plug', '/logs': 'file-lines', '/global': 'gear' },
+  zfs: { '/': 'camera', '/datasets': 'database' },
   files: { '/': 'folder', '/trash': 'trash-can' },
 };
 

@@ -10,7 +10,7 @@
 // connects modules through the adapters in packages gateway, dns, cron and
 // monitor, and
 // mounts them in the shell, together with the modules built in here (the
-// overview, domains, packages, services, disks, Samba and files).
+// overview, domains, packages, services, disks, Samba, ZFS snapshots and files).
 package main
 
 import (
@@ -51,6 +51,7 @@ import (
 	monitorweb "github.com/lsongdev/ohmyserver/modules/monitor/web"
 	pkgmgr "github.com/lsongdev/ohmyserver/modules/pkgmgr/web"
 	smbmgr "github.com/lsongdev/ohmyserver/modules/smbmgr/web"
+	zfsmgr "github.com/lsongdev/ohmyserver/modules/zfsmgr/web"
 	sshweb "github.com/lsongdev/ohmyserver/modules/ssh/web"
 	svcmgr "github.com/lsongdev/ohmyserver/modules/svcmgr/web"
 	"github.com/lsongdev/ohmyserver/monitor"
@@ -273,6 +274,9 @@ func run(cfg Config, logger *slog.Logger) error {
 	// Samba: shares, server settings and users in smb.conf, and who is
 	// connected.
 	samba := smbmgr.New(smbmgr.Options{Logger: logger})
+	// ZFS snapshots: taking, comparing and rolling back, and the schedules
+	// stored on the datasets.
+	snapshots := zfsmgr.New(zfsmgr.Options{Logger: logger})
 	// Files: browse and manage the server's files, from /.
 	fileManager, err := filemgr.New(filemgr.Options{Logger: logger})
 	if err != nil {
@@ -318,6 +322,10 @@ func run(cfg Config, logger *slog.Logger) error {
 	// Likewise Samba, without smbd and testparm.
 	if samba.API.Supported() {
 		modules = append(modules, samba)
+	}
+	// And ZFS snapshots, without zfs and zpool.
+	if snapshots.API.Supported() {
+		modules = append(modules, snapshots)
 	}
 	modules = append(modules, fileManager)
 	host, err := shell.New(opts, modules...)
