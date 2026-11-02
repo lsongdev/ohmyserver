@@ -15,7 +15,7 @@ export default function Zones() {
   const list = (zones.data || []).filter(z => !text || z.name.includes(text));
 
   return html`<${Page} title="Domains" subtitle="Zones hosted by your DNS provider accounts."
-    actions=${html`<span class="button-row">
+    actions=${html`<span class="page-actions">
       <button class="button" disabled=${refresh.busy} onClick=${reload}>${refresh.busy ? 'Refreshing…' : 'Refresh'}</button>
       <a class="button button-primary" href=${href('/accounts/new')}>Add account</a></span>`}>
     <${Notice} error=${zones.error || refresh.error} />

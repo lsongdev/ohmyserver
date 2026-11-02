@@ -51,7 +51,7 @@ export default function Services() {
           </td>
           <td><${ServiceStatus} unit=${u} /></td>
           <td class="muted">${u.enabled || '—'}</td>
-          <td class="actions"><span class="button-row">
+          <td class="actions"><span class="row-actions">
             ${isActive(u) ? html`
               <button class="button button-small" disabled=${busy[u.name]} onClick=${() => act(u, 'restart')}>Restart</button>
               ${u.name === self ? null : html`<button class="button button-small" disabled=${busy[u.name]} onClick=${() => act(u, 'stop')}>Stop</button>`}`

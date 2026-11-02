@@ -84,8 +84,10 @@ class ModuleHost {
     container.style.visibility = 'hidden';
     this.element.replaceChildren(container);
     this.current = { id: module.id, instance: null };
-    await Promise.all((module.styles || []).map(sheet => new Promise(resolve => {
-      const link = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: url(module.ui + sheet).href });
+    // Host-wide layout rules must also enter each module's shadow root.
+    const sheets = [...(module.styles || []).map(sheet => url(module.ui + sheet).href), url('_shell/actions.css').href];
+    await Promise.all(sheets.map(href => new Promise(resolve => {
+      const link = Object.assign(document.createElement('link'), { rel: 'stylesheet', href });
       link.onload = link.onerror = resolve;
       root.append(link);
     })));

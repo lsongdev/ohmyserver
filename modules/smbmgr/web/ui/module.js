@@ -8,8 +8,8 @@ const routes = [
   { path: '/shares/:name', load: () => import('./pages/share-form.js') },
   { path: '/users', load: () => import('./pages/users.js') },
   { path: '/sessions', load: () => import('./pages/sessions.js') },
+  { path: '/logs', load: () => import('./pages/logs.js') },
   { path: '/global', load: () => import('./pages/global.js') },
-  { path: '/config', load: () => import('./pages/config.js') },
 ];
 
 export const mount = createMount({ routes });

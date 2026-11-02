@@ -131,3 +131,48 @@ func TestAddUserNeedsSystemAccount(t *testing.T) {
 		t.Errorf("lsong: %d", code)
 	}
 }
+
+func TestLogsValidation(t *testing.T) {
+	srv, _ := newServer(t)
+	for _, path := range []string{"/logs?limit=abc", "/logs?limit=0", "/logs?limit=-1", "/logs?limit=5001", "/logs?q=" + strings.Repeat("x", 257)} {
+		if code := call(t, srv, "GET", path, nil, nil); code != 400 {
+			t.Errorf("%s: %d", path, code)
+		}
+	}
+
+}
+
+func TestConfigPreviewPreservesDraftWithoutSaving(t *testing.T) {
+	srv, path := newServer(t)
+	original, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var file configFile
+	if code := call(t, srv, "GET", "/config", nil, &file); code != 200 || len(file.Params) != 1 || file.Params[0].Key != "workgroup" {
+		t.Fatalf("config snapshot: %d %+v", code, file)
+	}
+	text := "# Keep this comment\n[global]\n workgroup = HOME\n log level = 2\n\n[photos]\n # Keep this share\n path = /new/photos\n read only = yes\n"
+	var draft struct {
+		Text   string         `json:"text"`
+		Params []system.Param `json:"params"`
+	}
+	if code := call(t, srv, "POST", "/config/preview", map[string]any{"text": text}, &draft); code != 200 || draft.Text != text || len(draft.Params) != 2 {
+		t.Fatalf("text to form: %d %+v", code, draft)
+	}
+	params := []system.Param{{Key: "workgroup", Value: "FAMILY"}, {Key: "log level", Value: "2"}}
+	if code := call(t, srv, "POST", "/config/preview", map[string]any{"text": draft.Text, "params": params}, &draft); code != 200 || draft.Text != strings.Replace(text, "HOME", "FAMILY", 1) {
+		t.Fatalf("form to text: %d %+v", code, draft)
+	}
+	params = append(params, system.Param{Key: "workgroup", Value: "DUPLICATE"})
+	if code := call(t, srv, "POST", "/config/preview", map[string]any{"text": draft.Text, "params": params}, nil); code != 400 {
+		t.Fatalf("duplicate parameter: %d", code)
+	}
+	after, _ := os.ReadFile(path)
+	if string(after) != string(original) {
+		t.Fatal("preview changed the on-disk configuration")
+	}
+	if _, err := os.Stat(path + ".bak"); !os.IsNotExist(err) {
+		t.Fatal("preview created a backup")
+	}
+}

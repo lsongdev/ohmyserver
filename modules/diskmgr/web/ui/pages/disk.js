@@ -30,7 +30,7 @@ export default function Disk({ params }) {
   const wake = () => window.confirm(`Read ${d.name} now? A disk in standby spins up.`) &&
     action.run(async () => { await api.get(path, { query: { wake: 1 } }); disk.reload(); });
   const polling = r?.ata_smart_data?.self_test?.polling_minutes;
-  const actions = r && !h.error ? html`<span class="button-row">
+  const actions = r && !h.error ? html`<span class="page-actions">
     ${h.testing != null ? html`<button class="button" disabled=${action.busy} onClick=${() => test('abort', 'Abort the running self-test?')}>Abort test</button>` : html`
       <button class="button" disabled=${action.busy} onClick=${() => test('short', null)}
         title=${polling?.short ? `About ${polling.short} minutes` : 'A few minutes'}>Short test</button>

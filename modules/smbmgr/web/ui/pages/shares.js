@@ -20,7 +20,7 @@ export default function Shares() {
   });
   const shares = list.data?.shares || [];
 
-  return html`<${Page} title="Shares" subtitle=${i?.version ? `Samba ${i.version}` : null} actions=${html`<span class="button-row">
+  return html`<${Page} title="Shares" subtitle=${i?.version ? `Samba ${i.version}` : null} actions=${html`<span class="page-actions">
       <button class="button" disabled=${reload.busy} onClick=${doReload} title="Ask smbd to read smb.conf again">Reload</button>
       <a class="button button-primary" href=${href('/shares/new')}>Add share</a>
     </span>`}>
@@ -28,7 +28,7 @@ export default function Shares() {
     ${i ? html`<div class="card server">
       <span>smbd <${ServiceStatus} service=${i.service} /></span>
       ${unitLink ? html`<a href=${unitLink}>${unit}</a>` : unit ? html`<code>${unit}</code>` : null}
-      <span class="muted">Configuration <a href=${href('/config')}><code>${i.config}</code></a></span>
+      <span class="muted">Configuration <a href=${href('/global')}><code>${i.config}</code></a></span>
     </div>` : null}
     <section class="section">
       ${!list.data ? (list.error ? null : html`<${Loading} />`) : shares.length === 0 ? html`<${Empty}>No shares yet. <a href=${href('/shares/new')}>Add one</a> to make a folder available on the network.<//>` : html`

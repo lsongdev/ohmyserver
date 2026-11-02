@@ -199,11 +199,8 @@ a.card {
 }
 
 /* square, as tall as the controls */
-.button-row {
-  display: inline-flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
+.button-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.row-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
 /* Forms */
 form.form {
@@ -249,12 +246,6 @@ textarea.code {
   white-space: pre;
 }
 
-.form-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
 
 .toolbar {
   display: flex;

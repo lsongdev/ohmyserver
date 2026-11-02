@@ -56,7 +56,7 @@ export default function Browser() {
     if (e.dataTransfer?.files?.length) send([...e.dataTransfer.files]);
   };
 
-  return html`<${Page} title="Files" actions=${html`<span class="button-row">
+  return html`<${Page} title="Files" actions=${html`<span class="page-actions">
       <button class="button" onClick=${() => setDialog({ kind: 'mkdir' })}>New folder</button>
       <button class="button" onClick=${() => setDialog({ kind: 'newfile' })}>New file</button>
       <button class="button button-primary" onClick=${() => picker.current?.click()}>Upload</button>
@@ -107,7 +107,7 @@ export default function Browser() {
             <td class="nowrap muted">${datetime(e.modified)}</td>
             <td class="mode">${e.mode}</td>
             <td class="muted">${e.owner}${e.group && e.group !== e.owner ? `:${e.group}` : ''}</td>
-            <td class="actions"><span class="button-row">
+            <td class="actions"><span class="row-actions">
               <button class="button button-small" onClick=${() => setDialog({ kind: 'rename', entry: e })}>Rename</button>
               <button class="button button-small" onClick=${() => download(e)} title=${isDir(e) ? 'Download as .tar.gz' : 'Download'}>Download</button>
             </span></td>

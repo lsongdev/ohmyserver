@@ -10,7 +10,7 @@
     { "path": "/", "title": "Shares", "icon": "▤" },
     { "path": "/users", "title": "Users", "icon": "☺" },
     { "path": "/sessions", "title": "Sessions", "icon": "⇄" },
-    { "path": "/global", "title": "Server settings", "icon": "⚙" },
-    { "path": "/config", "title": "smb.conf", "icon": "✎" }
+    { "path": "/logs", "title": "Logs", "icon": "☰" },
+    { "path": "/global", "title": "Server settings", "icon": "⚙" }
   ]
 }

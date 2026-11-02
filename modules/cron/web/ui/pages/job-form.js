@@ -106,7 +106,7 @@ function JobForm({ job, targets, back }) {
       <label class="field-check"><input type="checkbox" checked=${j.enabled} onChange=${e => set({ enabled: e.currentTarget.checked })} />Run on schedule</label>
       <//>
       </fieldset>
-      <div class="form-actions">
+      <div class="button-actions">
         <button class="button button-primary" disabled=${busy}>${busy ? 'Saving…' : isNew ? 'Add job' : 'Save changes'}</button>
         <a class="button" href=${href(back)}>Cancel</a>
       </div>

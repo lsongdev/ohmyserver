@@ -43,7 +43,7 @@ export default function Users() {
             ${u.disabled ? html`<${Badge} tone="red">Disabled<//>` : html`<${Badge} tone="green">Enabled<//>`}
             ${u.locked ? html`<${Badge} tone="amber">Locked<//>` : null}
           </span></td>
-          <td class="actions"><span class="button-row">
+          <td class="actions"><span class="row-actions">
             <button class="button button-small" disabled=${busy[u.name]} onClick=${() => setDialog({ kind: 'password', user: u })}>Set password</button>
             <button class="button button-small" disabled=${busy[u.name]} onClick=${() => toggle(u)}>${u.disabled ? 'Enable' : 'Disable'}</button>
             <button class="button button-small button-danger" disabled=${busy[u.name]} onClick=${() => remove(u)}>Remove</button>
@@ -79,8 +79,7 @@ function PasswordDialog({ title, action, user, candidates, onSubmit, onClose }) 
     if (mismatch) return;
     run(async () => { await onSubmit(name, password); saved(); onClose(); });
   };
-  return html`<${Modal} title=${title} onClose=${close} footer=${html`<span class="spacer"></span>
-    <button class="button" type="button" disabled=${busy} onClick=${close}>Cancel</button>
+  return html`<${Modal} title=${title} onClose=${close} footer=${html`    <button class="button" type="button" disabled=${busy} onClick=${close}>Cancel</button>
     <button class="button button-primary" type="submit" form="password-form" disabled=${busy || !name || !password || mismatch}>${busy ? 'Saving…' : action}</button>`}>
     <form id="password-form" class="form" onSubmit=${submit}>
       <${Notice} error=${error} />
