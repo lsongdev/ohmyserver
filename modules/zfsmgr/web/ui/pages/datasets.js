@@ -2,7 +2,7 @@ import { html } from '../lib/html.js';
 import { Page, Notice, Loading, Empty, Table, Badge, Status } from '../lib/ui.js';
 import { usePanel } from '../lib/panel.js';
 import { bytes } from '../lib/format.js';
-import { useApi, policyText } from '../zfs.js';
+import { useApi, policyText, ScheduleStatus } from '../zfs.js';
 
 function Pools({ pools }) {
   const full = pools.filter(p => p.capacity >= 80);
@@ -22,8 +22,11 @@ export default function Datasets() {
   const { href } = usePanel();
   const pools = useApi('/pools');
   const datasets = useApi('/datasets');
+  const schedule = useApi('/schedule');
+  const scheduled = (datasets.data || []).some(d => policyText(d.policy));
   return html`<${Page} title="Datasets & schedules" subtitle="How much space snapshots hold, and how many each schedule keeps">
-    <${Notice} error=${pools.error || datasets.error} />
+    <${Notice} error=${pools.error || datasets.error || schedule.error} />
+    <${ScheduleStatus} schedule=${schedule.data} scheduled=${scheduled} />
     ${pools.data?.length ? html`<${Pools} pools=${pools.data} />` : null}
     <div class="section">
       ${!datasets.data ? (datasets.error ? null : html`<${Loading} />`) : datasets.data.length === 0 ? html`<${Empty}>No datasets on this server.<//>` : html`

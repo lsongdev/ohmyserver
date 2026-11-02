@@ -22,7 +22,9 @@ hosts), and every run is recorded with its output and exit code.
   with the last 256 KiB of their output.
 - **Targets**: `runner.Local` runs `/bin/sh -c` as the user running the
   program and kills the whole process group on cancel or timeout. Other
-  targets implement `runner.Runner`.
+  targets implement `runner.Runner`. A host program can run its own work this
+  way too: an `Internal` target is not offered for new jobs, and
+  `Service.EnsureJob` creates the job on it once, leaving later changes alone.
 
 One Go binary; jobs live in SQLite. The UI is Preact + HTM loaded as native
 ES modules, with no build step.

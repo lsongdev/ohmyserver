@@ -355,6 +355,22 @@ func (s *Service) CreateJob(ctx context.Context, j store.Job) (JobView, error) {
 	return s.Job(ctx, j.ID)
 }
 
+// EnsureJob creates j unless a job already runs on its target, and returns the
+// job there. It is for a host program that relies on a job: what the user has
+// since changed on that job, including turning it off, stays as it is.
+func (s *Service) EnsureJob(ctx context.Context, j store.Job) (JobView, error) {
+	jobs, err := s.Jobs(ctx)
+	if err != nil {
+		return JobView{}, err
+	}
+	for _, existing := range jobs {
+		if existing.Target == j.Target {
+			return existing, nil
+		}
+	}
+	return s.CreateJob(ctx, j)
+}
+
 // UpdateJob replaces a job and reschedules it. A run in progress finishes.
 func (s *Service) UpdateJob(ctx context.Context, id int64, j store.Job) (JobView, error) {
 	old, err := s.store.Job(ctx, id)

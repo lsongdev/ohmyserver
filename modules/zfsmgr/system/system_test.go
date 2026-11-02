@@ -194,7 +194,15 @@ func TestSchedulerTakesDueAndPrunesOnlyAutoSnapshots(t *testing.T) {
 		snapRow("data@auto-hourly-20261102-1100", h(4), "0", "-") +
 		snapRow("data@auto-monthly-20260101-0000", h(5000), "0", "-")
 	s, f := schedulerFor("hourly=2,daily=0,weekly=0,monthly=0", list, nil)
-	s.Tick(context.Background(), now)
+	var out strings.Builder
+	if err := s.Apply(context.Background(), now, &out); err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range []string{"Took data@auto-hourly-20261102-1530", "Removed data@auto-hourly-20261102-1300", "Kept data@auto-hourly-20261102-1200"} {
+		if !strings.Contains(out.String(), line) {
+			t.Errorf("output lacks %q:\n%s", line, out.String())
+		}
+	}
 	want := []string{
 		"zfs snapshot data@auto-hourly-20261102-1530",
 		"zfs destroy data@auto-hourly-20261102-1300",
@@ -212,7 +220,7 @@ func TestSchedulerSkipsWhatIsNotDue(t *testing.T) {
 	now := time.Date(2026, 11, 2, 15, 30, 0, 0, time.Local)
 	list := snapRow("data@auto-hourly-20261102-1500", now.Add(-20*time.Minute), "0", "-")
 	s, f := schedulerFor("hourly=24,daily=0,weekly=0,monthly=0", list, nil)
-	s.Tick(context.Background(), now)
+	s.Apply(context.Background(), now, io.Discard)
 	if got := f.mutating(); got != nil {
 		t.Fatalf("ran %v", got)
 	}
@@ -224,7 +232,9 @@ func TestSchedulerNeverPrunesWhenItCouldNotSnapshot(t *testing.T) {
 		snapRow("data@auto-hourly-20261102-1300", now.Add(-2*time.Hour), "0", "-")
 	fail := map[string]string{"zfs snapshot data@auto-hourly-20261102-1530": "out of space"}
 	s, f := schedulerFor("hourly=1,daily=0,weekly=0,monthly=0", list, fail)
-	s.Tick(context.Background(), now)
+	if err := s.Apply(context.Background(), now, io.Discard); err == nil {
+		t.Fatal("a failed snapshot must fail the pass")
+	}
 	if got, want := f.mutating(), []string{"zfs snapshot data@auto-hourly-20261102-1530"}; !slices.Equal(got, want) {
 		t.Fatalf("ran %v", got)
 	}
@@ -237,7 +247,7 @@ func TestSchedulerLeavesEverythingAloneWithAnUnreadablePolicy(t *testing.T) {
 	now := time.Date(2026, 11, 2, 15, 30, 0, 0, time.Local)
 	list := snapRow("data@auto-hourly-20261102-1400", now.Add(-time.Hour), "0", "-")
 	s, f := schedulerFor("hourly=lots", list, nil)
-	s.Tick(context.Background(), now)
+	s.Apply(context.Background(), now, io.Discard)
 	if got := f.mutating(); got != nil {
 		t.Fatalf("ran %v", got)
 	}

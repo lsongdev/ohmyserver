@@ -3,6 +3,7 @@ import { html, useState } from './lib/html.js';
 import { useAction, useResource } from './lib/hooks.js';
 import { usePanel } from './lib/panel.js';
 import { Badge, Modal, Notice, toast } from './lib/ui.js';
+import { datetime } from './lib/format.js';
 
 // useApi loads a GET endpoint with an optional query; a null path loads
 // nothing yet.
@@ -65,4 +66,24 @@ export function DeleteDialog({ names, onClose, onDeleted }) {
       <ul class="zfs-names">${remaining.map(n => html`<li key=${n}>${n}</li>`)}</ul>
     </div>
   <//>`;
+}
+
+// ScheduleStatus tells how the job that runs the schedules stands, and warns
+// when schedules are set but nothing would apply them. Without a job the
+// module runs them itself and there is nothing to say.
+export function ScheduleStatus({ schedule: s, scheduled }) {
+  const { link } = usePanel();
+  if (!s?.external) return null;
+  const job = s.job_id ? link('cron', `/jobs/${s.job_id}`) : null;
+  const name = job ? html`<a href=${job}>ZFS snapshots</a>` : 'ZFS snapshots';
+  if (!s.job_id) {
+    return scheduled ? html`<${Notice} tone="warn">The job ZFS snapshots was deleted, so no snapshots are taken or removed. Save a schedule or restart the panel to bring it back.<//>` : null;
+  }
+  if (!s.enabled) {
+    return scheduled ? html`<${Notice} tone="warn">The job ${name} is turned off, so no snapshots are taken or removed.<//>` : null;
+  }
+  if (s.run_status && !['succeeded', 'running'].includes(s.run_status)) {
+    return html`<${Notice}>The last run of the job ${name} ended as ${s.run_status}. Its output says why.<//>`;
+  }
+  return html`<p class="muted small zfs-schedule">Applied by the job ${name}${s.next_run ? html`, next at ${datetime(s.next_run)}` : null}${s.last_run ? html`; last ran ${datetime(s.last_run)}` : null}.</p>`;
 }

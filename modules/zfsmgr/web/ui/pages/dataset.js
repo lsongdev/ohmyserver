@@ -3,7 +3,7 @@ import { useAction } from '../lib/hooks.js';
 import { Page, Notice, Loading, Field, toast } from '../lib/ui.js';
 import { usePanel } from '../lib/panel.js';
 import { useUnsavedChanges } from '../lib/forms.js';
-import { useApi, CLASSES, pinned } from '../zfs.js';
+import { useApi, CLASSES, pinned, ScheduleStatus } from '../zfs.js';
 
 const HINTS = {
   hourly: 'Each hour',
@@ -20,6 +20,7 @@ export default function Dataset() {
   const name = query.name || '';
   const dataset = useApi(name ? '/dataset' : null, { name });
   const snapshots = useApi(name ? '/snapshots' : null, { dataset: name });
+  const schedule = useApi('/schedule');
   const d = dataset.data;
   const [form, setForm] = useState(null);
   const { busy, error, run } = useAction();
@@ -70,6 +71,7 @@ export default function Dataset() {
     ${!d || !form ? (dataset.error ? null : html`<${Loading} />`) : html`
       <form class="form settings-form" onSubmit=${save}>
         <${Notice} error=${error} />
+        <${ScheduleStatus} schedule=${schedule.data} scheduled=${true} />
         ${d.schedule_error ? html`<${Notice}>The last run failed: ${d.schedule_error}<//>` : null}
         ${d.policy_invalid ? html`<${Notice} tone="warn">The stored policy <code>${d.policy_invalid}</code> cannot be read, so nothing is taken or removed. Saving replaces it.<//>` : null}
         ${d.policy_source && d.policy_source !== 'local' ? html`<${Notice} tone="info">Follows the schedule of ${d.policy_source}. Saving gives ${name} its own.<//>` : null}

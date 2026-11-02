@@ -73,8 +73,9 @@ This repository holds the assembly:
   file as text) and its users; testparm checks every change before it
   replaces the file, and smbd reloads it. It is left out without Samba.
 - `modules/zfsmgr` takes, compares, deletes and rolls back to ZFS snapshots,
-  and applies schedules with retention stored on the datasets; retention only
-  removes the snapshots schedules took. It is left out without ZFS.
+  and applies schedules with retention stored on the datasets, from a job in
+  the job scheduler; retention only removes the snapshots schedules took. It
+  is left out without ZFS.
 - `modules/filemgr` manages the server's files from `/`; system top-level
   directories cannot be deleted or moved.
 

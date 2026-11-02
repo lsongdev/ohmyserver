@@ -51,9 +51,9 @@ import (
 	monitorweb "github.com/lsongdev/ohmyserver/modules/monitor/web"
 	pkgmgr "github.com/lsongdev/ohmyserver/modules/pkgmgr/web"
 	smbmgr "github.com/lsongdev/ohmyserver/modules/smbmgr/web"
-	zfsmgr "github.com/lsongdev/ohmyserver/modules/zfsmgr/web"
 	sshweb "github.com/lsongdev/ohmyserver/modules/ssh/web"
 	svcmgr "github.com/lsongdev/ohmyserver/modules/svcmgr/web"
+	zfsmgr "github.com/lsongdev/ohmyserver/modules/zfsmgr/web"
 	"github.com/lsongdev/ohmyserver/monitor"
 	"github.com/lsongdev/yabber"
 	yabberapi "github.com/lsongdev/yabber/api"
@@ -237,12 +237,26 @@ func run(cfg Config, logger *slog.Logger) error {
 		return fmt.Errorf("ssh: %w", err)
 	}
 
+	// ZFS snapshots: taking, comparing and rolling back, and the schedules
+	// stored on the datasets, which a job below applies.
+	snapshotJob := &cron.ZFSJob{}
+	snapshots := zfsmgr.New(zfsmgr.Options{Logger: logger, Trigger: snapshotJob})
+
 	// Scheduler: jobs run on this machine or on the SSH module's hosts.
-	scheduler, err := cronweb.New(ctx, db, cronweb.Options{
-		Runners: []runner.Runner{cron.SSHHosts{Service: terminals.Service}}, Logger: logger,
-	})
+	runners := []runner.Runner{cron.SSHHosts{Service: terminals.Service}}
+	if snapshots.API.Supported() {
+		runners = append(runners, cron.ZFSRunner{Service: snapshots.API})
+	}
+	scheduler, err := cronweb.New(ctx, db, cronweb.Options{Runners: runners, Logger: logger})
 	if err != nil {
 		return fmt.Errorf("cron: %w", err)
+	}
+	snapshotJob.Cron = scheduler.Service
+	if snapshots.API.Supported() {
+		// Not fatal: the panel works without it, and the ZFS pages say so.
+		if err := snapshotJob.Ensure(ctx); err != nil {
+			logger.Warn("zfs: creating the snapshot job", "err", err)
+		}
 	}
 
 	// Host monitor: this machine and the SSH module's hosts, read over SSH
@@ -274,9 +288,6 @@ func run(cfg Config, logger *slog.Logger) error {
 	// Samba: shares, server settings and users in smb.conf, and who is
 	// connected.
 	samba := smbmgr.New(smbmgr.Options{Logger: logger})
-	// ZFS snapshots: taking, comparing and rolling back, and the schedules
-	// stored on the datasets.
-	snapshots := zfsmgr.New(zfsmgr.Options{Logger: logger})
 	// Files: browse and manage the server's files, from /.
 	fileManager, err := filemgr.New(filemgr.Options{Logger: logger})
 	if err != nil {
