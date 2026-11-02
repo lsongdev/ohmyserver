@@ -21,6 +21,9 @@ type Target struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 	Kind string `json:"kind"`
+	// Internal targets serve a job the host program created; job forms do
+	// not offer them for new commands.
+	Internal bool `json:"internal,omitempty"`
 }
 
 // Kind returns the kind part of a target ID.

@@ -3,22 +3,29 @@ package system
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"log/slog"
 	"maps"
 	"sync"
 	"time"
 )
 
-// Scheduler applies the datasets' retention policies: each minute it takes
-// the automatic snapshots whose period has started, including any missed
-// while the server was off, then destroys the oldest beyond each class's
-// count. A class set to zero, or a policy removed, leaves existing
-// snapshots alone. A snapshot that is held or has clones cannot be
-// destroyed and stays; older ones are still removed.
+// Scheduler applies the datasets' retention policies. Each pass looks at what
+// exists and takes the automatic snapshots whose period has started,
+// including any missed earlier, then destroys the oldest beyond each class's
+// count, so it does not matter how often or how regularly passes run. A class
+// set to zero, or a policy removed, leaves existing snapshots alone. A
+// snapshot that is held or has clones cannot be destroyed and stays; older
+// ones are still removed.
+//
+// Apply is one pass, for a host's own job scheduler to call. Start runs passes
+// each minute for a host without one.
 type Scheduler struct {
 	ZFS    *ZFS
 	Logger *slog.Logger
 
+	pass   sync.Mutex // passes never overlap
 	mu     sync.Mutex
 	errors map[string]string // dataset → what last failed
 	cancel context.CancelFunc
@@ -39,7 +46,7 @@ func (s *Scheduler) Start() {
 			case <-ctx.Done():
 				return
 			case now := <-timer.C:
-				s.Tick(ctx, now)
+				s.Apply(ctx, now, io.Discard) // failures are logged and kept in Errors
 				timer.Reset(time.Minute)
 			}
 		}
@@ -61,38 +68,51 @@ func (s *Scheduler) Errors() map[string]string {
 	return maps.Clone(s.errors)
 }
 
-// Tick makes one pass over the datasets.
-func (s *Scheduler) Tick(ctx context.Context, now time.Time) {
-	failed := map[string]string{}
+// Apply makes one pass over the datasets, writing what it did to out. It
+// returns what failed; the other datasets are still handled.
+func (s *Scheduler) Apply(ctx context.Context, now time.Time, out io.Writer) error {
+	s.pass.Lock()
+	defer s.pass.Unlock()
 	datasets, err := s.ZFS.Datasets(ctx)
 	if err != nil {
 		if ctx.Err() == nil {
 			s.Logger.Warn("zfs: listing datasets", "err", err)
 		}
-		return // keep the previous errors: nothing was checked
+		return err // keep the previous errors: nothing was checked
 	}
+	failed := map[string]string{}
+	var failures []error
+	scheduled := 0
 	for _, d := range datasets {
 		if d.PolicyInvalid != "" {
+			err := fmt.Errorf("%s: unreadable policy %s; taking and removing nothing", d.Name, d.PolicyInvalid)
+			fmt.Fprintln(out, err)
 			failed[d.Name] = "unreadable policy " + d.PolicyInvalid + "; taking and removing nothing"
+			failures = append(failures, err)
 			continue
 		}
 		if !d.Policy.Enabled() {
 			continue
 		}
-		if err := s.apply(ctx, d, now); err != nil {
+		scheduled++
+		if err := s.apply(ctx, d, now, out); err != nil {
 			if ctx.Err() != nil {
-				return
+				return ctx.Err()
 			}
 			s.Logger.Warn("zfs: applying policy", "dataset", d.Name, "err", err)
+			fmt.Fprintf(out, "%s: %v\n", d.Name, err)
 			failed[d.Name] = err.Error()
+			failures = append(failures, err)
 		}
 	}
 	s.mu.Lock()
 	s.errors = failed
 	s.mu.Unlock()
+	fmt.Fprintf(out, "Checked %d scheduled dataset(s).\n", scheduled)
+	return errors.Join(failures...)
 }
 
-func (s *Scheduler) apply(ctx context.Context, d Dataset, now time.Time) error {
+func (s *Scheduler) apply(ctx context.Context, d Dataset, now time.Time, out io.Writer) error {
 	snapshots, err := s.ZFS.Snapshots(ctx, d.Name)
 	if err != nil {
 		return err
@@ -119,10 +139,12 @@ func (s *Scheduler) apply(ctx context.Context, d Dataset, now time.Time) error {
 				continue
 			}
 			s.Logger.Info("zfs: took a snapshot", "dataset", d.Name, "name", name)
+			fmt.Fprintf(out, "Took %s@%s\n", d.Name, name)
 			existing = append([]Snapshot{{Name: d.Name + "@" + name}}, existing...)
 		}
 		for _, old := range existing[min(keep, len(existing)):] {
 			if old.Holds > 0 || old.Clones != "" {
+				fmt.Fprintf(out, "Kept %s: it is held or cloned\n", old.Name)
 				continue
 			}
 			if err := s.ZFS.Destroy(ctx, old.Name); err != nil {
@@ -130,6 +152,7 @@ func (s *Scheduler) apply(ctx context.Context, d Dataset, now time.Time) error {
 				continue
 			}
 			s.Logger.Info("zfs: removed an old snapshot", "snapshot", old.Name)
+			fmt.Fprintf(out, "Removed %s\n", old.Name)
 		}
 	}
 	return errors.Join(failures...)

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -33,17 +34,44 @@ type Options struct {
 	Runner system.Runner
 	// Installed overrides looking for zfs and zpool, for tests.
 	Installed *bool
+	// Trigger is a host's job scheduler running the passes, by calling
+	// Apply. Without one the module runs a pass each minute itself.
+	Trigger Trigger
+}
+
+// Trigger is the job a host's scheduler runs the passes from.
+type Trigger interface {
+	// Status says how that job stands.
+	Status(ctx context.Context) (TriggerStatus, error)
+	// Run asks for a pass soon, unless the job is turned off.
+	Run(ctx context.Context) error
+}
+
+// TriggerStatus describes the job that runs the passes.
+type TriggerStatus struct {
+	JobID     int64      `json:"job_id,omitempty"` // 0: there is no such job
+	Enabled   bool       `json:"enabled"`
+	NextRun   *time.Time `json:"next_run,omitempty"`
+	LastRun   *time.Time `json:"last_run,omitempty"`
+	RunStatus string     `json:"run_status,omitempty"` // of the latest run
+}
+
+// Schedule is who runs the passes: the module itself, or a host's job.
+type Schedule struct {
+	External bool `json:"external"`
+	TriggerStatus
 }
 
 // Service serves the API.
 type Service struct {
 	zfs       *system.ZFS
 	scheduler *system.Scheduler
+	trigger   Trigger
 	installed bool
 	logger    *slog.Logger
 }
 
-// New finds ZFS. The scheduler does not run until Start.
+// New finds ZFS. Nothing is scheduled until Start.
 func New(opts Options) *Service {
 	run := opts.Runner
 	if run == nil {
@@ -58,21 +86,27 @@ func New(opts Options) *Service {
 		installed = *opts.Installed
 	}
 	zfs := &system.ZFS{Run: run}
-	return &Service{zfs: zfs, scheduler: &system.Scheduler{ZFS: zfs, Logger: logger}, installed: installed, logger: logger}
+	return &Service{zfs: zfs, scheduler: &system.Scheduler{ZFS: zfs, Logger: logger}, trigger: opts.Trigger, installed: installed, logger: logger}
 }
 
 // Supported reports whether ZFS is installed. Without it every endpoint but
 // /info answers 503 "unsupported", so a shell may leave the module out.
 func (s *Service) Supported() bool { return s.installed }
 
-// Start starts applying retention policies, if ZFS is installed.
+// Start starts running passes, if ZFS is installed and no Trigger does.
 func (s *Service) Start() {
-	if s.installed {
+	if s.installed && s.trigger == nil {
 		s.scheduler.Start()
 	}
 }
 
-// Close stops applying retention policies.
+// Apply makes one pass over the datasets' retention policies, writing what it
+// did to out, for a Trigger's job to call.
+func (s *Service) Apply(ctx context.Context, out io.Writer) error {
+	return s.scheduler.Apply(ctx, time.Now(), out)
+}
+
+// Close stops the passes the module runs itself.
 func (s *Service) Close() error {
 	s.scheduler.Stop()
 	return nil
@@ -170,7 +204,23 @@ func (s *Service) Handler() http.Handler {
 			err = s.zfs.SetPolicy(ctx, body.Dataset, *body.Policy)
 		}
 		s.logged(err, "changed a retention policy", "dataset", body.Dataset)
+		if err == nil && s.trigger != nil {
+			// A new schedule applies now rather than at the job's next time.
+			if err := s.trigger.Run(ctx); err != nil {
+				s.logger.Warn("zfs: starting a pass", "err", err)
+			}
+		}
 		return nil, err
+	})
+	handle("GET /schedule", func(r *http.Request) (any, error) {
+		if s.trigger == nil {
+			return Schedule{}, nil
+		}
+		status, err := s.trigger.Status(r.Context())
+		if err != nil {
+			return nil, err
+		}
+		return Schedule{External: true, TriggerStatus: status}, nil
 	})
 
 	handle("GET /snapshots", func(r *http.Request) (any, error) {

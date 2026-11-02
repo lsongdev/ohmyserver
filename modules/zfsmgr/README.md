@@ -18,11 +18,21 @@ A schedule is stored on the dataset as the user property
 by child datasets, and it survives reinstalling the panel. No dataset has one
 until you set it.
 
-While the panel runs it checks each minute. When a class's period has started
-(the hour, the day, the week from Monday, the month, in the server's time
-zone) and no snapshot of the class exists for it, it takes
-`auto-<class>-YYYYMMDD-HHMM`, including one for a period started while the
-panel was off, then deletes the oldest of that class beyond its count.
+Each pass looks at what exists. When a class's period has started (the hour,
+the day, the week from Monday, the month, in the server's time zone) and no
+snapshot of the class exists for it, it takes `auto-<class>-YYYYMMDD-HHMM`,
+including one for a period missed earlier, then deletes the oldest of that
+class beyond its count. Since it goes by what exists, it does not matter when
+or how often passes run.
+
+In OhMyServer the job scheduler runs the passes: a job named ZFS snapshots,
+created at startup and running each hour, so they show up with their output
+and outcome among the other jobs and can be run by hand. The job can be
+rescheduled; turned off or deleted, no snapshots are taken or removed and the
+ZFS pages say so. A deleted job comes back when a schedule is saved or the panel
+restarts. Saving a schedule also starts a pass. On its own, `zfsmgr` runs a pass
+each minute instead, and a host program chooses by setting `Options.Trigger` and
+calling `Service.Apply` from its job.
 
 Retention is deliberately narrow:
 
@@ -70,6 +80,7 @@ they travel in the query string or the body.
 | GET | `/datasets` | Filesystems and volumes with snapshot counts and schedules |
 | GET | `/dataset?name=` | One of them |
 | PUT | `/policy` | `{dataset, policy: {hourly, daily, weekly, monthly}}`; a null policy removes the dataset's own |
+| GET | `/schedule` | Who runs the passes: `{external, job_id, enabled, next_run, last_run, run_status}` |
 | GET | `/snapshots?dataset=` | Newest first; without a dataset, all of them |
 | GET | `/snapshot?name=` | One, with the newer ones a rollback destroys and its files' path |
 | GET | `/snapshot/diff?name=` | `{changes, truncated}`, the first 5000 changes since it |

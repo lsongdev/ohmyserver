@@ -295,3 +295,38 @@ func TestOutputIsCapped(t *testing.T) {
 		t.Fatalf("kept %d runs", len(runs))
 	}
 }
+
+func TestEnsureJobCreatesOnceAndKeepsChanges(t *testing.T) {
+	ctx := context.Background()
+	db, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "cron.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	st, err := store.New(ctx, db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := api.NewService(st, api.Options{Runners: []runner.Runner{&fakeRunner{}}})
+	if err := s.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	job := store.Job{Name: "managed", Schedule: "@daily", Target: "fake:a", Command: "x", Enabled: true}
+	first, err := s.EnsureJob(ctx, job)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.SetEnabled(ctx, first.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	job.Name, job.Schedule = "other", "@hourly"
+	second, err := s.EnsureJob(ctx, job)
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobs, _ := s.Jobs(ctx)
+	if len(jobs) != 1 || second.ID != first.ID || second.Enabled || second.Schedule != "@daily" {
+		t.Fatalf("%+v", jobs)
+	}
+}

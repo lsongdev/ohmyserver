@@ -18,3 +18,4 @@
 .zfs-keep { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
 .zfs-pool + .zfs-pool { margin-top: 12px; }
 .zfs-pool-line { display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.zfs-schedule { margin: 0 0 14px; }

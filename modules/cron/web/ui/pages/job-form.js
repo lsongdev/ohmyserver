@@ -74,7 +74,7 @@ function JobForm({ job, targets, back }) {
         <//>
         <${Field} label="Runs on">
           <select class="input" value=${j.target} onChange=${e => set({ target: e.currentTarget.value })}>
-            ${targets.map(t => html`<option value=${t.id}>${t.kind === 'local' ? `Local (${t.name})` : `${t.name} (${t.kind.toUpperCase()})`}</option>`)}
+            ${targets.filter(t => !t.internal || t.id === j.target).map(t => html`<option value=${t.id}>${t.kind === 'local' ? `Local (${t.name})` : `${t.name} (${t.kind.toUpperCase()})`}</option>`)}
             ${targets.some(t => t.id === j.target) ? null : html`<option value=${j.target}>${j.target} (unavailable)</option>`}
           </select>
         <//>

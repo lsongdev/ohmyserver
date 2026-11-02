@@ -171,3 +171,36 @@ func TestUnsupportedWithoutZFS(t *testing.T) {
 		t.Fatal(code)
 	}
 }
+
+type fakeTrigger struct {
+	runs   int
+	status TriggerStatus
+}
+
+func (f *fakeTrigger) Status(context.Context) (TriggerStatus, error) { return f.status, nil }
+func (f *fakeTrigger) Run(context.Context) error                     { f.runs++; return nil }
+
+func TestScheduleAndTrigger(t *testing.T) {
+	srv, _ := newServer(t)
+	var own Schedule
+	if code := call(t, srv, "GET", "/schedule", nil, &own); code != 200 || own.External {
+		t.Fatalf("code %d, %+v", code, own)
+	}
+
+	yes := true
+	trigger := &fakeTrigger{status: TriggerStatus{JobID: 7, Enabled: true, RunStatus: "succeeded"}}
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	withJob := httptest.NewServer(New(Options{Runner: &fake{}, Installed: &yes, Logger: logger, Trigger: trigger}).Handler())
+	defer withJob.Close()
+	var got Schedule
+	if code := call(t, withJob, "GET", "/schedule", nil, &got); code != 200 || !got.External || got.JobID != 7 {
+		t.Fatalf("code %d, %+v", code, got)
+	}
+	body := map[string]any{"dataset": "data", "policy": system.Policy{Daily: 7}}
+	if code := call(t, withJob, "PUT", "/policy", body, nil); code != 200 || trigger.runs != 1 {
+		t.Fatalf("code %d, %d runs", code, trigger.runs)
+	}
+	if code := call(t, withJob, "PUT", "/policy", map[string]any{"dataset": "bad@name"}, nil); code != 400 || trigger.runs != 1 {
+		t.Fatalf("code %d, %d runs after a refused change", code, trigger.runs)
+	}
+}
