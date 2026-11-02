@@ -25,6 +25,7 @@ Modules that are still small and change with the panel live in
 | Services (systemd) and logs (journal) | [modules/svcmgr](modules/svcmgr) | `svcmgr` |
 | Disks (capacity, RAID, SMART health) | [modules/diskmgr](modules/diskmgr) | `diskmgr` |
 | Samba shares, settings and users (smb.conf) | [modules/smbmgr](modules/smbmgr) | `smbmgr` |
+| ZFS snapshots, schedules and retention | [modules/zfsmgr](modules/zfsmgr) | `zfsmgr` |
 | Files (browse, edit, upload, download, move, copy) | [modules/filemgr](modules/filemgr) | `filemgr` |
 | Domains at DNS providers (Cloudflare), and DNS-01 for certificates | [modules/domains](modules/domains) | `domains` |
 
@@ -71,6 +72,9 @@ This repository holds the assembly:
 - `modules/smbmgr` edits Samba's smb.conf (shares, server settings, or the
   file as text) and its users; testparm checks every change before it
   replaces the file, and smbd reloads it. It is left out without Samba.
+- `modules/zfsmgr` takes, compares, deletes and rolls back to ZFS snapshots,
+  and applies schedules with retention stored on the datasets; retention only
+  removes the snapshots schedules took. It is left out without ZFS.
 - `modules/filemgr` manages the server's files from `/`; system top-level
   directories cannot be deleted or moved.
 
