@@ -152,7 +152,7 @@ function GlobalFields({ f, set, busy }) {
   <//>`;
   return html`
       ${GROUPS.map(group => html`<${FormSection} key=${group.title} title=${group.title} description=${group.description}>
-        <div class="form-grid">${group.fields.map(field)}</div>
+        <div class="samba-settings-fields">${group.fields.map(field)}</div>
       <//>`)}
       <${FormSection} title="Custom parameters" description="Additional [global] settings without a dedicated field above. Enter their Samba parameter names and values; testparm validates all settings when you save.">
         <${ParamsEditor} rows=${f.other} onChange=${other => set({ other })} disabled=${busy} />

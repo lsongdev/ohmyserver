@@ -4,6 +4,6 @@
   "description": "Browser dependencies of this UI, embedded by Go from node_modules (npm ci).",
   "dependencies": {
     "@lsongdev/scripts": "0.1.0-rc.6",
-    "@lsongdev/stylesheets": "1.3.3"
+    "@lsongdev/stylesheets": "https://codeload.github.com/lsongdev/stylesheets/tar.gz/67b77655b28ed4948ba369cba8c962a5fbdc293f"
   }
 }
