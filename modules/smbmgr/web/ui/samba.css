@@ -29,3 +29,5 @@
 .samba-editor-mode { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .samba-editor-mode .button { border: 0; border-radius: 0; }
 .samba-editor-mode .button.active { background: var(--primary-soft); color: var(--primary); }
+
+.samba-settings-fields { display: flex; flex-direction: column; gap: 16px; }

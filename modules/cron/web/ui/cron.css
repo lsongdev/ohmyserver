@@ -5,3 +5,5 @@
 .cell-command { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: 12.5px; }
 .examples { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 .num, .table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.cron-job-fields { display: flex; flex-direction: column; gap: 16px; }

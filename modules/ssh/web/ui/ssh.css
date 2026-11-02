@@ -5,3 +5,5 @@
 fieldset.field { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 .key-line { margin: 0; padding: 12px; border-radius: var(--radius); background: var(--surface-2); font: 12.5px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 .test-result { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.ssh-host-fields { display: flex; flex-direction: column; gap: 16px; }

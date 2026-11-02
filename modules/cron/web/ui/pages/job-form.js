@@ -68,7 +68,7 @@ function JobForm({ job, targets, back }) {
       <fieldset class="form-fields" disabled=${busy}>
       <${Notice} error=${error} />
       <${FormSection} title="Execution">
-      <div class="form-grid">
+      <div class="cron-job-fields">
         <${Field} label="Name" required>
           <input class="input" required value=${j.name} onInput=${e => set({ name: e.currentTarget.value })} placeholder="backup" autofocus />
         <//>
@@ -83,7 +83,7 @@ function JobForm({ job, targets, back }) {
         <textarea class="input" rows="5" spellcheck="false" required value=${j.command}
           placeholder="tar czf /backup/data-$(date +%F).tgz /srv/data" onInput=${e => set({ command: e.currentTarget.value })} />
       <//>
-      <div class="form-grid">
+      <div class="cron-job-fields">
         <${Field} label="Directory" hint="Empty uses the default">
           <input class="input mono" value=${j.dir} onInput=${e => set({ dir: e.currentTarget.value })} />
         <//>
@@ -93,7 +93,7 @@ function JobForm({ job, targets, back }) {
       </div>
       <//>
       <${FormSection} title="Schedule">
-      <div class="form-grid">
+      <div class="cron-job-fields">
         <${Field} label="Schedule" required error=${preview.error}>
           <input class="input mono" required value=${j.schedule} onInput=${e => set({ schedule: e.currentTarget.value })} />
           <div class="examples">${EXAMPLES.map(([label, expr]) => html`<button type="button" class="button button-small" key=${expr} onClick=${() => set({ schedule: expr })}>${label}</button>`)}</div>

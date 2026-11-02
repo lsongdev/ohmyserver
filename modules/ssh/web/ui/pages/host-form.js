@@ -49,7 +49,7 @@ function HostForm({ host, back }) {
       <fieldset class="form-fields" disabled=${save.busy || test.busy}>
       <${Notice} error=${save.error || test.error} />
       <${FormSection} title="Connection">
-      <div class="form-grid">
+      <div class="ssh-host-fields">
         <${Field} label="Name" required>
           <input class="input" required value=${h.name} onInput=${e => set({ name: e.currentTarget.value })} placeholder="nas" autofocus />
         <//>
