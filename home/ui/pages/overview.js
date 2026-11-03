@@ -14,6 +14,27 @@ function Card({ title, to, value, sub, error }) {
   return to ? html`<a class="card stat" href=${to}>${body}</a>` : html`<div class="card stat">${body}</div>`;
 }
 
+// Issues lists what is wrong right now, and takes no room when nothing is.
+function Issues({ summary: n, link }) {
+  if (!n?.open) return null;
+  const tones = { critical: 'red', warning: 'amber', info: 'blue' };
+  const target = i => {
+    if (!i.link) return link('notify', '/');
+    const [route, search = ''] = i.link.split('?');
+    return link(i.source, route, Object.fromEntries(new URLSearchParams(search))) || link('notify', '/');
+  };
+  return html`<div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <strong>${n.open === 1 ? '1 open issue' : `${n.open} open issues`}</strong>
+      ${link('notify', '/') ? html`<a href=${link('notify', '/')}>All notifications</a>` : null}
+    </div>
+    <div style="display:grid;gap:6px">${n.issues.map(i => html`<div key=${i.id} style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <${Badge} tone=${tones[i.level]}>${i.level[0].toUpperCase() + i.level.slice(1)}<//>
+      ${target(i) ? html`<a href=${target(i)}>${i.title}</a>` : i.title}
+    </div>`)}</div>
+  </div>`;
+}
+
 export default function Overview({ ctx }) {
   const api = useMemo(() => createClient(ctx.apiBase), [ctx.apiBase]);
   const summary = useResource(signal => api.get('summary', { signal }), [api], { interval: 10000 });
@@ -24,6 +45,7 @@ export default function Overview({ ctx }) {
   return html`<${Page} title="Dashboard">
     <${Notice} error=${summary.error} />
     ${!s ? (summary.error ? null : html`<${Loading} />`) : html`
+      <${Issues} summary=${s.notifications} link=${link} />
       ${local ? html`<div class="grid" style="margin-bottom:16px">
         <${Card} title="CPU" to=${link('monitor', '/hosts/local')} value=${`${local.cpu.toFixed(1)}%`} sub=${`Load ${local.load1.toFixed(2)}`} />
         <${Card} title="Memory" to=${link('monitor', '/hosts/local')} value=${`${pct(local.mem_used, local.mem_total)}%`}
