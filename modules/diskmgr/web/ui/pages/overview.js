@@ -3,17 +3,18 @@ import { Page, Notice, Loading, Empty, Badge, Status, Table } from '../lib/ui.js
 import { usePanel } from '../lib/panel.js';
 import { bytes } from '../lib/format.js';
 import { useApi, kind, uptime, usage, HealthStatus } from '../disks.js';
+import { PoolCard } from '../components/pool.js';
 
 export default function Overview() {
   const { href, link } = usePanel();
   const system = useApi('/system');
   const overview = useApi(system.data?.supported ? '/overview' : null, 30000);
   if (system.data && !system.data.supported) {
-    return html`<${Page} title="Storage"><${Notice} tone="info">Disk information needs Linux (lsblk) or macOS (diskutil); neither was found.<//><//>`;
+    return html`<${Page} title="Overview"><${Notice} tone="info">Disk information needs Linux (lsblk) or macOS (diskutil); neither was found.<//><//>`;
   }
   const o = overview.data;
   const install = link?.('packages', '/', { tab: 'search', s: 'smartmontools' });
-  return html`<${Page} title="Storage">
+  return html`<${Page} title="Overview">
     ${system.data && !system.data.smartctl ? html`<${Notice} tone="info">
       Disk health needs smartmontools.${install ? html` <a href=${install}>Install it from Packages</a>.` : ' Install the smartmontools package.'}
     <//>` : null}
@@ -24,6 +25,11 @@ export default function Overview() {
         ${o.filesystems.length === 0 ? html`<${Empty}>No mounted file systems.<//>` : html`
           <div class="grid">${o.filesystems.map(fs => html`<${FileSystem} key=${fs.source} fs=${fs} />`)}</div>`}
       </section>
+      ${o.pools.length || o.pools_error ? html`<section class="section">
+        <h2>ZFS pools</h2>
+        ${o.pools_error ? html`<${Notice} tone="warn">${o.pools_error}<//>` : null}
+        ${o.pools.map(p => html`<${PoolCard} key=${p.name} pool=${p} />`)}
+      </section>` : null}
       ${o.arrays.length ? html`<section class="section">
         <h2>RAID arrays</h2>
         <div class="grid-2">${o.arrays.map(a => html`<${ArrayCard} key=${a.name} array=${a} />`)}</div>
@@ -49,10 +55,12 @@ export default function Overview() {
 }
 
 function FileSystem({ fs }) {
+  const { link } = usePanel();
   const pct = fs.size ? Math.round((fs.used / fs.size) * 100) : 0;
+  const snapshots = fs.type === 'zfs' && link?.('zfs', '/', { dataset: fs.source });
   return html`<div class="card fs-card">
     <div class="fs-head"><strong>${fs.mountpoint}</strong><span class="muted small">${fs.type}</span></div>
-    <div class="cell-sub">${fs.source}</div>
+    <div class="cell-sub">${fs.source}${snapshots ? html` · <a href=${snapshots}>Snapshots</a>` : null}</div>
     <div class=${`meter ${pct >= 90 ? 'danger' : pct >= 80 ? 'warning' : ''}`}><span style=${`width:${pct}%`}></span></div>
     <div class="fs-numbers"><span>${pct}% used · ${bytes(fs.used)}</span><span>${bytes(fs.available)} free of ${bytes(fs.size)}</span></div>
   </div>`;

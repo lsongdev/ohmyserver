@@ -45,6 +45,7 @@ export function usage(disk) {
     if (b.type?.startsWith('raid')) found.push(`${b.name} (${b.type})${b.mountpoint ? ` ${b.mountpoint}` : ''}`);
     else if (b.mountpoint) found.push(b.mountpoint);
     else if (b.fstype === 'swap') found.push('swap');
+    else if (b.fstype === 'zfs_member') found.push(`${b.label || 'pool'} (ZFS)`);
     (b.children || []).forEach(walk);
   };
   walk(disk);

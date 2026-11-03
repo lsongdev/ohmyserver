@@ -5,11 +5,13 @@ import { bytes } from '../lib/format.js';
 import { useApi, policyText, ScheduleStatus } from '../zfs.js';
 
 function Pools({ pools }) {
+  const { link } = usePanel();
+  const health = link?.('disks', '/');
   const full = pools.filter(p => p.capacity >= 80);
   return html`<div class="card">
     ${pools.map(p => html`<div class="zfs-pool" key=${p.name}>
       <div class="zfs-pool-line">
-        <span class="cell-main">${p.name} <${Status} state=${p.health === 'ONLINE' ? 'healthy' : 'unhealthy'} label=${p.health} /></span>
+        <span class="cell-main">${p.name} <${Status} state=${p.health === 'ONLINE' ? 'healthy' : 'unhealthy'} label=${p.health} />${health ? html` <a class="small" href=${health}>Devices and scrubs</a>` : null}</span>
         <span class="muted">${bytes(p.alloc)} of ${bytes(p.size)} allocated (${p.capacity}%)</span>
       </div>
       <div class="meter" role="progressbar" aria-label=${`${p.name} capacity`} aria-valuenow=${p.capacity} aria-valuemin="0" aria-valuemax="100"><span style=${`width:${p.capacity}%`}></span></div>
