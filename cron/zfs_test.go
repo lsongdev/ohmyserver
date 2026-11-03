@@ -25,7 +25,7 @@ func (f *zfsFake) Run(_ context.Context, name string, args ...string) ([]byte, e
 	line := name + " " + strings.Join(args, " ")
 	switch {
 	case strings.HasPrefix(line, "zfs list -Hp -t filesystem,volume"):
-		return []byte("data\tfilesystem\t1\t1\t1\t0\t/data\tyes\n"), nil
+		return []byte("data\tfilesystem\t1\t1\t1\t0\t/data\tyes\tlz4\t0\n"), nil
 	case strings.HasPrefix(line, "zfs get -Hp"):
 		return []byte("data\thourly=0,daily=7,weekly=0,monthly=0\tlocal\n"), nil
 	case strings.HasPrefix(line, "zfs snapshot") && f.fail != "":

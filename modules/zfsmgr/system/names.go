@@ -44,6 +44,12 @@ func ValidDataset(name string) error {
 	return nil
 }
 
+// validPool checks a pool's name: one part of a dataset name, starting with a
+// letter as zpool requires.
+func validPool(name string) bool {
+	return validComponent(name) && (name[0] >= 'a' && name[0] <= 'z' || name[0] >= 'A' && name[0] <= 'Z') && !strings.Contains(name, " ")
+}
+
 // ValidSnapshotName checks the part of a snapshot's name after the @.
 func ValidSnapshotName(name string) error {
 	if !validComponent(name) {

@@ -5,12 +5,12 @@ import { usePanel } from './lib/panel.js';
 import { Badge, Modal, Notice, toast } from './lib/ui.js';
 import { datetime } from './lib/format.js';
 
-// useApi loads a GET endpoint with an optional query; a null path loads
-// nothing yet.
-export function useApi(path, query) {
+// useApi loads a GET endpoint with an optional query, polling every interval
+// milliseconds when that is positive; a null path loads nothing yet.
+export function useApi(path, query, interval) {
   const { api } = usePanel();
   const key = JSON.stringify(query || {});
-  return useResource(signal => (path ? api.get(path, { signal, query }) : Promise.resolve(undefined)), [path, key]);
+  return useResource(signal => (path ? api.get(path, { signal, query }) : Promise.resolve(undefined)), [path, key], { interval });
 }
 
 // Automatic snapshots are removed by retention; badges say so at a glance.

@@ -1,95 +1,72 @@
-import { html, useEffect, useState } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, Field, toast } from '../lib/ui.js';
+import { html, useState } from '../lib/html.js';
+import { Page, Notice, Loading, Empty, Badge, KV } from '../lib/ui.js';
 import { usePanel } from '../lib/panel.js';
-import { useUnsavedChanges } from '../lib/forms.js';
-import { useApi, CLASSES, pinned, ScheduleStatus } from '../zfs.js';
+import { routeURL } from '../lib/forms.js';
+import { bytes } from '../lib/format.js';
+import { useApi, policyText, ScheduleStatus } from '../zfs.js';
+import { SnapshotTable, TakeSnapshotDialog } from '../components/snapshots.js';
 
-const HINTS = {
-  hourly: 'Each hour',
-  daily: 'Each day, from midnight',
-  weekly: 'Each week, from Monday',
-  monthly: 'Each month, from the 1st',
-};
-
-const toForm = policy => Object.fromEntries(CLASSES.map(c => [c, String(policy?.[c] ?? 0)]));
-const valid = v => /^\d+$/.test(v) && Number(v) <= 1000;
-
+// A dataset: its space, its schedule and its snapshots. Opened from Disks, its
+// return link goes back there.
 export default function Dataset() {
-  const { query, api, navigate, href } = usePanel();
+  const { query, href, link } = usePanel();
   const name = query.name || '';
-  const dataset = useApi(name ? '/dataset' : null, { name });
+  const pool = name.split('/')[0];
+  const datasets = useApi('/datasets');
   const snapshots = useApi(name ? '/snapshots' : null, { dataset: name });
   const schedule = useApi('/schedule');
-  const d = dataset.data;
-  const [form, setForm] = useState(null);
-  const { busy, error, run } = useAction();
-  useEffect(() => { if (d && !form) setForm(toForm(d.policy)); }, [d]);
+  const [taking, setTaking] = useState(false);
+  const d = datasets.data?.find(x => x.name === name);
+  const children = (datasets.data || []).filter(x => x.name.startsWith(name + '/') && !x.name.slice(name.length + 1).includes('/'));
+  const disks = query.from === 'disks' && link?.('disks', '/');
+  const files = d?.type === 'filesystem' && d.mounted && d.mountpoint && link?.('files', '/', { path: d.mountpoint });
+  const changed = () => { snapshots.reload(); datasets.reload(); };
+  const returnTo = routeURL('/dataset', { name, from: query.from });
 
-  const original = d ? toForm(d.policy) : null;
-  const dirty = !!form && CLASSES.some(c => form[c] !== original[c]);
-  const saved = useUnsavedChanges(dirty, { pending: busy });
-  const invalid = !form || CLASSES.some(c => !valid(form[c]));
-  const leave = () => navigate('/datasets');
-
-  // What saving would remove: retention applies within a minute.
-  const removed = form && !invalid && snapshots.data ? CLASSES.reduce((total, c) => {
-    const keep = Number(form[c]);
-    if (keep === 0) return total; // a class turned off keeps what it has
-    // Newest first; held and cloned ones count toward keep but are not removed.
-    const excess = snapshots.data.filter(s => s.class === c).slice(keep);
-    return total + excess.filter(s => !pinned(s)).length;
-  }, 0) : 0;
-
-  const save = e => {
-    e.preventDefault();
-    if (invalid) return;
-    if (removed > 0 && !window.confirm(`Saving removes the oldest ${removed} automatic snapshot${removed === 1 ? '' : 's'} of ${name} within a minute. They cannot be recovered. Continue?`)) return;
-    run(async () => {
-      await api.put('/policy', { dataset: name, policy: Object.fromEntries(CLASSES.map(c => [c, Number(form[c])])) });
-      toast(`Saved the schedule of ${name}`, 'success');
-      saved();
-      leave();
-    });
-  };
-  const inherit = () => {
-    const parent = name.includes('/');
-    if (!window.confirm(parent
-      ? `Remove ${name}'s own schedule and follow its parent's? Retention then uses the parent's counts.`
-      : `Remove the schedule of ${name}? No new automatic snapshots are taken, and existing ones stay until you delete them.`)) return;
-    run(async () => {
-      await api.put('/policy', { dataset: name, policy: null });
-      toast(parent ? `${name} now follows its parent` : `Removed the schedule of ${name}`, 'success');
-      saved();
-      leave();
-    });
-  };
-
-  return html`<${Page} title=${name || 'Dataset'} subtitle="Automatic snapshots and how many of each to keep"
-    back=${{ href: href('/datasets'), label: 'Datasets' }}>
-    <${Notice} error=${dataset.error} />
-    ${!d || !form ? (dataset.error ? null : html`<${Loading} />`) : html`
-      <form class="form settings-form" onSubmit=${save}>
-        <${Notice} error=${error} />
-        <${ScheduleStatus} schedule=${schedule.data} scheduled=${true} />
-        ${d.schedule_error ? html`<${Notice}>The last run failed: ${d.schedule_error}<//>` : null}
-        ${d.policy_invalid ? html`<${Notice} tone="warn">The stored policy <code>${d.policy_invalid}</code> cannot be read, so nothing is taken or removed. Saving replaces it.<//>` : null}
-        ${d.policy_source && d.policy_source !== 'local' ? html`<${Notice} tone="info">Follows the schedule of ${d.policy_source}. Saving gives ${name} its own.<//>` : null}
+  return html`<${Page} title=${name || 'Dataset'} subtitle=${d?.mountpoint || d?.type}
+    back=${disks ? { href: disks, label: 'Disks' } : { href: href('/pool', { name: pool }), label: pool }}
+    actions=${d ? html`<span class="zfs-actions">
+      ${files ? html`<a class="button" href=${files}>Browse files</a>` : null}
+      ${d.type === 'filesystem' ? html`<a class="button" href=${href('/dataset/new', { parent: name })}>New child dataset</a>` : null}
+    </span>` : null}>
+    <${Notice} error=${datasets.error || snapshots.error || schedule.error} />
+    ${!datasets.data ? (datasets.error ? null : html`<${Loading} />`) : !d ? html`<${Empty}>No dataset named ${name}.<//>` : html`
+      <div class="card">
+        <${KV} items=${[
+          ['Used', html`${bytes(d.used)} <span class="muted">${bytes(d.snapshot_used)} of it only in snapshots</span>`],
+          ['Available', bytes(d.available)],
+          ['Compression', d.compression || '—'],
+          ['Quota', d.quota ? bytes(d.quota) : 'None'],
+          d.mounted || d.type !== 'filesystem' ? null : ['Mounted', html`<${Badge} tone="amber">Not mounted<//>`],
+        ].filter(Boolean)} />
+      </div>
+      <section class="section">
+        <div class="section-row">
+          <h2 class="section-title">Schedule</h2>
+          <a class="button button-small" href=${href('/dataset/schedule', { name, from: query.from })}>Edit schedule</a>
+        </div>
+        <${ScheduleStatus} schedule=${schedule.data} scheduled=${!!policyText(d.policy)} />
         <div class="card">
-          <div class="zfs-keep">
-            ${CLASSES.map(c => html`<${Field} key=${c} label=${`Keep ${c}`} hint=${HINTS[c]} error=${valid(form[c]) ? null : 'From 0 to 1000'}>
-              <input class="input" type="number" min="0" max="1000" step="1" required disabled=${busy} value=${form[c]}
-                onInput=${e => setForm({ ...form, [c]: e.currentTarget.value })} />
-            <//>`)}
-          </div>
-          <p class="muted small">Zero takes none of that class and leaves the ones it already has. Only snapshots named <code>auto-…</code> by a schedule are ever removed, oldest first; manual, held and cloned ones stay. Child datasets without a schedule of their own follow this one.</p>
+          ${d.policy_invalid ? html`<${Badge} tone="red" title=${d.policy_invalid}>Unreadable<//>`
+            : policyText(d.policy) ? html`Keeps ${policyText(d.policy)}${d.policy_source && d.policy_source !== 'local' ? html` <span class="muted">· from ${d.policy_source}</span>` : null}`
+            : html`<span class="muted">No automatic snapshots</span>`}
+          ${d.schedule_error ? html`<div class="pool-line"><${Badge} tone="red" title=${d.schedule_error}>Last run failed<//></div>` : null}
         </div>
-        ${removed > 0 && dirty ? html`<${Notice} tone="warn">Saving removes the oldest ${removed} automatic snapshot${removed === 1 ? '' : 's'} within a minute.<//>` : null}
-        <div class="zfs-actions">
-          <button class="button button-primary" type="submit" disabled=${busy || invalid || !dirty}>${busy ? 'Saving…' : 'Save'}</button>
-          <button class="button" type="button" disabled=${busy} onClick=${leave}>Cancel</button>
-          ${d.policy_source === 'local' ? html`<button class="button" type="button" disabled=${busy} onClick=${inherit}>${name.includes('/') ? "Follow parent's schedule" : 'Remove schedule'}</button>` : null}
+      </section>
+      ${children.length ? html`<section class="section">
+        <h2 class="section-title">Child datasets</h2>
+        <p class="zfs-children">${children.map(c => html`<a key=${c.name} class="button button-small" href=${href('/dataset', { name: c.name })}>${c.name.split('/').pop()}</a>`)}</p>
+        <p class="muted small">Each has its own snapshots: a snapshot of ${name} does not include their files.</p>
+      </section>` : null}
+      <section class="section">
+        <div class="section-row">
+          <h2 class="section-title">Snapshots</h2>
+          <button class="button button-small button-primary" onClick=${() => setTaking(true)}>Take snapshot</button>
         </div>
-      </form>`}
+        ${!snapshots.data ? (snapshots.error ? null : html`<${Loading} />`) : snapshots.data.length === 0
+          ? html`<${Empty}>No snapshots of this dataset yet.<//>`
+          : html`<${SnapshotTable} snapshots=${snapshots.data} returnTo=${returnTo} showDataset=${false} onChanged=${changed} />`}
+      </section>`}
+    ${taking ? html`<${TakeSnapshotDialog} datasets=${datasets.data} dataset=${name} fixed=${true} onClose=${() => setTaking(false)} onCreated=${changed} />` : null}
   <//>`;
 }

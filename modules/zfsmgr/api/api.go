@@ -112,6 +112,13 @@ func (s *Service) Close() error {
 	return nil
 }
 
+// PoolList is the pools, and why their devices and scrubs could not be read if
+// they could not.
+type PoolList struct {
+	Pools        []system.Pool `json:"pools"`
+	DetailsError string        `json:"details_error,omitempty"`
+}
+
 // SnapshotDetail is a snapshot with what a rollback to it would destroy and
 // where its files are.
 type SnapshotDetail struct {
@@ -172,7 +179,19 @@ func (s *Service) Handler() http.Handler {
 		}
 		respond(w, func(*http.Request) (any, error) { return info, nil }, r)
 	})
-	handle("GET /pools", func(r *http.Request) (any, error) { return s.zfs.Pools(r.Context()) })
+	handle("GET /pools", func(r *http.Request) (any, error) {
+		pools, err := s.zfs.Pools(r.Context())
+		if err != nil {
+			return nil, err
+		}
+		list := PoolList{Pools: pools}
+		// Without details the capacity is still worth showing.
+		if err := s.zfs.AddHealth(r.Context(), pools); err != nil {
+			s.logger.Warn("zfs: reading pool health", "err", err)
+			list.DetailsError = err.Error()
+		}
+		return list, nil
+	})
 	handle("GET /datasets", func(r *http.Request) (any, error) {
 		list, err := s.zfs.Datasets(r.Context())
 		if err != nil {
@@ -191,6 +210,33 @@ func (s *Service) Handler() http.Handler {
 		}
 		d.ScheduleError = s.scheduler.Errors()[d.Name]
 		return d, nil
+	})
+	change("POST /datasets", func(ctx context.Context, r *http.Request) (any, error) {
+		var body system.NewDataset
+		if err := decode(r, &body); err != nil {
+			return nil, err
+		}
+		full, err := s.zfs.CreateDataset(ctx, body)
+		s.logged(err, "created a dataset", "dataset", full)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]string{"name": full}, nil
+	})
+	change("POST /pools/scrub", func(ctx context.Context, r *http.Request) (any, error) {
+		var body struct {
+			Pool   string `json:"pool"`
+			Action string `json:"action"` // start or stop
+		}
+		if err := decode(r, &body); err != nil {
+			return nil, err
+		}
+		if body.Action != "start" && body.Action != "stop" {
+			return nil, fmt.Errorf("%w action %q", system.ErrInvalid, body.Action)
+		}
+		err := s.zfs.Scrub(ctx, body.Pool, body.Action == "start")
+		s.logged(err, "changed a scrub", "pool", body.Pool, "action", body.Action)
+		return nil, err
 	})
 	change("PUT /policy", func(ctx context.Context, r *http.Request) (any, error) {
 		var body policyBody

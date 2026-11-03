@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	datasets  = "data\tfilesystem\t10\t20\t10\t3\t/data\tyes\ndata/vol\tvolume\t1\t2\t1\t0\tnone\t-\n"
+	datasets  = "data\tfilesystem\t10\t20\t10\t3\t/data\tyes\tlz4\t0\ndata/vol\tvolume\t1\t2\t1\t0\tnone\t-\tlz4\t-\n"
 	policies  = "data\thourly=24,daily=0,weekly=0,monthly=0\tlocal\ndata/vol\thourly=24,daily=0,weekly=0,monthly=0\tinherited from data\n"
 	snapshots = "data@b\t200\t1\t2\t3\t0\t-\ndata@a\t100\t1\t2\t3\t0\t-\n"
 )
@@ -31,6 +31,12 @@ func (f *fake) Run(ctx context.Context, name string, args ...string) ([]byte, er
 		return []byte(policies), nil
 	case strings.HasPrefix(line, "zfs list -Hp -t snapshot"):
 		return []byte(snapshots), nil
+	}
+	switch {
+	case strings.HasPrefix(line, "zpool list"):
+		return []byte("data\t100\t80\t20\t80\tONLINE\n"), nil
+	case strings.HasPrefix(line, "zpool status"):
+		return nil, &system.ExitError{Command: name, Code: 2, Output: "invalid option 'j'"}
 	}
 	f.calls = append(f.calls, line)
 	if strings.Contains(line, "destroy data@busy") {
@@ -202,5 +208,16 @@ func TestScheduleAndTrigger(t *testing.T) {
 	}
 	if code := call(t, withJob, "PUT", "/policy", map[string]any{"dataset": "bad@name"}, nil); code != 400 || trigger.runs != 1 {
 		t.Fatalf("code %d, %d runs after a refused change", code, trigger.runs)
+	}
+}
+
+func TestPoolsKeepCapacityWithoutDetails(t *testing.T) {
+	srv, _ := newServer(t)
+	var list PoolList
+	if code := call(t, srv, "GET", "/pools", nil, &list); code != 200 {
+		t.Fatal(code)
+	}
+	if len(list.Pools) != 1 || list.Pools[0].Capacity != 80 || list.DetailsError != "reading devices and scrubs needs OpenZFS 2.3 or later" {
+		t.Fatalf("%+v", list)
 	}
 }

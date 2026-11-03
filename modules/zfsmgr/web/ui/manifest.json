@@ -1,13 +1,13 @@
 {
   "contract": 1,
   "id": "zfs",
-  "title": "ZFS Snapshots",
-  "icon": "◷",
+  "title": "ZFS",
+  "icon": "◍",
   "entry": "module.js",
   "styles": ["stylesheets.css", "style.css", "zfs.css"],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Snapshots", "icon": "◷" },
-    { "path": "/datasets", "title": "Datasets & schedules", "icon": "▤" }
+    { "path": "/", "title": "ZFS pools", "icon": "◍" },
+    { "path": "/snapshots", "title": "Snapshots", "icon": "◷" }
   ]
 }

@@ -1,5 +1,5 @@
 // Package api is the disk module's JSON API: capacity of the mounted file
-// systems, software RAID arrays and ZFS pools, and the disks with their SMART health and
+// systems, software RAID arrays, and the disks with their SMART health and
 // self-tests.
 package api
 
@@ -76,10 +76,7 @@ type Disk struct {
 type Overview struct {
 	FileSystems []system.FileSystem `json:"filesystems"`
 	Arrays      []system.Array      `json:"arrays"`
-	Pools       []system.Pool       `json:"pools"` // ZFS
-	// PoolsError says why pools could not be read; the rest is still good.
-	PoolsError string `json:"pools_error,omitempty"`
-	Disks      []Disk `json:"disks"`
+	Disks       []Disk              `json:"disks"`
 }
 
 func (s *Service) need() error {
@@ -106,13 +103,6 @@ func (s *Service) overview(ctx context.Context) (*Overview, error) {
 		o.Arrays = []system.Array{}
 	}
 	disks := system.Disks(blocks)
-	pools, err := s.storage.Pools(ctx)
-	if err != nil {
-		s.logger.Warn("disks: reading ZFS pools", "err", err)
-		o.PoolsError = err.Error()
-	}
-	s.storage.LinkDisks(pools, disks)
-	o.Pools = append([]system.Pool{}, pools...)
 	s.refresh(ctx, disks)
 	s.mu.Lock()
 	defer s.mu.Unlock()

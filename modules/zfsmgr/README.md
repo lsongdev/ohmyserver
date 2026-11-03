@@ -1,14 +1,28 @@
 # zfsmgr
 
-Manage ZFS snapshots from the browser: take them, see how much space they
-hold, compare one with the live data, browse its files, rename, delete and
-roll back, and schedule automatic ones with retention.
+Manage ZFS from the browser, in the order ZFS itself is built:
 
-This module (id `zfs`, shown as ZFS Snapshots) is built into OhMyServer for
-now. It follows the [module contract](../../docs/module-contract.md) and
-imports nothing else from this repository. It drives the `zfs` and `zpool`
-commands and keeps no state of its own. Without them the panel leaves it out;
-after installing ZFS, restart the panel.
+- **Pools** combine disks into one space. The list shows capacity, state and
+  anything needing attention. A pool's page shows its disks as small cards,
+  each linked to the disk, starts and cancels scrubs, and lists its datasets.
+- **Datasets** are the filesystems in a pool, and can nest. A dataset's page
+  shows its space, its schedule and its snapshots, and can create a child.
+- **Snapshots** belong to one dataset. They can be taken, compared with the live
+  data, browsed, renamed, deleted and rolled back to. The Snapshots page searches
+  them across datasets.
+
+This module (id `zfs`, shown as ZFS) is built into OhMyServer for now. It follows
+the [module contract](../../docs/module-contract.md) and imports nothing else
+from this repository. It drives the `zfs` and `zpool` commands and keeps no state
+of its own. Without them the panel leaves it out; after installing ZFS, restart
+the panel.
+
+## Creating datasets
+
+A new dataset inherits everything from its parent unless set, including the
+schedule. A folder that already holds files where it would mount is refused
+before anything is created: zfs would create the dataset and then fail to mount
+it. A dataset cannot take over an existing folder; the files have to be copied.
 
 ## Schedules
 
@@ -76,9 +90,11 @@ they travel in the query string or the body.
 | Method | Path | |
 |---|---|---|
 | GET | `/info` | Whether ZFS is installed, and its version |
-| GET | `/pools` | Capacity and health of the pools |
+| GET | `/pools` | `{pools, details_error}`: capacity and state, with devices and the latest scrub from `zpool status` (OpenZFS 2.3 and later). Asking is limited to five seconds, since zpool can hang on a suspended pool |
 | GET | `/datasets` | Filesystems and volumes with snapshot counts and schedules |
 | GET | `/dataset?name=` | One of them |
+| POST | `/datasets` | `{parent, name, mountpoint, compression, quota}` answers `{name}` |
+| POST | `/pools/scrub` | `{pool, action}`, `start` or `stop` |
 | PUT | `/policy` | `{dataset, policy: {hourly, daily, weekly, monthly}}`; a null policy removes the dataset's own |
 | GET | `/schedule` | Who runs the passes: `{external, job_id, enabled, next_run, last_run, run_status}` |
 | GET | `/snapshots?dataset=` | Newest first; without a dataset, all of them |

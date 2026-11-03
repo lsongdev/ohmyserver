@@ -12,7 +12,8 @@ export default function Snapshot() {
   const detail = useApi(name ? '/snapshot' : null, { name });
   const s = detail.data;
   const [dialog, setDialog] = useState(null);
-  const back = returnPath(query, routeURL('/', { dataset: name.split('@')[0] }));
+  const dataset = name.split('@')[0];
+  const back = returnPath(query, routeURL('/dataset', { name: dataset }));
   const backHref = (() => {
     const [path, search = ''] = back.split('?');
     return href(path, Object.fromEntries(new URLSearchParams(search)));
@@ -20,7 +21,7 @@ export default function Snapshot() {
   const files = s?.path && link('files', '/', { path: s.path });
 
   return html`<${Page} title=${s?.short || name.split('@')[1] || 'Snapshot'} subtitle=${s?.dataset || name.split('@')[0]}
-    back=${{ href: backHref, label: 'Snapshots' }}
+    back=${{ href: backHref, label: back.startsWith('/dataset') ? dataset : 'Snapshots' }}
     actions=${s ? html`<span class="zfs-actions">
       ${files ? html`<a class="button" href=${files}>Browse files</a>` : null}
       <button class="button" onClick=${() => setDialog('rename')}>Rename</button>

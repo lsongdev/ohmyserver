@@ -8,26 +8,29 @@ import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 )
 
 // poolTimeout bounds asking zpool: on a suspended pool it can hang, and that
-// must not take the rest of the page with it.
+// must not hang the page or the request with it.
 const poolTimeout = 5 * time.Second
 
-// Pool is a ZFS storage pool's health, as zpool status reports it.
+// Pool is a storage pool: capacity from zpool list, and from zpool status what
+// AddHealth adds.
 type Pool struct {
-	Name   string `json:"name"`
-	State  string `json:"state"`            // ONLINE, DEGRADED, FAULTED, …
+	Name     string `json:"name"`
+	Size     int64  `json:"size"`
+	Alloc    int64  `json:"alloc"`
+	Free     int64  `json:"free"`
+	Capacity int    `json:"capacity"` // percent allocated
+	Health   string `json:"health"`   // ONLINE, DEGRADED, FAULTED, …
+
 	Status string `json:"status,omitempty"` // what is wrong, in zpool's words
 	Action string `json:"action,omitempty"` // what to do about it
 	Errors int64  `json:"errors"`           // files with known data errors
-	Size   int64  `json:"size"`
-	Alloc  int64  `json:"alloc"`
-	Scan   *Scan  `json:"scan,omitempty"` // the latest scrub or resilver
-	Vdevs  []Vdev `json:"vdevs"`          // in zpool's order: data, then log, cache, spare
+	Scan   *Scan  `json:"scan,omitempty"`   // the latest scrub or resilver
+	Vdevs  []Vdev `json:"vdevs,omitempty"`  // in zpool's order: data, then log, cache, spare
 }
 
 // Scan is a pool's latest scrub or resilver; zpool keeps only that one.
@@ -52,51 +55,89 @@ type Vdev struct {
 	Read     int64  `json:"read_errors"`
 	Write    int64  `json:"write_errors"`
 	Checksum int64  `json:"checksum_errors"`
-	// Disk names the disk it is on, for vdevs that are whole disks or
-	// partitions and can be found now.
+	Size     int64  `json:"size,omitempty"` // of a device, not a group
+	// Disk names the disk it is on (sdb), when it can be found now.
 	Disk     string `json:"disk,omitempty"`
 	path     string
 	Children []Vdev `json:"children,omitempty"`
 }
 
-// Pools asks zpool for the health of the pools. Without zpool, or without any
-// pool, there are none and no error. It needs OpenZFS 2.3 for JSON output.
-//
-// The output is read without -L: as of OpenZFS 2.4, -L leaves the state out of
-// devices that are disks. Paths are resolved here instead.
-func (s *Storage) Pools(ctx context.Context) ([]Pool, error) {
+// bounded runs zpool for at most poolTimeout. Even a killed zpool can be stuck
+// in the kernel on a suspended pool, so it does not wait for that either.
+func (z *ZFS) bounded(ctx context.Context, args ...string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, poolTimeout)
-	defer cancel()
 	type result struct {
 		out []byte
 		err error
 	}
-	// Even a killed zpool can be stuck in the kernel on a suspended pool.
 	done := make(chan result, 1)
 	go func() {
-		out, err := s.Run.Output(ctx, nil, "zpool", "status", "-j", "--json-int")
+		defer cancel()
+		out, err := z.Run.Run(ctx, "zpool", args...)
 		done <- result{out, err}
 	}()
-	var r result
 	select {
-	case r = <-done:
+	case r := <-done:
+		return r.out, r.err
 	case <-ctx.Done():
-		return nil, fmt.Errorf("zpool status did not answer in %s", poolTimeout)
-	}
-	if errors.Is(r.err, exec.ErrNotFound) {
-		return nil, nil
-	}
-	if r.err != nil {
-		var exit *ExitError
-		if errors.As(r.err, &exit) && strings.Contains(exit.Output, "invalid option") {
-			return nil, errors.New("reading pool health needs OpenZFS 2.3 or later")
+		select {
+		case r := <-done: // finished just then
+			return r.out, r.err
+		default:
 		}
-		return nil, r.err
+		return nil, fmt.Errorf("zpool did not answer in %s", poolTimeout)
 	}
-	if bytes.Contains(r.out, []byte("no pools available")) {
-		return nil, nil
+}
+
+// Pools lists the imported pools with their capacity.
+func (z *ZFS) Pools(ctx context.Context) ([]Pool, error) {
+	out, err := z.bounded(ctx, "list", "-Hp", "-o", "name,size,alloc,free,cap,health")
+	if err != nil {
+		return nil, err
 	}
-	return parsePools(r.out)
+	pools := []Pool{}
+	for _, f := range rows(out, 6) {
+		pools = append(pools, Pool{
+			Name: f[0], Size: num(f[1]), Alloc: num(f[2]), Free: num(f[3]),
+			Capacity: int(num(strings.TrimSuffix(f[4], "%"))), Health: f[5],
+		})
+	}
+	return pools, nil
+}
+
+// AddHealth fills in the pools' devices and scrubs from zpool status, which
+// needs OpenZFS 2.3 for JSON output. It is read without -L: as of OpenZFS 2.4,
+// -L leaves the state out of devices that are disks. Paths are resolved here
+// instead.
+func (z *ZFS) AddHealth(ctx context.Context, pools []Pool) error {
+	out, err := z.bounded(ctx, "status", "-j", "--json-int")
+	if err != nil {
+		var exit *ExitError
+		if errors.As(err, &exit) && strings.Contains(exit.Output, "invalid option") {
+			return errors.New("reading devices and scrubs needs OpenZFS 2.3 or later")
+		}
+		if errors.Is(err, exec.ErrNotFound) {
+			return nil
+		}
+		return err
+	}
+	if bytes.Contains(out, []byte("no pools available")) {
+		return nil
+	}
+	health, err := parseStatus(out)
+	if err != nil {
+		return err
+	}
+	for i := range pools {
+		p := &pools[i]
+		h, ok := health[p.Name]
+		if !ok {
+			continue
+		}
+		p.Health, p.Status, p.Action, p.Errors, p.Scan, p.Vdevs = h.Health, h.Status, h.Action, h.Errors, h.Scan, h.Vdevs
+		z.linkDisks(p.Vdevs)
+	}
+	return nil
 }
 
 // jsonVdevs keeps the vdevs in the order zpool lists them, which a map would
@@ -127,8 +168,7 @@ type jsonVdev struct {
 	Class    string    `json:"class"`
 	State    string    `json:"state"`
 	Path     string    `json:"path"`
-	Alloc    int64     `json:"alloc_space"`
-	Total    int64     `json:"total_space"`
+	Size     int64     `json:"phys_space"`
 	Read     int64     `json:"read_errors"`
 	Write    int64     `json:"write_errors"`
 	Checksum int64     `json:"checksum_errors"`
@@ -137,7 +177,7 @@ type jsonVdev struct {
 
 func (v jsonVdev) vdev() Vdev {
 	out := Vdev{
-		Name: v.Name, Type: v.Type, Class: v.Class, State: v.State, path: v.Path,
+		Name: v.Name, Type: v.Type, Class: v.Class, State: v.State, path: v.Path, Size: v.Size,
 		Read: v.Read, Write: v.Write, Checksum: v.Checksum,
 	}
 	for _, child := range v.Vdevs {
@@ -147,7 +187,6 @@ func (v jsonVdev) vdev() Vdev {
 }
 
 type jsonPool struct {
-	Name   string    `json:"name"`
 	State  string    `json:"state"`
 	Status string    `json:"status"`
 	Action string    `json:"action"`
@@ -169,23 +208,22 @@ type jsonPool struct {
 	} `json:"scan_stats"`
 }
 
-func parsePools(data []byte) ([]Pool, error) {
+// parseStatus reads zpool status -j --json-int into pools by name.
+func parseStatus(data []byte) (map[string]Pool, error) {
 	var doc struct {
 		Pools map[string]jsonPool `json:"pools"`
 	}
 	if err := json.Unmarshal(data, &doc); err != nil {
 		return nil, fmt.Errorf("reading zpool status: %w", err)
 	}
-	pools := make([]Pool, 0, len(doc.Pools))
-	for _, p := range doc.Pools {
+	pools := map[string]Pool{}
+	for name, p := range doc.Pools {
 		pool := Pool{
-			Name: p.Name, State: p.State, Errors: p.Errors,
+			Name: name, Health: p.State, Errors: p.Errors,
 			Status: strings.Join(strings.Fields(p.Status), " "),
 			Action: strings.Join(strings.Fields(p.Action), " "),
-			Vdevs:  []Vdev{},
 		}
 		for _, root := range p.Vdevs {
-			pool.Size, pool.Alloc = root.Total, root.Alloc
 			for _, v := range root.Vdevs {
 				pool.Vdevs = append(pool.Vdevs, v.vdev())
 			}
@@ -202,42 +240,34 @@ func parsePools(data []byte) ([]Pool, error) {
 				Errors: scan.Errors, Paused: scan.Pause > 0,
 			}
 		}
-		pools = append(pools, pool)
+		pools[name] = pool
 	}
-	slices.SortFunc(pools, func(a, b Pool) int { return strings.Compare(a.Name, b.Name) })
 	return pools, nil
 }
 
-// LinkDisks fills in which of disks each device of pools is on, by following
-// its path (/dev/disk/by-id/…-part1) to a disk or a partition of one. A device
-// that is gone stays unlinked.
-func (s *Storage) LinkDisks(pools []Pool, disks []Block) {
-	owner := map[string]string{} // block name → disk name
-	var walk func(disk string, blocks []Block)
-	walk = func(disk string, blocks []Block) {
-		for _, b := range blocks {
-			owner[b.Name] = disk
-			walk(disk, b.Children)
+// linkDisks finds the disks of the devices that are disks: their path leads
+// to a block device (/dev/disk/by-id/…-part1 → sdb1), and sysfs keeps a
+// partition under its disk (…/block/sdb/sdb1). A device that is gone stays
+// unlinked.
+func (z *ZFS) linkDisks(vdevs []Vdev) {
+	for i := range vdevs {
+		v := &vdevs[i]
+		z.linkDisks(v.Children)
+		if v.Type != "disk" || v.path == "" {
+			continue
 		}
-	}
-	for _, d := range disks {
-		owner[d.Name] = d.Name
-		walk(d.Name, d.Children)
-	}
-	var link func(vdevs []Vdev)
-	link = func(vdevs []Vdev) {
-		for i := range vdevs {
-			v := &vdevs[i]
-			link(v.Children)
-			if v.path == "" {
-				continue
-			}
-			if real, err := filepath.EvalSymlinks(s.Root + v.path); err == nil {
-				v.Disk = owner[filepath.Base(real)]
-			}
+		device, err := filepath.EvalSymlinks(z.Root + v.path)
+		if err != nil {
+			continue
 		}
-	}
-	for i := range pools {
-		link(pools[i].Vdevs)
+		name := filepath.Base(device)
+		sys, err := filepath.EvalSymlinks(filepath.Join(z.Root, "/sys/class/block", name))
+		if err != nil {
+			continue
+		}
+		if parent := filepath.Base(filepath.Dir(sys)); parent != "block" {
+			name = parent
+		}
+		v.Disk = name
 	}
 }

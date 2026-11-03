@@ -27,6 +27,17 @@ export function uptime(hours) {
   return days < 365 ? `${Math.round(days)} days` : `${(days / 365).toFixed(1)} years`;
 }
 
+// zfsPools names the ZFS pools a disk's labels say it is in.
+export function zfsPools(disk) {
+  const found = [];
+  const walk = b => {
+    if (b.fstype === 'zfs_member' && b.label) found.push(b.label);
+    (b.children || []).forEach(walk);
+  };
+  walk(disk);
+  return [...new Set(found)];
+}
+
 // HealthStatus is a disk's health in one badge.
 export function HealthStatus({ health }) {
   if (!health) return html`<span class="muted">—</span>`;
@@ -45,7 +56,6 @@ export function usage(disk) {
     if (b.type?.startsWith('raid')) found.push(`${b.name} (${b.type})${b.mountpoint ? ` ${b.mountpoint}` : ''}`);
     else if (b.mountpoint) found.push(b.mountpoint);
     else if (b.fstype === 'swap') found.push('swap');
-    else if (b.fstype === 'zfs_member') found.push(`${b.label || 'pool'} (ZFS)`);
     (b.children || []).forEach(walk);
   };
   walk(disk);
