@@ -5,8 +5,12 @@ package system
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"path"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -19,6 +23,8 @@ const PolicyProperty = "ohmyserver:snapshots"
 // ZFS runs the commands.
 type ZFS struct {
 	Run Runner
+	// Root is the file system root, "" unless testing.
+	Root string
 }
 
 // Installed reports whether the zfs and zpool commands exist.
@@ -41,32 +47,6 @@ func (z *ZFS) Version(ctx context.Context) string {
 	return strings.TrimSpace(first)
 }
 
-// Pool is a storage pool's capacity and health.
-type Pool struct {
-	Name     string `json:"name"`
-	Size     int64  `json:"size"`
-	Alloc    int64  `json:"alloc"`
-	Free     int64  `json:"free"`
-	Capacity int    `json:"capacity"` // percent allocated
-	Health   string `json:"health"`
-}
-
-// Pools lists the imported pools.
-func (z *ZFS) Pools(ctx context.Context) ([]Pool, error) {
-	out, err := z.Run.Run(ctx, "zpool", "list", "-Hp", "-o", "name,size,alloc,free,cap,health")
-	if err != nil {
-		return nil, err
-	}
-	pools := []Pool{}
-	for _, f := range rows(out, 6) {
-		pools = append(pools, Pool{
-			Name: f[0], Size: num(f[1]), Alloc: num(f[2]), Free: num(f[3]),
-			Capacity: int(num(strings.TrimSuffix(f[4], "%"))), Health: f[5],
-		})
-	}
-	return pools, nil
-}
-
 // Dataset is a filesystem or volume.
 type Dataset struct {
 	Name         string `json:"name"`
@@ -77,6 +57,8 @@ type Dataset struct {
 	SnapshotUsed int64  `json:"snapshot_used"` // space only snapshots keep
 	Mountpoint   string `json:"mountpoint,omitempty"`
 	Mounted      bool   `json:"mounted"`
+	Compression  string `json:"compression"`
+	Quota        int64  `json:"quota"` // bytes; 0 is none
 	Snapshots    int    `json:"snapshots"`
 	Policy       Policy `json:"policy"`
 	// PolicySource is "" with no policy, "local", or the dataset it is
@@ -92,15 +74,15 @@ type Dataset struct {
 // Snapshots filled in from a listing of them.
 func (z *ZFS) Datasets(ctx context.Context) ([]Dataset, error) {
 	out, err := z.Run.Run(ctx, "zfs", "list", "-Hp", "-t", "filesystem,volume",
-		"-o", "name,type,used,avail,refer,usedbysnapshots,mountpoint,mounted")
+		"-o", "name,type,used,avail,refer,usedbysnapshots,mountpoint,mounted,compression,quota")
 	if err != nil {
 		return nil, err
 	}
 	list := []Dataset{}
-	for _, f := range rows(out, 8) {
+	for _, f := range rows(out, 10) {
 		d := Dataset{
 			Name: f[0], Type: f[1], Used: num(f[2]), Available: num(f[3]), Referenced: num(f[4]),
-			SnapshotUsed: num(f[5]), Mounted: f[7] == "yes",
+			SnapshotUsed: num(f[5]), Mounted: f[7] == "yes", Compression: f[8], Quota: num(f[9]),
 		}
 		if strings.HasPrefix(f[6], "/") {
 			d.Mountpoint = f[6]
@@ -197,6 +179,101 @@ func (z *ZFS) InheritPolicy(ctx context.Context, dataset string) error {
 		return err
 	}
 	_, err := z.Run.Run(ctx, "zfs", "inherit", PolicyProperty, dataset)
+	return err
+}
+
+// NewDataset is a filesystem to create under an existing one. Empty values
+// are inherited from the parent.
+type NewDataset struct {
+	Parent      string `json:"parent"`
+	Name        string `json:"name"` // the last part of its name
+	Mountpoint  string `json:"mountpoint"`
+	Compression string `json:"compression"`
+	Quota       string `json:"quota"` // 500M, 2T, …
+}
+
+var (
+	compressions = []string{"off", "on", "lz4", "zstd", "gzip"}
+	quotaValue   = regexp.MustCompile(`^[1-9][0-9]*(\.[0-9]+)?[KMGTP]?$`)
+)
+
+// CreateDataset creates a filesystem and returns its full name. A directory
+// with files where it would mount is refused first: zfs would create the
+// dataset and then fail to mount it, leaving it there with the files showing
+// instead of its own.
+func (z *ZFS) CreateDataset(ctx context.Context, d NewDataset) (string, error) {
+	if err := ValidDataset(d.Parent); err != nil {
+		return "", err
+	}
+	if !validComponent(d.Name) {
+		return "", fmt.Errorf("%w name %q: use letters, digits and - _ . : (not starting with -)", ErrInvalid, d.Name)
+	}
+	if d.Mountpoint != "" && (!strings.HasPrefix(d.Mountpoint, "/") || path.Clean(d.Mountpoint) != d.Mountpoint) {
+		return "", fmt.Errorf("%w mountpoint %q: use an absolute path", ErrInvalid, d.Mountpoint)
+	}
+	if d.Compression != "" && !slices.Contains(compressions, d.Compression) {
+		return "", fmt.Errorf("%w compression %q", ErrInvalid, d.Compression)
+	}
+	if d.Quota != "" && !quotaValue.MatchString(d.Quota) {
+		return "", fmt.Errorf("%w quota %q: use a size such as 500M or 2T", ErrInvalid, d.Quota)
+	}
+	parent, err := z.Dataset(ctx, d.Parent)
+	if err != nil {
+		return "", err
+	}
+	if parent.Type != "filesystem" {
+		return "", fmt.Errorf("%w parent: %s is not a filesystem", ErrInvalid, d.Parent)
+	}
+	full := d.Parent + "/" + d.Name
+	mount := d.Mountpoint
+	if mount == "" && parent.Mountpoint != "" {
+		mount = path.Join(parent.Mountpoint, d.Name)
+	}
+	if mount != "" {
+		if err := z.emptyMountpoint(mount); err != nil {
+			return "", err
+		}
+	}
+	args := []string{"create"}
+	if d.Mountpoint != "" {
+		args = append(args, "-o", "mountpoint="+d.Mountpoint)
+	}
+	if d.Compression != "" {
+		args = append(args, "-o", "compression="+d.Compression)
+	}
+	if d.Quota != "" {
+		args = append(args, "-o", "quota="+d.Quota)
+	}
+	_, err = z.Run.Run(ctx, "zfs", append(args, full)...)
+	return full, err
+}
+
+// emptyMountpoint checks that nothing would be hidden by mounting at path, or
+// keep the mount from happening.
+func (z *ZFS) emptyMountpoint(mount string) error {
+	entries, err := os.ReadDir(z.Root + mount)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("%w mountpoint %s: %v", ErrInvalid, mount, err)
+	}
+	if len(entries) > 0 {
+		return fmt.Errorf("%w mountpoint: %s already holds files. Choose another path; a dataset cannot take over an existing folder, so its files would have to be copied in", ErrInvalid, mount)
+	}
+	return nil
+}
+
+// Scrub starts checking a pool's data against its checksums, or cancels that.
+func (z *ZFS) Scrub(ctx context.Context, pool string, start bool) error {
+	if !validPool(pool) {
+		return fmt.Errorf("%w pool name %q", ErrInvalid, pool)
+	}
+	args := []string{"scrub"}
+	if !start {
+		args = append(args, "-s")
+	}
+	_, err := z.Run.Run(ctx, "zpool", append(args, pool)...)
 	return err
 }
 

@@ -31,7 +31,7 @@ const icons = {
   services: { '/': 'gears', '/logs': 'file-lines' },
   disks: { '/': 'gauge-high' },
   samba: { '/': 'share-nodes', '/users': 'users', '/sessions': 'plug', '/logs': 'file-lines', '/global': 'gear' },
-  zfs: { '/': 'camera', '/datasets': 'database' },
+  zfs: { '/': 'hard-drive', '/snapshots': 'camera' },
   files: { '/': 'folder', '/trash': 'trash-can' },
 };
 

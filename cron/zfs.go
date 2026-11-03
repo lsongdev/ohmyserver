@@ -56,7 +56,7 @@ func (j *ZFSJob) Ensure(ctx context.Context) error {
 func (j *ZFSJob) ensure(ctx context.Context) (cronapi.JobView, error) {
 	return j.Cron.EnsureJob(ctx, store.Job{
 		Name: "ZFS snapshots", Schedule: "0 * * * *", Target: zfsTarget,
-		Command: "# Takes due snapshots and removes old ones, per the schedules in ZFS Snapshots",
+		Command: "# Takes due snapshots and removes old ones, per the schedules on ZFS datasets",
 		Timeout: 3600, Enabled: true,
 	})
 }

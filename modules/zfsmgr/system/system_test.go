@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -173,7 +175,7 @@ func TestDiffDecodesAndLimits(t *testing.T) {
 // schedulerFor builds a scheduler over one dataset with a policy value.
 func schedulerFor(policy, snapshots string, fail map[string]string) (*Scheduler, *fake) {
 	f := &fake{fail: fail, out: map[string]string{
-		"zfs list -Hp -t filesystem,volume": "data\tfilesystem\t1\t1\t1\t0\t/data\tyes\n",
+		"zfs list -Hp -t filesystem,volume": "data\tfilesystem\t1\t1\t1\t0\t/data\tyes\tlz4\t0\n",
 		"zfs get -Hp":                       "data\t" + policy + "\tlocal\n",
 		"zfs list -Hp -t snapshot":          snapshots,
 	}}
@@ -253,5 +255,75 @@ func TestSchedulerLeavesEverythingAloneWithAnUnreadablePolicy(t *testing.T) {
 	}
 	if !strings.Contains(s.Errors()["data"], "unreadable") {
 		t.Fatalf("errors: %v", s.Errors())
+	}
+}
+
+func createFake() *fake {
+	return &fake{out: map[string]string{
+		"zfs list -Hp -t filesystem,volume": "data\tfilesystem\t1\t1\t1\t0\t/mnt\tyes\tlz4\t0\ndata/vol\tvolume\t1\t1\t1\t0\tnone\t-\tlz4\t-\n",
+	}}
+}
+
+func TestCreateDataset(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	os.MkdirAll(filepath.Join(root, "mnt/empty"), 0o755)
+	os.MkdirAll(filepath.Join(root, "mnt/full"), 0o755)
+	os.WriteFile(filepath.Join(root, "mnt/full/file"), nil, 0o644)
+
+	f := createFake()
+	z := &ZFS{Run: f, Root: root}
+	full, err := z.CreateDataset(ctx, NewDataset{Parent: "data", Name: "media"})
+	if err != nil || full != "data/media" {
+		t.Fatalf("%q %v", full, err)
+	}
+	if _, err := z.CreateDataset(ctx, NewDataset{Parent: "data", Name: "empty", Mountpoint: "/srv/x", Compression: "zstd", Quota: "2T"}); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"zfs create data/media", "zfs create -o mountpoint=/srv/x -o compression=zstd -o quota=2T data/empty"}
+	if got := f.mutating(); !slices.Equal(got, want) {
+		t.Fatalf("ran %q", got)
+	}
+
+	f = createFake()
+	z = &ZFS{Run: f, Root: root}
+	for name, bad := range map[string]NewDataset{
+		"folder with files":  {Parent: "data", Name: "full"},
+		"chosen mountpoint":  {Parent: "data", Name: "x", Mountpoint: "/mnt/full"},
+		"under a volume":     {Parent: "data/vol", Name: "x"},
+		"parent missing":     {Parent: "nope", Name: "x"},
+		"nested name":        {Parent: "data", Name: "a/b"},
+		"option in the name": {Parent: "data", Name: "-o"},
+		"relative mount":     {Parent: "data", Name: "x", Mountpoint: "srv"},
+		"unclean mount":      {Parent: "data", Name: "x", Mountpoint: "/srv/../etc"},
+		"unknown compress":   {Parent: "data", Name: "x", Compression: "-o"},
+		"odd quota":          {Parent: "data", Name: "x", Quota: "2T,x"},
+	} {
+		if _, err := z.CreateDataset(ctx, bad); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+	if got := f.mutating(); got != nil {
+		t.Fatalf("ran %q", got)
+	}
+}
+
+func TestScrub(t *testing.T) {
+	ctx := context.Background()
+	f := &fake{}
+	z := &ZFS{Run: f}
+	for _, bad := range []string{"", "-s", "data/media", "data@x", "1data"} {
+		if err := z.Scrub(ctx, bad, true); err == nil {
+			t.Errorf("Scrub(%q) accepted", bad)
+		}
+	}
+	if err := z.Scrub(ctx, "data", true); err != nil {
+		t.Fatal(err)
+	}
+	if err := z.Scrub(ctx, "data", false); err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"zpool scrub data", "zpool scrub -s data"}; !slices.Equal(f.calls, want) {
+		t.Fatalf("ran %q", f.calls)
 	}
 }

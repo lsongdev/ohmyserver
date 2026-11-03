@@ -16,6 +16,33 @@
 .zfs-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .zfs-path { overflow-wrap: anywhere; }
 .zfs-keep { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
-.zfs-pool + .zfs-pool { margin-top: 12px; }
-.zfs-pool-line { display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
 .zfs-schedule { margin: 0 0 14px; }
+
+/* Pools */
+.pool-card + .pool-card { margin-top: 16px; }
+.pool-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.pool-head h2 { margin: 0; font-size: 15px; }
+a.pool-link { color: inherit; }
+a.pool-link:hover { border-color: var(--primary); text-decoration: none; }
+.pool-capacity { margin-left: auto; }
+.pool-card .meter.warning > span { background: var(--amber); }
+.pool-card .meter.danger > span { background: var(--danger); }
+.pool-line { display: flex; gap: 4px 6px; flex-wrap: wrap; align-items: center; margin-top: 10px; font-size: 12.5px; }
+.pool-card .alert { margin: 10px 0 0; }
+.section-row { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 10px; }
+.section-row .section-title { margin: 0; }
+.zfs-children { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 6px; }
+
+/* Devices as small cards */
+.device-group + .device-group { margin-top: 16px; }
+.device-group-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.device-group-head h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.device-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); }
+.device-card { display: block; min-width: 0; padding: 10px 12px; color: inherit; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+a.device-card:hover { border-color: var(--primary); text-decoration: none; }
+.device-trouble { border-color: var(--danger); }
+.device-head { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.device-head strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.device-id { margin-top: 4px; overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.device-numbers { display: flex; gap: 8px; justify-content: space-between; flex-wrap: wrap; margin-top: 6px; color: var(--muted); font-size: 12.5px; }
+.device-errors { color: var(--danger); }
