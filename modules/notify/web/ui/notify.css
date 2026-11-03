@@ -6,3 +6,5 @@
 .notify-body { white-space: pre-line; overflow-wrap: anywhere; }
 .notify-title { font-weight: 550; overflow-wrap: anywhere; }
 .notify-more { display: flex; justify-content: center; margin-top: 12px; }
+.notify-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.notify-issue-actions { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }

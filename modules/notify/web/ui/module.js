@@ -4,6 +4,10 @@ import { createMount } from './lib/mount.js';
 
 const routes = [
   { path: '/', load: () => import('./pages/center.js') },
+  { path: '/channels', load: () => import('./pages/channels.js') },
+  { path: '/channels/new', load: () => import('./pages/channel-form.js') },
+  { path: '/channels/:id', load: () => import('./pages/channel-form.js') },
+  { path: '/deliveries', load: () => import('./pages/deliveries.js') },
 ];
 
 export const mount = createMount({ routes });

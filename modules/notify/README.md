@@ -1,8 +1,8 @@
 # notify
 
-The notification center: modules and scripts report what happens, it keeps the
-events and tracks the problems still open. OhMyServer's overview shows the open
-ones. Sending them to chat and email is next; see
+The notification center: modules report what happens, it keeps the events,
+tracks the problems still open, and sends them to chat services. OhMyServer's
+overview shows the open ones. See also
 [the design](../../docs/notification-center-design.md).
 
 This module (id `notify`, shown as Notifications) follows the
@@ -35,6 +35,33 @@ reports it again, it reopens.
 Events are kept for 7 days (debug), 30 (info), 90 (warning) or a year
 (critical), at most 100,000 in all, and those of open issues always.
 
+## Channels
+
+A channel is somewhere messages go: a Feishu or WeCom group bot, Bark, ntfy, any
+web hook (as JSON), or Telegram. Each has a rule, the lowest level it wants and
+optionally which sources; by default warnings and above from anywhere, so that
+adding one needs no more than its address. A resolved problem is announced
+wherever the problem was sent, and nowhere else.
+
+Sending goes through an outbox, written with the event, so a restart loses
+nothing and reporting never waits for it. A message could be sent twice if the
+panel stops at the very moment it went out.
+
+- A channel sends strictly in order: what comes later waits behind a failed
+  message, since a stale "resolved" after a newer "opened" would mislead.
+- A failed send retries after 30 seconds, 2 minutes, 10 minutes, then hourly, and
+  is given up on after a day, when it can be sent again by hand from the log.
+- A channel gets at most 20 messages a minute. More than that waiting at once
+  becomes one summary, most severe first.
+- A muted issue is recorded but not sent, including if it gets worse.
+- A channel failing shows on its status, and never produces an event, or a dead
+  channel would feed itself.
+
+Addresses and tokens are secrets, since a bot's address is all it takes to post
+as it. The API never returns them, errors are scrubbed of them, and redirects are
+not followed. They are stored in the database as other modules' credentials are,
+in plain text.
+
 ## API
 
 Responses are `{"data": …}`; errors are `{"error": {"code", "message"}}`.
@@ -45,4 +72,11 @@ Responses are `{"data": …}`; errors are `{"error": {"code", "message"}}`.
 | GET | `/sources` | Who has sent events |
 | GET | `/issues` | `state=open` (the default) or `resolved` |
 | POST | `/issues/{id}/resolve` | Close by hand |
+| POST | `/issues/{id}/mute` | `{minutes}`; 0 ends it |
+| GET, POST | `/channels` | `{name, type, preset, url, token, chat_id, min_level, sources, enabled}` |
+| GET, PUT, DELETE | `/channels/{id}` | On PUT, an empty `url` or `token` keeps the stored one |
+| POST | `/channels/{id}/test` | Sends a test message; 502 `send_failed` says why not |
+| GET | `/deliveries` | The log, newest first: `channel`, `state`, `before` |
+| POST | `/deliveries/{id}/retry` | Queue one that was given up on |
+| GET | `/info` | Whether the panel has no sign-in |
 | GET | `/summary` | Counts and the most severe open issues |

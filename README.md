@@ -78,7 +78,8 @@ This repository holds the assembly:
   the job scheduler; retention only removes the snapshots schedules took. It
   is left out without ZFS.
 - `modules/notify` records what modules report and tracks the problems still
-  open, shown on the overview. For now it only keeps them; channels come next.
+  open, shown on the overview, and sends them to chat services by each channel's
+  rule, with an outbox, retries and rate limits.
 - `modules/filemgr` manages the server's files from `/`; system top-level
   directories cannot be deleted or moved.
 
