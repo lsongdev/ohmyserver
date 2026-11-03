@@ -240,7 +240,7 @@ func run(cfg Config, logger *slog.Logger) error {
 	}
 
 	// Notifications: what modules report, and what is still wrong.
-	notifications, err := notifyweb.New(ctx, db, notifyweb.Options{Logger: logger})
+	notifications, err := notifyweb.New(ctx, db, notifyweb.Options{Logger: logger, Unauthenticated: cfg.Password == ""})
 	if err != nil {
 		return fmt.Errorf("notifications: %w", err)
 	}

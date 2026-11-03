@@ -7,6 +7,7 @@
   "styles": ["stylesheets.css", "style.css", "notify.css"],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Notifications", "icon": "◉" }
+    { "path": "/", "title": "Notifications", "icon": "◉" },
+    { "path": "/channels", "title": "Channels", "icon": "➤" }
   ]
 }

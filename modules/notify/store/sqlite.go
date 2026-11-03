@@ -76,6 +76,7 @@ type Issue struct {
 	LastSeen    time.Time  `json:"last_seen"`
 	ResolvedAt  *time.Time `json:"resolved_at,omitempty"`
 	Occurrences int64      `json:"occurrences"`
+	MutedUntil  *time.Time `json:"muted_until,omitempty"`
 }
 
 // SQLite stores events and issues.
@@ -151,6 +152,34 @@ CREATE TABLE notify_events (
 );
 CREATE INDEX notify_events_time ON notify_events(created_at);
 CREATE INDEX notify_events_issue ON notify_events(issue_id);
+`, `
+ALTER TABLE notify_issues ADD COLUMN muted_until INTEGER;
+CREATE TABLE notify_channels (
+	id              INTEGER PRIMARY KEY,
+	name            TEXT NOT NULL UNIQUE,
+	type            TEXT NOT NULL,
+	config          TEXT NOT NULL,
+	min_level       TEXT NOT NULL,
+	sources         TEXT NOT NULL DEFAULT '',
+	enabled         INTEGER NOT NULL,
+	last_error      TEXT NOT NULL DEFAULT '',
+	last_error_at   INTEGER,
+	last_success_at INTEGER,
+	created_at      INTEGER NOT NULL
+);
+CREATE TABLE notify_deliveries (
+	id              INTEGER PRIMARY KEY,
+	event_id        INTEGER NOT NULL REFERENCES notify_events(id) ON DELETE CASCADE,
+	channel_id      INTEGER NOT NULL REFERENCES notify_channels(id) ON DELETE CASCADE,
+	state           TEXT NOT NULL,
+	attempts        INTEGER NOT NULL DEFAULT 0,
+	next_attempt_at INTEGER NOT NULL,
+	finished_at     INTEGER,
+	error           TEXT NOT NULL DEFAULT '',
+	created_at      INTEGER NOT NULL
+);
+CREATE INDEX notify_deliveries_due ON notify_deliveries(channel_id, state, next_attempt_at);
+CREATE INDEX notify_deliveries_event ON notify_deliveries(event_id);
 `}
 
 func (s *SQLite) migrate(ctx context.Context) error {
@@ -183,14 +212,30 @@ type Report struct {
 	Resolved                              bool
 }
 
-func insertEvent(ctx context.Context, tx *sql.Tx, at time.Time, r Report, kind string, issue int64) error {
+// emit writes an event dated at, and queues it for the channels it goes to.
+// Nothing goes out for a muted issue, though it is still recorded.
+func emit(ctx context.Context, tx *sql.Tx, at, now time.Time, r Report, kind string, issue int64, muted bool) error {
 	var issueID any
 	if issue != 0 {
 		issueID = issue
 	}
-	_, err := tx.ExecContext(ctx, `INSERT INTO notify_events (created_at, source, level, kind, title, body, link, issue_id)
+	res, err := tx.ExecContext(ctx, `INSERT INTO notify_events (created_at, source, level, kind, title, body, link, issue_id)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, at.UnixMilli(), r.Source, r.Level, kind, r.Title, r.Body, r.Link, issueID)
-	return err
+	if err != nil {
+		return err
+	}
+	if muted {
+		return nil
+	}
+	event, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+	return enqueue(ctx, tx, event, now, r, kind, issue)
+}
+
+func isMuted(until sql.NullInt64, now time.Time) bool {
+	return until.Valid && until.Int64 > now.UnixMilli()
 }
 
 // Record applies a report. Without a key it is one event. With one it moves
@@ -217,16 +262,18 @@ func (s *SQLite) Record(ctx context.Context, r Report, now time.Time) error {
 
 func record(ctx context.Context, tx *sql.Tx, r Report, now time.Time) error {
 	if r.Key == "" {
-		return insertEvent(ctx, tx, now, r, KindMessage, 0)
+		return emit(ctx, tx, now, now, r, KindMessage, 0, false)
 	}
 	var id, pending int64
 	var state, level string
-	err := tx.QueryRowContext(ctx, `SELECT id, state, level, resolve_pending FROM notify_issues WHERE source = ? AND key = ?`, r.Source, r.Key).
-		Scan(&id, &state, &level, &pending)
+	var mutedUntil sql.NullInt64
+	err := tx.QueryRowContext(ctx, `SELECT id, state, level, resolve_pending, muted_until FROM notify_issues WHERE source = ? AND key = ?`, r.Source, r.Key).
+		Scan(&id, &state, &level, &pending, &mutedUntil)
 	missing := errors.Is(err, sql.ErrNoRows)
 	if err != nil && !missing {
 		return err
 	}
+	muted := isMuted(mutedUntil, now)
 	if r.Resolved {
 		if missing || state != StateOpen {
 			return nil
@@ -245,13 +292,13 @@ func record(ctx context.Context, tx *sql.Tx, r Report, now time.Time) error {
 		if err != nil {
 			return err
 		}
-		return insertEvent(ctx, tx, now, r, KindOpened, id)
+		return emit(ctx, tx, now, now, r, KindOpened, id, false)
 	case state == StateResolved && pending == 0:
 		if _, err := tx.ExecContext(ctx, `UPDATE notify_issues SET state = ?, level = ?, title = ?, body = ?, link = ?, first_seen = ?, last_seen = ?,
 			resolved_at = NULL, occurrences = 1 WHERE id = ?`, StateOpen, r.Level, r.Title, r.Body, r.Link, now.UnixMilli(), now.UnixMilli(), id); err != nil {
 			return err
 		}
-		return insertEvent(ctx, tx, now, r, KindOpened, id)
+		return emit(ctx, tx, now, now, r, KindOpened, id, muted)
 	}
 	// Going on, or back before its resolution was announced.
 	if _, err := tx.ExecContext(ctx, `UPDATE notify_issues SET state = ?, level = ?, title = ?, body = ?, link = ?, last_seen = ?,
@@ -260,7 +307,7 @@ func record(ctx context.Context, tx *sql.Tx, r Report, now time.Time) error {
 		return err
 	}
 	if Rank(r.Level) > Rank(level) {
-		return insertEvent(ctx, tx, now, r, KindEscalated, id)
+		return emit(ctx, tx, now, now, r, KindEscalated, id, muted)
 	}
 	return nil
 }
@@ -273,7 +320,7 @@ func (s *SQLite) FlushResolved(ctx context.Context, window time.Duration, now ti
 		return err
 	}
 	defer tx.Rollback()
-	rows, err := tx.QueryContext(ctx, `SELECT id, source, key, title, link, resolved_at FROM notify_issues
+	rows, err := tx.QueryContext(ctx, `SELECT id, source, key, title, link, resolved_at, muted_until FROM notify_issues
 		WHERE state = ? AND resolve_pending = 1 AND resolved_at <= ?`, StateResolved, now.Add(-window).UnixMilli())
 	if err != nil {
 		return err
@@ -282,11 +329,12 @@ func (s *SQLite) FlushResolved(ctx context.Context, window time.Duration, now ti
 		id     int64
 		report Report
 		at     int64
+		muted  sql.NullInt64
 	}
 	var list []due
 	for rows.Next() {
 		var d due
-		if err := rows.Scan(&d.id, &d.report.Source, &d.report.Key, &d.report.Title, &d.report.Link, &d.at); err != nil {
+		if err := rows.Scan(&d.id, &d.report.Source, &d.report.Key, &d.report.Title, &d.report.Link, &d.at, &d.muted); err != nil {
 			rows.Close()
 			return err
 		}
@@ -297,7 +345,7 @@ func (s *SQLite) FlushResolved(ctx context.Context, window time.Duration, now ti
 		return err
 	}
 	for _, d := range list {
-		if err := insertEvent(ctx, tx, time.UnixMilli(d.at), d.report, KindResolved, d.id); err != nil {
+		if err := emit(ctx, tx, time.UnixMilli(d.at), now, d.report, KindResolved, d.id, isMuted(d.muted, now)); err != nil {
 			return err
 		}
 		if _, err := tx.ExecContext(ctx, `UPDATE notify_issues SET resolve_pending = 0 WHERE id = ?`, d.id); err != nil {
@@ -317,7 +365,8 @@ func (s *SQLite) CloseIssue(ctx context.Context, id int64, now time.Time) error 
 	defer tx.Rollback()
 	var r Report
 	var state string
-	err = tx.QueryRowContext(ctx, `SELECT source, key, state, title, link FROM notify_issues WHERE id = ?`, id).Scan(&r.Source, &r.Key, &state, &r.Title, &r.Link)
+	var mutedUntil sql.NullInt64
+	err = tx.QueryRowContext(ctx, `SELECT source, key, state, title, link, muted_until FROM notify_issues WHERE id = ?`, id).Scan(&r.Source, &r.Key, &state, &r.Title, &r.Link, &mutedUntil)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFound
 	}
@@ -331,7 +380,7 @@ func (s *SQLite) CloseIssue(ctx context.Context, id int64, now time.Time) error 
 		return err
 	}
 	r.Level = LevelInfo
-	if err := insertEvent(ctx, tx, now, r, KindResolved, id); err != nil {
+	if err := emit(ctx, tx, now, now, r, KindResolved, id, isMuted(mutedUntil, now)); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -399,7 +448,7 @@ func (s *SQLite) Sources(ctx context.Context) ([]string, error) {
 
 // Issues lists the issues in a state, most severe first, then longest going.
 func (s *SQLite) Issues(ctx context.Context, state string) ([]Issue, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id, source, key, state, level, title, body, link, first_seen, last_seen, resolved_at, occurrences
+	rows, err := s.db.QueryContext(ctx, `SELECT id, source, key, state, level, title, body, link, first_seen, last_seen, resolved_at, occurrences, muted_until
 		FROM notify_issues WHERE state = ?
 		ORDER BY CASE level WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 WHEN 'info' THEN 2 ELSE 3 END, first_seen`, state)
 	if err != nil {
@@ -410,14 +459,18 @@ func (s *SQLite) Issues(ctx context.Context, state string) ([]Issue, error) {
 	for rows.Next() {
 		var i Issue
 		var first, last int64
-		var resolved sql.NullInt64
-		if err := rows.Scan(&i.ID, &i.Source, &i.Key, &i.State, &i.Level, &i.Title, &i.Body, &i.Link, &first, &last, &resolved, &i.Occurrences); err != nil {
+		var resolved, muted sql.NullInt64
+		if err := rows.Scan(&i.ID, &i.Source, &i.Key, &i.State, &i.Level, &i.Title, &i.Body, &i.Link, &first, &last, &resolved, &i.Occurrences, &muted); err != nil {
 			return nil, err
 		}
 		i.FirstSeen, i.LastSeen = time.UnixMilli(first), time.UnixMilli(last)
 		if resolved.Valid {
 			at := time.UnixMilli(resolved.Int64)
 			i.ResolvedAt = &at
+		}
+		if muted.Valid {
+			at := time.UnixMilli(muted.Int64)
+			i.MutedUntil = &at
 		}
 		list = append(list, i)
 	}

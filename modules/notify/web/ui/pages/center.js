@@ -1,6 +1,6 @@
 import { html, useCallback, useEffect, useState } from '../lib/html.js';
 import { useAction, useResource } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Badge, toast, toastError } from '../lib/ui.js';
+import { Page, Notice, Loading, Empty, Table, Badge, Modal, Field, toast, toastError } from '../lib/ui.js';
 import { usePanel } from '../lib/panel.js';
 import { ago, datetime } from '../lib/format.js';
 
@@ -30,6 +30,20 @@ function Issues() {
   const target = useTarget();
   const issues = useResource(signal => api.get('/issues', { signal }), [], { interval: REFRESH });
   const [closing, setClosing] = useState(null);
+  const [muting, setMuting] = useState(null);
+  const muted = i => i.muted_until && new Date(i.muted_until) > new Date();
+  const unmute = async issue => {
+    setClosing(issue.id);
+    try {
+      await api.post(`/issues/${issue.id}/mute`, { minutes: 0 });
+      toast('No longer muted', 'success');
+      issues.reload();
+    } catch (err) {
+      toastError(err);
+    } finally {
+      setClosing(null);
+    }
+  };
   const close = async issue => {
     setClosing(issue.id);
     try {
@@ -52,16 +66,59 @@ function Issues() {
           <td><${Level} level=${i.level} /></td>
           <td>
             <${Linked} href=${target(i.source, i.link)}>${i.title}<//>
+            ${muted(i) ? html` <${Badge} title=${`Not sent anywhere until ${datetime(i.muted_until)}`}>Muted<//>` : null}
             ${i.body ? html`<div class="cell-sub notify-body">${i.body}</div>` : null}
           </td>
           <td>${i.source}</td>
           <td><${When} at=${i.first_seen} /></td>
-          <td class="actions"><button class="button button-small" disabled=${closing === i.id}
-            title="For a problem whose source is gone. If it is still there, it comes back."
-            onClick=${() => close(i)}>Close</button></td>
+          <td class="actions"><span class="notify-issue-actions">
+            ${muted(i)
+              ? html`<button class="button button-small" disabled=${closing === i.id} onClick=${() => unmute(i)}>Unmute</button>`
+              : html`<button class="button button-small" disabled=${closing === i.id} title="Keep it from being sent anywhere for a while" onClick=${() => setMuting(i)}>Mute</button>`}
+            <button class="button button-small" disabled=${closing === i.id}
+              title="For a problem whose source is gone. If it is still there, it comes back."
+              onClick=${() => close(i)}>Close</button>
+          </span></td>
         </tr>`)}</tbody>
       <//>`}
+    ${muting ? html`<${MuteDialog} issue=${muting} onClose=${() => setMuting(null)} onDone=${issues.reload} />` : null}
   </section>`;
+}
+
+function MuteDialog({ issue, onClose, onDone }) {
+  const { api } = usePanel();
+  const [minutes, setMinutes] = useState(60);
+  const { busy, error, run } = useAction();
+  const close = () => {
+    if (busy) return false;
+    onClose();
+  };
+  const submit = e => {
+    e.preventDefault();
+    run(async () => {
+      await api.post(`/issues/${issue.id}/mute`, { minutes: Number(minutes) });
+      toast('Muted', 'success');
+      onDone();
+      onClose();
+    });
+  };
+  return html`<${Modal} title="Mute this issue" onClose=${close} footer=${html`
+    <button class="button" type="button" disabled=${busy} onClick=${close}>Cancel</button>
+    <button class="button button-primary" type="submit" form="mute-form" disabled=${busy}>${busy ? 'Muting…' : 'Mute'}</button>`}>
+    <form id="mute-form" class="form" onSubmit=${submit}>
+      <${Notice} error=${error} />
+      <p style="margin:0">${issue.title}. It stays listed here, but is not sent to any channel, including if it gets worse.</p>
+      <${Field} label="For">
+        <select class="input" autofocus disabled=${busy} value=${minutes} onChange=${e => setMinutes(e.currentTarget.value)}>
+          <option value="60">1 hour</option>
+          <option value="480">8 hours</option>
+          <option value="1440">1 day</option>
+          <option value="10080">1 week</option>
+          <option value="43200">30 days</option>
+        </select>
+      <//>
+    </form>
+  <//>`;
 }
 
 function Events() {

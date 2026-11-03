@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lsongdev/ohmyserver/modules/notify/channels"
 	"github.com/lsongdev/ohmyserver/modules/notify/store"
 )
 
@@ -50,6 +51,14 @@ type Options struct {
 	Retention *store.Retention
 	// Now is the clock, for tests.
 	Now func() time.Time
+	// Unauthenticated says the host serves this without a sign-in, so anyone
+	// who can reach it can read what channels are for and change them. The
+	// pages warn about it.
+	Unauthenticated bool
+	// Sending configures how channels send.
+	Sending channels.Options
+	// RateLimit is the most messages a channel gets in a minute (20).
+	RateLimit int
 }
 
 // DefaultRetention keeps less of what matters less.
@@ -71,15 +80,30 @@ type Service struct {
 	window time.Duration
 	keep   store.Retention
 	now    func() time.Time
+	open   bool // served without a sign-in
+	send   channels.Options
+	rate   int
 
 	mu     sync.Mutex // one change at a time: a report reads, then writes
 	cancel context.CancelFunc
 	done   chan struct{}
+
+	wake    chan struct{}  // a delivery may be due
+	active  map[int64]bool // channels sending now, each one at a time
+	sending sync.WaitGroup
+	busy    sync.Mutex // guards active
 }
 
 // NewService returns a service; call Start for its upkeep.
 func NewService(st *store.SQLite, opts Options) *Service {
-	s := &Service{store: st, logger: opts.Logger, window: opts.FlapWindow, keep: DefaultRetention(), now: opts.Now}
+	s := &Service{
+		store: st, logger: opts.Logger, window: opts.FlapWindow, keep: DefaultRetention(), now: opts.Now,
+		open: opts.Unauthenticated, send: opts.Sending, rate: opts.RateLimit,
+		wake: make(chan struct{}, 1), active: map[int64]bool{},
+	}
+	if s.rate == 0 {
+		s.rate = defaultRate
+	}
 	if s.logger == nil {
 		s.logger = slog.Default()
 	}
@@ -105,10 +129,18 @@ func (s *Service) Start() {
 		defer tick.Stop()
 		prune := time.NewTicker(time.Hour)
 		defer prune.Stop()
+		retry := time.NewTicker(5 * time.Second)
+		defer retry.Stop()
+		s.dispatch(ctx) // what a restart left waiting
 		for {
 			select {
 			case <-ctx.Done():
+				s.sending.Wait()
 				return
+			case <-s.wake:
+				s.dispatch(ctx)
+			case <-retry.C:
+				s.dispatch(ctx)
 			case <-tick.C:
 				if err := s.Flush(ctx); err != nil && ctx.Err() == nil {
 					s.logger.Warn("notify: announcing resolutions", "err", err)
@@ -133,8 +165,10 @@ func (s *Service) Close() {
 // Flush announces the resolutions whose window has passed.
 func (s *Service) Flush(ctx context.Context) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.store.FlushResolved(ctx, s.window, s.now())
+	err := s.store.FlushResolved(ctx, s.window, s.now())
+	s.mu.Unlock()
+	s.nudge()
+	return err
 }
 
 // Prune removes old events.
@@ -186,10 +220,20 @@ func (s *Service) Notify(ctx context.Context, source string, e Event) error {
 		return err
 	}
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.store.Record(ctx, store.Report{
+	err := s.store.Record(ctx, store.Report{
 		Source: source, Key: e.Key, Level: e.Level, Title: e.Title, Body: e.Body, Link: e.Link, Resolved: e.Resolved,
 	}, s.now())
+	s.mu.Unlock()
+	s.nudge()
+	return err
+}
+
+// MuteIssue keeps an issue from being sent anywhere until a time, which may be
+// nil to end that. It is still recorded and shown.
+func (s *Service) MuteIssue(ctx context.Context, id int64, until *time.Time) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.store.MuteIssue(ctx, id, until)
 }
 
 // Events lists events newest first.
@@ -199,6 +243,11 @@ func (s *Service) Events(ctx context.Context, q store.EventQuery) ([]store.Event
 	}
 	q.Limit = min(q.Limit, maxLimit)
 	return s.store.Events(ctx, q)
+}
+
+// Deliveries lists deliveries newest first.
+func (s *Service) Deliveries(ctx context.Context, q store.DeliveryQuery) ([]store.DeliveryView, error) {
+	return s.store.Deliveries(ctx, q)
 }
 
 // Sources lists who has sent events.
@@ -212,8 +261,10 @@ func (s *Service) Issues(ctx context.Context, state string) ([]store.Issue, erro
 // CloseIssue resolves an open issue by hand.
 func (s *Service) CloseIssue(ctx context.Context, id int64) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.store.CloseIssue(ctx, id, s.now())
+	err := s.store.CloseIssue(ctx, id, s.now())
+	s.mu.Unlock()
+	s.nudge()
+	return err
 }
 
 // Summary is what an overview shows.
