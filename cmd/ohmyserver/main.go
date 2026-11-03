@@ -49,12 +49,14 @@ import (
 	filemgr "github.com/lsongdev/ohmyserver/modules/filemgr/web"
 	"github.com/lsongdev/ohmyserver/modules/monitor/collector"
 	monitorweb "github.com/lsongdev/ohmyserver/modules/monitor/web"
+	notifyweb "github.com/lsongdev/ohmyserver/modules/notify/web"
 	pkgmgr "github.com/lsongdev/ohmyserver/modules/pkgmgr/web"
 	smbmgr "github.com/lsongdev/ohmyserver/modules/smbmgr/web"
 	sshweb "github.com/lsongdev/ohmyserver/modules/ssh/web"
 	svcmgr "github.com/lsongdev/ohmyserver/modules/svcmgr/web"
 	zfsmgr "github.com/lsongdev/ohmyserver/modules/zfsmgr/web"
 	"github.com/lsongdev/ohmyserver/monitor"
+	"github.com/lsongdev/ohmyserver/notify"
 	"github.com/lsongdev/yabber"
 	yabberapi "github.com/lsongdev/yabber/api"
 	yabberweb "github.com/lsongdev/yabber/web"
@@ -237,10 +239,16 @@ func run(cfg Config, logger *slog.Logger) error {
 		return fmt.Errorf("ssh: %w", err)
 	}
 
-	// ZFS snapshots: taking, comparing and rolling back, and the schedules
-	// stored on the datasets, which a job below applies.
+	// Notifications: what modules report, and what is still wrong.
+	notifications, err := notifyweb.New(ctx, db, notifyweb.Options{Logger: logger})
+	if err != nil {
+		return fmt.Errorf("notifications: %w", err)
+	}
+
+	// ZFS: pools, datasets and snapshots, and the schedules stored on the
+	// datasets, which a job below applies.
 	snapshotJob := &cron.ZFSJob{}
-	snapshots := zfsmgr.New(zfsmgr.Options{Logger: logger, Trigger: snapshotJob})
+	snapshots := zfsmgr.New(zfsmgr.Options{Logger: logger, Trigger: snapshotJob, Notifier: notify.ZFS{Service: notifications.Service}})
 
 	// Scheduler: jobs run on this machine or on the SSH module's hosts.
 	runners := []runner.Runner{cron.SSHHosts{Service: terminals.Service}}
@@ -320,9 +328,9 @@ func run(cfg Config, logger *slog.Logger) error {
 		home.New(home.Sources{
 			Docker: docker, Certs: certs.Service, Gateway: gw, DNS: dnsServer,
 			Forward: forwarder.Service, SSH: terminals.Service, Cron: scheduler.Service, Monitor: monitoring.Service,
-			CI: builds.Service,
+			CI: builds.Service, Notifications: notifications.Service,
 		}),
-		monitoring, docker, certs, yabberweb.New(management), dnsServer, domains, dhcpServer, forwarder, terminals, scheduler, builds, packages,
+		notifications, monitoring, docker, certs, yabberweb.New(management), dnsServer, domains, dhcpServer, forwarder, terminals, scheduler, builds, packages,
 	}
 	// Services manages systemd: without it (macOS, for one) the module has
 	// nothing to show, so it is left out of the panel.

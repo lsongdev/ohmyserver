@@ -271,3 +271,19 @@ func (z *ZFS) linkDisks(vdevs []Vdev) {
 		v.Disk = name
 	}
 }
+
+// PoolCreated says when a pool was created.
+func (z *ZFS) PoolCreated(ctx context.Context, pool string) (time.Time, error) {
+	if !validPool(pool) {
+		return time.Time{}, fmt.Errorf("%w pool name %q", ErrInvalid, pool)
+	}
+	out, err := z.bounded(ctx, "get", "-Hp", "-o", "value", "creation", pool)
+	if err != nil {
+		return time.Time{}, err
+	}
+	seconds := num(strings.TrimSpace(string(out)))
+	if seconds == 0 {
+		return time.Time{}, fmt.Errorf("reading when %s was created", pool)
+	}
+	return time.Unix(seconds, 0), nil
+}

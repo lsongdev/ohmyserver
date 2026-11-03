@@ -25,7 +25,8 @@ Modules that are still small and change with the panel live in
 | Services (systemd) and logs (journal) | [modules/svcmgr](modules/svcmgr) | `svcmgr` |
 | Disks (capacity, RAID, SMART health) | [modules/diskmgr](modules/diskmgr) | `diskmgr` |
 | Samba shares, settings and users (smb.conf) | [modules/smbmgr](modules/smbmgr) | `smbmgr` |
-| ZFS snapshots, schedules and retention | [modules/zfsmgr](modules/zfsmgr) | `zfsmgr` |
+| ZFS pools, datasets, snapshots and schedules | [modules/zfsmgr](modules/zfsmgr) | `zfsmgr` |
+| Notifications: what modules report and what is still wrong | [modules/notify](modules/notify) | `notify-go` |
 | Files (browse, edit, upload, download, move, copy) | [modules/filemgr](modules/filemgr) | `filemgr` |
 | Domains at DNS providers (Cloudflare), and DNS-01 for certificates | [modules/domains](modules/domains) | `domains` |
 
@@ -76,6 +77,8 @@ This repository holds the assembly:
   and applies schedules with retention stored on the datasets, from a job in
   the job scheduler; retention only removes the snapshots schedules took. It
   is left out without ZFS.
+- `modules/notify` records what modules report and tracks the problems still
+  open, shown on the overview. For now it only keeps them; channels come next.
 - `modules/filemgr` manages the server's files from `/`; system top-level
   directories cannot be deleted or moved.
 

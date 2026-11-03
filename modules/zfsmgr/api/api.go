@@ -37,6 +37,9 @@ type Options struct {
 	// TestLoopDisks is for trying pool creation out: new pools may only use
 	// loop devices, never a real disk, and no retention passes run.
 	TestLoopDisks bool
+	// Notifier is told about problems, found by checking the pools on an
+	// interval. Without one no such checks run.
+	Notifier Notifier
 	// Trigger is a host's job scheduler running the passes, by calling
 	// Apply. Without one the module runs a pass each minute itself.
 	Trigger Trigger
@@ -70,9 +73,14 @@ type Service struct {
 	zfs       *system.ZFS
 	scheduler *system.Scheduler
 	trigger   Trigger
+	notifier  Notifier
+	check     checker
 	testLoops bool
-	installed bool
-	logger    *slog.Logger
+
+	stopChecks context.CancelFunc
+	checksDone chan struct{}
+	installed  bool
+	logger     *slog.Logger
 }
 
 // New finds ZFS. Nothing is scheduled until Start.
@@ -90,7 +98,7 @@ func New(opts Options) *Service {
 		installed = *opts.Installed
 	}
 	zfs := &system.ZFS{Run: run, TestLoopDisks: opts.TestLoopDisks}
-	return &Service{zfs: zfs, scheduler: &system.Scheduler{ZFS: zfs, Logger: logger}, trigger: opts.Trigger, testLoops: opts.TestLoopDisks, installed: installed, logger: logger}
+	return &Service{zfs: zfs, scheduler: &system.Scheduler{ZFS: zfs, Logger: logger}, trigger: opts.Trigger, notifier: opts.Notifier, testLoops: opts.TestLoopDisks, installed: installed, logger: logger}
 }
 
 // Supported reports whether ZFS is installed. Without it every endpoint but
@@ -99,19 +107,33 @@ func (s *Service) Supported() bool { return s.installed }
 
 // Start starts running passes, if ZFS is installed and no Trigger does.
 func (s *Service) Start() {
-	if s.installed && s.trigger == nil && !s.testLoops {
+	if !s.installed || s.testLoops {
+		return
+	}
+	if s.trigger == nil {
 		s.scheduler.Start()
+	}
+	if s.notifier != nil {
+		s.startChecks()
 	}
 }
 
 // Apply makes one pass over the datasets' retention policies, writing what it
 // did to out, for a Trigger's job to call.
 func (s *Service) Apply(ctx context.Context, out io.Writer) error {
-	return s.scheduler.Apply(ctx, time.Now(), out)
+	err := s.scheduler.Apply(ctx, time.Now(), out)
+	if s.notifier != nil && ctx.Err() == nil {
+		s.reportSchedules(ctx)
+	}
+	return err
 }
 
-// Close stops the passes the module runs itself.
+// Close stops the passes and checks the module runs itself.
 func (s *Service) Close() error {
+	if s.stopChecks != nil {
+		s.stopChecks()
+		<-s.checksDone
+	}
 	s.scheduler.Stop()
 	return nil
 }

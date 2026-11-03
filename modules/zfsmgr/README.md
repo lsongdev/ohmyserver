@@ -17,6 +17,16 @@ from this repository. It drives the `zfs` and `zpool` commands and keeps no stat
 of its own. Without them the panel leaves it out; after installing ZFS, restart
 the panel.
 
+## Problems
+
+Given a `Notifier`, the module looks at the pools every 30 seconds, and reports
+what is wrong: a pool that is not online or cannot be read, known data errors,
+capacity from 80% (critical from 90%), and no scrub for 35 days. Each pass also
+reports failed snapshot schedules. Each problem has a stable key, and what was
+read as healthy is reported as resolved on every check, so the module remembers
+nothing; what could not be read is reported as neither. Without a `Notifier`, as
+in `zfsmgr` on its own for now, no checks run.
+
 ## Creating pools
 
 Creating a pool makes whatever is on its disks unreachable, so it is careful:

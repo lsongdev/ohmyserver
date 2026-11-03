@@ -23,6 +23,7 @@ import (
 	ciapi "github.com/lsongdev/ohmyserver/modules/ci/api"
 	cronapi "github.com/lsongdev/ohmyserver/modules/cron/api"
 	monitorapi "github.com/lsongdev/ohmyserver/modules/monitor/api"
+	notifyapi "github.com/lsongdev/ohmyserver/modules/notify/api"
 	sshapi "github.com/lsongdev/ohmyserver/modules/ssh/api"
 	"github.com/lsongdev/yabber"
 )
@@ -49,6 +50,8 @@ type Sources struct {
 	Cron    *cronapi.Service
 	Monitor *monitorapi.Service
 	CI      *ciapi.Service
+	// Notifications says what is wrong right now.
+	Notifications *notifyapi.Service
 }
 
 // Home is the overview module.
@@ -173,6 +176,11 @@ func (src Sources) summary(ctx context.Context) map[string]any {
 		out["dns"] = dnsSummary{
 			Enabled: !settings.Disabled, Mode: settings.Mode, Queries: stats.Total, Blocked: stats.Blocked,
 			Zones: len(d.Manager.Service().Zones.List()), Listeners: d.Listeners(),
+		}
+	}
+	if n := src.Notifications; n != nil {
+		if sum, err := n.Summary(ctx); err == nil {
+			out["notifications"] = sum
 		}
 	}
 	if f := src.Forward; f != nil {
