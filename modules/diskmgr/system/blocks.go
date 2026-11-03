@@ -1,6 +1,6 @@
 // Package system reads a host's storage: block devices (lsblk on Linux,
 // diskutil on macOS), mounted file systems and their capacity (df),
-// software RAID arrays (/proc/mdstat, Linux) and disk health (smartctl,
+// software RAID arrays (/proc/mdstat, Linux), ZFS pools (zpool) and disk health (smartctl,
 // through smartctl-go).
 //
 // Commands run with LC_ALL=C and never through a shell. Output formats are

@@ -124,10 +124,20 @@ function Navigation({ panel, path, onLogout }) {
   const active = items
     .filter(i => path === i.to || (!i.root && path.startsWith(i.to + '/')))
     .sort((a, b) => b.to.length - a.to.length)[0];
-  const groups = panel.modules.map(m => ({
-    title: panel.modules.length > 1 ? m.title : null,
-    items: items.filter(i => i.module === m).map(i => ({ href: '#' + i.to, title: i.title, icon: navigationIcon(m, i), active: i === active })),
-  }));
+  // Cross-module grouping is a host policy; item.group belongs inside a module.
+  const sharedGroups = { disks: 'Storage', zfs: 'Storage' };
+  const grouped = new Map();
+  for (const item of items) {
+    const m = item.module;
+    const group = sharedGroups[m.id];
+    const key = group ? `group:${group}` : `module:${m.id}`;
+    if (!grouped.has(key)) grouped.set(key, {
+      title: panel.modules.length > 1 ? group || m.title : null,
+      items: [],
+    });
+    grouped.get(key).items.push({ href: '#' + item.to, title: item.title, icon: navigationIcon(m, item), active: item === active });
+  }
+  const groups = [...grouped.values()];
   const logout = panel.auth
     ? html`<button class="button button-ghost sidebar-logout" onClick=${onLogout}><i aria-hidden="true">${faIcon('right-from-bracket')}</i><span>Sign out</span></button>`
     : null;

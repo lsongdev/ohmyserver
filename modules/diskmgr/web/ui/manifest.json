@@ -7,6 +7,6 @@
   "styles": ["stylesheets.css", "style.css", "disks.css"],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Storage", "icon": "◍" }
+    { "path": "/", "title": "Overview", "icon": "◍" }
   ]
 }
