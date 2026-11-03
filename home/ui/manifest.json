@@ -1,10 +1,10 @@
 {
   "contract": 1,
   "id": "home",
-  "title": "Overview",
+  "title": "Home",
   "icon": "◎",
   "entry": "module.js",
   "styles": ["style.css"],
   "home": "/",
-  "nav": [{ "path": "/", "title": "Overview", "icon": "◎" }]
+  "nav": [{ "path": "/", "title": "Dashboard", "icon": "◎" }]
 }

@@ -21,7 +21,7 @@ export default function Overview({ ctx }) {
   const link = ctx.link;
   const local = s?.monitor?.local?.latest;
   const pct = (used, total) => (total ? Math.round((used / total) * 100) : 0);
-  return html`<${Page} title="Overview">
+  return html`<${Page} title="Dashboard">
     <${Notice} error=${summary.error} />
     ${!s ? (summary.error ? null : html`<${Loading} />`) : html`
       ${local ? html`<div class="grid" style="margin-bottom:16px">
