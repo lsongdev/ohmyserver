@@ -79,7 +79,7 @@ a.card { color: inherit; display: block; }
 form.form { display: grid; gap: 16px; }
 .settings-form { max-width: 960px; }
 .form-fields { display: grid; gap: 24px; min-width: 0; margin: 0; padding: 0; border: 0; }
-.form-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); }
+.form-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
 /* Fields keep the control size (16px) even in monospace: smaller text
    makes iOS zoom into a focused field. */
 .input.mono { font-size: var(--input-font-size); }
