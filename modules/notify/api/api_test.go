@@ -27,6 +27,11 @@ type env struct {
 
 func setup(t *testing.T) *env {
 	t.Helper()
+	return setupWith(t, api.Options{})
+}
+
+func setupWith(t *testing.T, opts api.Options) *env {
+	t.Helper()
 	db, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "n.db")+"?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)&_txlock=immediate")
 	if err != nil {
 		t.Fatal(err)
@@ -38,7 +43,9 @@ func setup(t *testing.T) *env {
 		t.Fatal(err)
 	}
 	e := &env{t: t, now: time.Date(2026, 11, 3, 12, 0, 0, 0, time.UTC)}
-	e.s = api.NewService(st, api.Options{Logger: slog.New(slog.NewTextHandler(io.Discard, nil)), Now: func() time.Time { return e.now }})
+	opts.Logger = slog.New(slog.NewTextHandler(io.Discard, nil))
+	opts.Now = func() time.Time { return e.now }
+	e.s = api.NewService(st, opts)
 	return e
 }
 

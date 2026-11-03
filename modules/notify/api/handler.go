@@ -114,6 +114,17 @@ func (s *Service) Handler() http.Handler {
 	mux.HandleFunc("POST /channels/{id}/test", withID(func(w http.ResponseWriter, r *http.Request, id int64) {
 		respond(w, nil, s.TestChannel(r.Context(), id))
 	}))
+	mux.HandleFunc("POST /telegram/discover", func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Token   string `json:"token"`
+			Channel int64  `json:"channel"`
+		}
+		if err := decode(w, r, &body); err != nil {
+			return
+		}
+		found, err := s.DiscoverTelegram(r.Context(), body.Token, body.Channel)
+		respond(w, found, err)
+	})
 	mux.HandleFunc("GET /deliveries", func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		channel, _ := strconv.ParseInt(q.Get("channel"), 10, 64)

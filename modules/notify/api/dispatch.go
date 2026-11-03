@@ -340,6 +340,45 @@ func (s *Service) DeleteChannel(ctx context.Context, id int64) error {
 	return s.store.DeleteChannel(ctx, id)
 }
 
+// TelegramDiscovery is who a bot token belongs to and who has written to it.
+// Problem says why chats could not be listed, while the bot may still be known.
+type TelegramDiscovery struct {
+	Bot     channels.TelegramBot    `json:"bot"`
+	Chats   []channels.TelegramChat `json:"chats"`
+	Problem string                  `json:"problem,omitempty"`
+}
+
+// DiscoverTelegram looks a bot up by its token, or a saved channel's if channel
+// is given, which keeps the token from travelling back to the browser.
+func (s *Service) DiscoverTelegram(ctx context.Context, token string, channel int64) (TelegramDiscovery, error) {
+	if token == "" && channel != 0 {
+		c, err := s.store.Channel(ctx, channel)
+		if err != nil {
+			return TelegramDiscovery{}, err
+		}
+		var config channels.Config
+		if c.Type == channels.TypeTelegram {
+			json.Unmarshal([]byte(c.Config), &config)
+		}
+		token = config.Token
+	}
+	if token == "" {
+		return TelegramDiscovery{}, fmt.Errorf("%w: a bot token is required", ErrInvalid)
+	}
+	bot, chats, err := channels.DiscoverTelegram(ctx, token, s.send)
+	if errors.Is(err, channels.ErrInvalid) {
+		return TelegramDiscovery{}, err
+	}
+	found := TelegramDiscovery{Bot: bot, Chats: chats}
+	if found.Chats == nil {
+		found.Chats = []channels.TelegramChat{}
+	}
+	if err != nil {
+		found.Problem = err.Error()
+	}
+	return found, nil
+}
+
 // TestChannel sends a test message right away, and records how it went.
 func (s *Service) TestChannel(ctx context.Context, id int64) error {
 	c, err := s.store.Channel(ctx, id)

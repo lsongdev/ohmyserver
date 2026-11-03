@@ -1,4 +1,4 @@
-import { html, useState } from '../lib/html.js';
+import { html, useEffect, useState } from '../lib/html.js';
 import { useAction, useResource } from '../lib/hooks.js';
 import { Page, Notice, Loading, Field, Check, Modal, toast } from '../lib/ui.js';
 import { usePanel } from '../lib/panel.js';
@@ -78,41 +78,29 @@ function Form({ saved, onSaved }) {
     <${Notice} error=${save.error} />
     <div class="card">
       <div class="form-fields">
-        <div class="form-grid">
-          <${Field} label="Name" required>
-            <input class="input" required autofocus=${!saved} autocomplete="off" disabled=${save.busy} value=${form.name} onInput=${e => set('name', e.currentTarget.value)} />
-          <//>
-          <${Field} label="Send to">
-            <select class="input" disabled=${save.busy} value=${form.kind} onChange=${e => set('kind', Number(e.currentTarget.value))}>
-              ${KINDS.map((k, i) => html`<option value=${i}>${k.title}</option>`)}
-            </select>
-          <//>
-        </div>
-        ${kind.type === 'telegram' ? html`<div class="form-grid">
-          <${Field} label="Bot token" required=${!sameKind} hint=${sameKind && saved.has_token ? 'Saved. Leave empty to keep it.' : 'From @BotFather'}>
-            <input class="input mono" type="password" autocomplete="off" required=${!sameKind} disabled=${save.busy} value=${form.token} onInput=${e => set('token', e.currentTarget.value)} />
-          <//>
-          <${Field} label="Chat ID" required hint="The chat to send to; the bot must be able to post there">
-            <input class="input mono" required autocomplete="off" disabled=${save.busy} value=${form.chat_id} onInput=${e => set('chat_id', e.currentTarget.value)} />
-          <//>
-        </div>` : html`<div class="form-grid">
+        <${Field} label="Send to">
+          <select class="input" autofocus=${!saved} disabled=${save.busy} value=${form.kind} onChange=${e => set('kind', Number(e.currentTarget.value))}>
+            ${KINDS.map((k, i) => html`<option value=${i}>${k.title}</option>`)}
+          </select>
+        <//>
+        ${kind.type === 'telegram' ? html`<${TelegramFields} form=${form} set=${set} saved=${sameKind ? saved : null} busy=${save.busy} />` : html`
           <${Field} label="Address" required=${!sameKind} hint=${sameKind ? `Saved as ${saved.target}. Leave empty to keep it.` : kind.hint}>
             <input class="input mono" type="password" autocomplete="off" required=${!sameKind} placeholder=${kind.placeholder} disabled=${save.busy} value=${form.url} onInput=${e => set('url', e.currentTarget.value)} />
           <//>
           ${kind.token ? html`<${Field} label="Bearer token" hint=${sameKind && saved.has_token ? 'Saved. Leave empty to keep it.' : 'Optional'}>
             <input class="input mono" type="password" autocomplete="off" disabled=${save.busy} value=${form.token} onInput=${e => set('token', e.currentTarget.value)} />
-          <//>` : null}
-        </div>`}
-        <div class="form-grid">
-          <${Field} label="Send" hint="A resolved problem is announced wherever it was sent">
-            <select class="input" disabled=${save.busy} value=${form.min_level} onChange=${e => set('min_level', e.currentTarget.value)}>
-              ${LEVELS.map(([value, title]) => html`<option value=${value}>${title}</option>`)}
-            </select>
-          <//>
-          <${Field} label="From" hint="Sources such as zfs, cron. Empty means all">
-            <input class="input mono" autocomplete="off" spellcheck="false" placeholder="All sources" disabled=${save.busy} value=${form.sources} onInput=${e => set('sources', e.currentTarget.value)} />
-          <//>
-        </div>
+          <//>` : null}`}
+        <${Field} label="Send" hint="A resolved problem is announced wherever it was sent">
+          <select class="input" disabled=${save.busy} value=${form.min_level} onChange=${e => set('min_level', e.currentTarget.value)}>
+            ${LEVELS.map(([value, title]) => html`<option value=${value}>${title}</option>`)}
+          </select>
+        <//>
+        <${Field} label="From" hint="Sources such as zfs, cron. Empty means all">
+          <input class="input mono" autocomplete="off" spellcheck="false" placeholder="All sources" disabled=${save.busy} value=${form.sources} onInput=${e => set('sources', e.currentTarget.value)} />
+        <//>
+        <${Field} label="Name" required hint="To tell channels apart">
+          <input class="input" required autocomplete="off" disabled=${save.busy} value=${form.name} onInput=${e => set('name', e.currentTarget.value)} />
+        <//>
         <${Check} label="Turned on" checked=${form.enabled} disabled=${save.busy} onChange=${e => set('enabled', e.currentTarget.checked)} />
       </div>
     </div>
@@ -129,6 +117,82 @@ function Form({ saved, onSaved }) {
     ${dialog ? html`<${DeleteDialog} channel=${saved} onClose=${() => setDialog(false)} onDeleted=${() => { release(); navigate('/channels'); }} />` : null}
   </form>`;
 }
+
+const WAIT = 3000;
+const GIVE_UP = 100; // about five minutes of asking
+
+// TelegramFields finds the chat instead of asking for its id: a pasted token is
+// checked and names the bot, and whoever writes to the bot shows up to pick from.
+// Typing the id stays possible, for a bot something else already reads.
+function TelegramFields({ form, set, saved, busy }) {
+  const { api } = usePanel();
+  const [found, setFound] = useState(null);
+  const [error, setError] = useState(null);
+  const [asking, setAsking] = useState(false); // on a saved token, once asked to
+  const token = form.token.trim();
+  const canAsk = token.includes(':') || (!token && saved?.has_token && asking);
+  const chosen = form.chat_id.trim();
+  const body = { token, channel: token ? 0 : saved?.id || 0 };
+  const key = JSON.stringify(body);
+
+  // Waits a moment after typing, then looks every few seconds for about five
+  // minutes, also after a chat is chosen: others may still write, and this stops
+  // with the page.
+  useEffect(() => {
+    setFound(null);
+    setError(null);
+    if (!canAsk) return undefined;
+    const controller = new AbortController();
+    let timer;
+    let tries = 0;
+    const look = async () => {
+      try {
+        const next = await api.post('/telegram/discover', body, { signal: controller.signal });
+        setFound(next);
+        setError(null);
+        if (!next.problem && ++tries < GIVE_UP) timer = setTimeout(look, WAIT);
+      } catch (err) {
+        if (err.name !== 'AbortError') setError(err);
+      }
+    };
+    timer = setTimeout(look, token ? 500 : 0);
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [key, canAsk]);
+
+  const pick = chat => {
+    set('chat_id', chat.id);
+    if (!form.name.trim()) set('name', `Telegram: ${chat.title}`);
+  };
+  const username = found?.bot?.username;
+  return html`
+    <${Field} label="Bot token" required=${!saved} error=${error?.message}
+      hint=${saved?.has_token ? 'Saved. Leave empty to keep it.' : html`Create a bot with <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer">@BotFather</a> and paste its token here.`}>
+      <input class="input mono" type="password" autocomplete="off" required=${!saved} disabled=${busy} value=${form.token} onInput=${e => set('token', e.currentTarget.value)} />
+    <//>
+    ${saved?.has_token && !token && !asking ? html`<div><button class="button button-small" type="button" onClick=${() => setAsking(true)}>Find another chat</button></div>` : null}
+    ${canAsk && !found && !error ? html`<p class="muted small notify-step">Checking the token…</p>` : null}
+    ${found && username ? html`<div class="notify-telegram">
+      <strong>Connected to <a href=${`https://t.me/${username}`} target="_blank" rel="noopener noreferrer">@${username}</a></strong>
+      ${found.problem ? html`<${Notice}>${found.problem}<//>` : html`
+        <p class="notify-step">
+          Open <a href=${`https://t.me/${username}`} target="_blank" rel="noopener noreferrer">@${username}</a> and send it any message.
+          For a group, add the bot to it and send a message that mentions it.
+        </p>
+        ${found.chats.length === 0 ? html`<p class="muted small notify-step">Waiting for a message…</p>` : html`
+          <div class="notify-chats" role="radiogroup" aria-label="Chat to send to">
+            ${found.chats.map(c => html`<label class=${`notify-chat${chosen === c.id ? ' selected' : ''}`} key=${c.id}>
+              <input type="radio" name="telegram-chat" disabled=${busy} checked=${chosen === c.id} onChange=${() => pick(c)} />
+              <span><span class="cell-main">${c.title}</span> <span class="muted small">${CHAT_TYPES[c.type] || c.type}</span></span>
+            </label>`)}
+          </div>
+          <p class="muted small notify-step">Not listed? Send it a message, and it appears here.</p>`}`}
+    </div>` : null}
+    <${Field} label="Chat" required hint="Filled in when you pick a chat above; you can also type its ID">
+      <input class="input mono" required autocomplete="off" spellcheck="false" disabled=${busy} value=${form.chat_id} onInput=${e => set('chat_id', e.currentTarget.value)} />
+    <//>`;
+}
+
+const CHAT_TYPES = { private: 'Direct message', group: 'Group', supergroup: 'Group', channel: 'Channel' };
 
 function DeleteDialog({ channel, onClose, onDeleted }) {
   const { api } = usePanel();

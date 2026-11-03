@@ -57,6 +57,11 @@ panel stops at the very moment it went out.
 - A channel failing shows on its status, and never produces an event, or a dead
   channel would feed itself.
 
+Setting up Telegram needs no chat id: a pasted bot token is checked and names the
+bot, and whoever then writes to the bot shows up to pick from, from `getMe` and
+`getUpdates`. Those fail if something else reads the same bot's messages, and then
+the id can be typed in.
+
 Addresses and tokens are secrets, since a bot's address is all it takes to post
 as it. The API never returns them, errors are scrubbed of them, and redirects are
 not followed. They are stored in the database as other modules' credentials are,
@@ -76,6 +81,7 @@ Responses are `{"data": …}`; errors are `{"error": {"code", "message"}}`.
 | GET, POST | `/channels` | `{name, type, preset, url, token, chat_id, min_level, sources, enabled}` |
 | GET, PUT, DELETE | `/channels/{id}` | On PUT, an empty `url` or `token` keeps the stored one |
 | POST | `/channels/{id}/test` | Sends a test message; 502 `send_failed` says why not |
+| POST | `/telegram/discover` | `{token}`, or `{channel}` to use a saved one: `{bot, chats, problem}` |
 | GET | `/deliveries` | The log, newest first: `channel`, `state`, `before` |
 | POST | `/deliveries/{id}/retry` | Queue one that was given up on |
 | GET | `/info` | Whether the panel has no sign-in |
