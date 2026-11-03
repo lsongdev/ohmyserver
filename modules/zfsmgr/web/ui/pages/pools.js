@@ -30,10 +30,12 @@ function PoolCard({ pool: p, datasets }) {
 }
 
 export default function Pools() {
+  const { href } = usePanel();
   const list = useApi('/pools', undefined, REFRESH);
   const datasets = useApi('/datasets');
   const data = list.data;
-  return html`<${Page} title="ZFS pools" subtitle="Each pool combines disks into one space, and holds the datasets that keep your files">
+  return html`<${Page} title="ZFS pools" subtitle="Each pool combines disks into one space, and holds the datasets that keep your files"
+    actions=${html`<a class="button button-primary" href=${href('/pool/new')}>Create pool</a>`}>
     <${Notice} error=${list.error || datasets.error} />
     ${data?.details_error ? html`<${Notice} tone="warn">${data.details_error}<//>` : null}
     ${!data ? (list.error ? null : html`<${Loading} />`)

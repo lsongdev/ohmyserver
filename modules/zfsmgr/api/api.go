@@ -34,6 +34,9 @@ type Options struct {
 	Runner system.Runner
 	// Installed overrides looking for zfs and zpool, for tests.
 	Installed *bool
+	// TestLoopDisks is for trying pool creation out: new pools may only use
+	// loop devices, never a real disk, and no retention passes run.
+	TestLoopDisks bool
 	// Trigger is a host's job scheduler running the passes, by calling
 	// Apply. Without one the module runs a pass each minute itself.
 	Trigger Trigger
@@ -67,6 +70,7 @@ type Service struct {
 	zfs       *system.ZFS
 	scheduler *system.Scheduler
 	trigger   Trigger
+	testLoops bool
 	installed bool
 	logger    *slog.Logger
 }
@@ -85,8 +89,8 @@ func New(opts Options) *Service {
 	if opts.Installed != nil {
 		installed = *opts.Installed
 	}
-	zfs := &system.ZFS{Run: run}
-	return &Service{zfs: zfs, scheduler: &system.Scheduler{ZFS: zfs, Logger: logger}, trigger: opts.Trigger, installed: installed, logger: logger}
+	zfs := &system.ZFS{Run: run, TestLoopDisks: opts.TestLoopDisks}
+	return &Service{zfs: zfs, scheduler: &system.Scheduler{ZFS: zfs, Logger: logger}, trigger: opts.Trigger, testLoops: opts.TestLoopDisks, installed: installed, logger: logger}
 }
 
 // Supported reports whether ZFS is installed. Without it every endpoint but
@@ -95,7 +99,7 @@ func (s *Service) Supported() bool { return s.installed }
 
 // Start starts running passes, if ZFS is installed and no Trigger does.
 func (s *Service) Start() {
-	if s.installed && s.trigger == nil {
+	if s.installed && s.trigger == nil && !s.testLoops {
 		s.scheduler.Start()
 	}
 }
@@ -222,6 +226,23 @@ func (s *Service) Handler() http.Handler {
 			return nil, err
 		}
 		return map[string]string{"name": full}, nil
+	})
+	handle("GET /disks", func(r *http.Request) (any, error) { return s.zfs.Disks(r.Context()) })
+	change("POST /pools/preview", func(ctx context.Context, r *http.Request) (any, error) {
+		var body system.NewPool
+		if err := decode(r, &body); err != nil {
+			return nil, err
+		}
+		return s.zfs.PreviewPool(ctx, body)
+	})
+	change("POST /pools", func(ctx context.Context, r *http.Request) (any, error) {
+		var body system.NewPool
+		if err := decode(r, &body); err != nil {
+			return nil, err
+		}
+		err := s.zfs.CreatePool(ctx, body)
+		s.logged(err, "created a pool", "pool", body.Name, "layout", body.Layout, "disks", body.Disks)
+		return nil, err
 	})
 	change("POST /pools/scrub", func(ctx context.Context, r *http.Request) (any, error) {
 		var body struct {

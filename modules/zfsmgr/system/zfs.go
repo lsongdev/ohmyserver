@@ -25,6 +25,8 @@ type ZFS struct {
 	Run Runner
 	// Root is the file system root, "" unless testing.
 	Root string
+	// TestLoopDisks offers only loop devices for new pools, and no real disk.
+	TestLoopDisks bool
 }
 
 // Installed reports whether the zfs and zpool commands exist.
