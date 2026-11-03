@@ -17,6 +17,25 @@ from this repository. It drives the `zfs` and `zpool` commands and keeps no stat
 of its own. Without them the panel leaves it out; after installing ZFS, restart
 the panel.
 
+## Creating pools
+
+Creating a pool makes whatever is on its disks unreachable, so it is careful:
+
+- Only disks with nothing on them are offered. One that is mounted, in a pool or
+  array, or has a file system or partition table is listed with the reason. It
+  has to be cleared by hand first; the page cannot do that. If what the pools are
+  made of cannot be read, no disk is offered.
+- This never passes `-f`, so zpool refuses a disk it finds in use.
+- Disks are named by stable paths (`/dev/disk/by-id/…`), since device names like
+  `sdb` can change on reboot.
+- Every disk is checked again when creating, a dry run (`zpool create -n`) shows
+  the result first, and the pool's name must be typed to confirm.
+
+Removing pools and clearing disks are left to the command line on purpose.
+
+To try this without any real disk, `zfsmgr -test-loop-disks` offers only loop
+devices and runs no schedules.
+
 ## Creating datasets
 
 A new dataset inherits everything from its parent unless set, including the
@@ -94,6 +113,9 @@ they travel in the query string or the body.
 | GET | `/datasets` | Filesystems and volumes with snapshot counts and schedules |
 | GET | `/dataset?name=` | One of them |
 | POST | `/datasets` | `{parent, name, mountpoint, compression, quota}` answers `{name}` |
+| GET | `/disks` | The whole disks, with `in_use` saying why one is not offered |
+| POST | `/pools/preview` | `{name, layout, disks, mountpoint}` answers `{output, usable, disks, warnings}` |
+| POST | `/pools` | The same, creating it |
 | POST | `/pools/scrub` | `{pool, action}`, `start` or `stop` |
 | PUT | `/policy` | `{dataset, policy: {hourly, daily, weekly, monthly}}`; a null policy removes the dataset's own |
 | GET | `/schedule` | Who runs the passes: `{external, job_id, enabled, next_run, last_run, run_status}` |

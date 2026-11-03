@@ -31,19 +31,20 @@ Flags:
 func main() {
 	flag.Usage = func() { fmt.Fprint(flag.CommandLine.Output(), usage); flag.PrintDefaults() }
 	listen := flag.String("listen", "127.0.0.1:8080", "address for the UI and API")
+	loops := flag.Bool("test-loop-disks", false, "for trying things out: new pools may only use loop devices, and no schedules run")
 	flag.Parse()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
-	if err := run(*listen, logger); err != nil {
+	if err := run(*listen, *loops, logger); err != nil {
 		logger.Error("fatal", "err", err)
 		os.Exit(1)
 	}
 }
 
-func run(listen string, logger *slog.Logger) error {
+func run(listen string, loops bool, logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	module := web.New(web.Options{Logger: logger})
+	module := web.New(web.Options{Logger: logger, TestLoopDisks: loops})
 	defer module.Close()
 
 	password := os.Getenv("ZFSMGR_PASSWORD")
