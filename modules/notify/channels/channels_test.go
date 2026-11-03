@@ -174,3 +174,85 @@ func TestValidate(t *testing.T) {
 		}
 	}
 }
+
+func telegramServer(t *testing.T, routes map[string]string, status int) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(status)
+		for suffix, answer := range routes {
+			if strings.HasSuffix(r.URL.Path, suffix) {
+				io.WriteString(w, answer)
+				return
+			}
+		}
+	}))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+func TestDiscoverTelegram(t *testing.T) {
+	srv := telegramServer(t, map[string]string{
+		"/getMe": `{"ok":true,"result":{"username":"nas_bot","first_name":"NAS"}}`,
+		"/getUpdates": `{"ok":true,"result":[
+			{"update_id":1,"message":{"chat":{"id":123456789,"type":"private","first_name":"Li","last_name":"Song"}}},
+			{"update_id":2,"my_chat_member":{"chat":{"id":-1001234567890123,"type":"supergroup","title":"Ops"}}},
+			{"update_id":3,"message":{"chat":{"id":123456789,"type":"private","first_name":"Li","last_name":"Song"}}},
+			{"update_id":4,"channel_post":{"chat":{"id":-1009,"type":"channel","title":"Alerts"}}},
+			{"update_id":5,"poll":{"id":"x"}}
+		]}`,
+	}, 200)
+	bot, chats, err := DiscoverTelegram(context.Background(), "1:tok", Options{TelegramAPI: srv.URL})
+	if err != nil || bot.Username != "nas_bot" {
+		t.Fatalf("%+v %v", bot, err)
+	}
+	want := []TelegramChat{
+		{ID: "-1009", Title: "Alerts", Type: "channel"},
+		{ID: "123456789", Title: "Li Song", Type: "private"},
+		{ID: "-1001234567890123", Title: "Ops", Type: "supergroup"}, // exact, past a float's precision
+	}
+	if len(chats) != len(want) {
+		t.Fatalf("%+v", chats)
+	}
+	for i := range want {
+		if chats[i] != want[i] {
+			t.Errorf("%+v, want %+v", chats[i], want[i])
+		}
+	}
+}
+
+func TestDiscoverTelegramSaysWhatIsWrong(t *testing.T) {
+	const token = "1:s3cret"
+	for status, phrase := range map[int]string{401: "does not know this token", 409: "something else is reading"} {
+		srv := telegramServer(t, map[string]string{"/getMe": `{"ok":false}`}, status)
+		_, _, err := DiscoverTelegram(context.Background(), token, Options{TelegramAPI: srv.URL})
+		if err == nil || !strings.Contains(err.Error(), phrase) {
+			t.Errorf("%d: %v", status, err)
+		}
+	}
+	srv := telegramServer(t, nil, 200)
+	srv.Close()
+	_, _, err := DiscoverTelegram(context.Background(), token, Options{TelegramAPI: srv.URL})
+	if err == nil || strings.Contains(err.Error(), "s3cret") {
+		t.Fatalf("leaked: %v", err)
+	}
+	if _, _, err := DiscoverTelegram(context.Background(), "no-colon", Options{TelegramAPI: srv.URL}); err == nil {
+		t.Fatal("accepted a malformed token")
+	}
+}
+
+// A conflict getting updates still names the bot, so the page can say whose it is.
+func TestDiscoverTelegramKeepsTheBotOnConflict(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/getMe") {
+			io.WriteString(w, `{"ok":true,"result":{"username":"nas_bot","first_name":"NAS"}}`)
+			return
+		}
+		w.WriteHeader(409)
+		io.WriteString(w, `{"ok":false,"description":"Conflict"}`)
+	}))
+	defer srv.Close()
+	bot, _, err := DiscoverTelegram(context.Background(), "1:t", Options{TelegramAPI: srv.URL})
+	if bot.Username != "nas_bot" || err == nil {
+		t.Fatalf("%+v %v", bot, err)
+	}
+}

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/lsongdev/ohmyserver/modules/notify/api"
+	"github.com/lsongdev/ohmyserver/modules/notify/channels"
 	"github.com/lsongdev/ohmyserver/modules/notify/store"
 )
 
@@ -430,5 +431,34 @@ func TestMessagesStayInOrderThroughFailures(t *testing.T) {
 	e.s.Dispatch(ctx)
 	if got := r.titles(); got != "opened:Pool degraded|resolved:Pool degraded|opened:Pool degraded" {
 		t.Fatal(got)
+	}
+}
+
+func TestDiscoverTelegramUsesASavedToken(t *testing.T) {
+	ctx := context.Background()
+	var asked []string
+	tg := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		asked = append(asked, r.URL.Path)
+		if strings.HasSuffix(r.URL.Path, "/getMe") {
+			io.WriteString(w, `{"ok":true,"result":{"username":"nas_bot"}}`)
+			return
+		}
+		io.WriteString(w, `{"ok":true,"result":[]}`)
+	}))
+	defer tg.Close()
+	e := setupWith(t, api.Options{Sending: channels.Options{TelegramAPI: tg.URL}})
+	v, err := e.s.CreateChannel(ctx, api.ChannelInput{Name: "tg", Type: "telegram", Token: "1:saved", ChatID: "5", MinLevel: "warning", Enabled: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found, err := e.s.DiscoverTelegram(ctx, "", v.ID)
+	if err != nil || found.Bot.Username != "nas_bot" || found.Chats == nil || !strings.Contains(asked[0], "1:saved") {
+		t.Fatalf("%+v %v %v", found, err, asked)
+	}
+	if _, err := e.s.DiscoverTelegram(ctx, "", 0); !errors.Is(err, api.ErrInvalid) {
+		t.Fatal(err)
+	}
+	if _, err := e.s.DiscoverTelegram(ctx, "malformed", 0); !errors.Is(err, channels.ErrInvalid) {
+		t.Fatal(err)
 	}
 }
