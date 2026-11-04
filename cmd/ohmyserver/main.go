@@ -34,6 +34,7 @@ import (
 	dnsweb "github.com/lsongdev/dns-go/web"
 	dockerweb "github.com/lsongdev/docker-go/web"
 	forwardweb "github.com/lsongdev/forward-go/web"
+	"github.com/lsongdev/ohmyserver/config"
 	"github.com/lsongdev/ohmyserver/cron"
 	"github.com/lsongdev/ohmyserver/dns"
 	"github.com/lsongdev/ohmyserver/gateway"
@@ -66,8 +67,6 @@ import (
 // version is set at build time: -ldflags "-X main.version=2026.10.28".
 var version = "dev"
 
-const defaultCatalog = dockerweb.DefaultCatalog
-
 const usage = `usage: ohmyserver [-d dir]
 
 Serves the OhMyServer panel with the settings in <dir>/config.yaml (see
@@ -89,7 +88,7 @@ func main() {
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
-	cfg, err := loadConfig(*dir)
+	cfg, err := config.LoadConfig(*dir)
 	if err == nil {
 		err = run(cfg, logger)
 	}
@@ -99,7 +98,7 @@ func main() {
 	}
 }
 
-func run(cfg Config, logger *slog.Logger) error {
+func run(cfg config.Config, logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	dataDir := cfg.Data

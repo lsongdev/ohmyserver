@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"os"
@@ -14,7 +14,7 @@ import (
 func TestLoadConfigDefaults(t *testing.T) {
 	t.Setenv("OHMYSERVER_PASSWORD", "")
 	dir := t.TempDir()
-	cfg, err := loadConfig(dir)
+	cfg, err := LoadConfig(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,7 +29,7 @@ func TestLoadConfigFile(t *testing.T) {
 	t.Setenv("OHMYSERVER_PASSWORD", "")
 	dir := t.TempDir()
 	write(t, dir, "listen: 0.0.0.0:9000\ndata: data\ndns:\n  listen: 127.0.0.1:5300\nacme:\n  retry_delay: 2m\n")
-	cfg, err := loadConfig(dir)
+	cfg, err := LoadConfig(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func TestLoadConfigFile(t *testing.T) {
 func TestLoadConfigRejectsUnknownSettings(t *testing.T) {
 	dir := t.TempDir()
 	write(t, dir, "listn: :8080\n")
-	if _, err := loadConfig(dir); err == nil || !strings.Contains(err.Error(), "listn") {
+	if _, err := LoadConfig(dir); err == nil || !strings.Contains(err.Error(), "listn") {
 		t.Fatalf("got %v, want an error naming the setting", err)
 	}
 }
@@ -53,7 +53,7 @@ func TestLoadConfigPasswordFromEnvironment(t *testing.T) {
 	dir := t.TempDir()
 	write(t, dir, "password: file\n")
 	t.Setenv("OHMYSERVER_PASSWORD", "env")
-	cfg, err := loadConfig(dir)
+	cfg, err := LoadConfig(dir)
 	if err != nil || cfg.Password != "env" {
 		t.Fatalf("got %q, %v", cfg.Password, err)
 	}
@@ -61,7 +61,7 @@ func TestLoadConfigPasswordFromEnvironment(t *testing.T) {
 
 // The example documents the defaults, so it must parse to exactly them.
 func TestConfigExampleMatchesDefaults(t *testing.T) {
-	data, err := os.ReadFile("../../config.yaml.example")
+	data, err := os.ReadFile("../config.yaml.example")
 	if err != nil {
 		t.Fatal(err)
 	}

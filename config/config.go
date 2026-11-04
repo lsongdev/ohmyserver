@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"bytes"
@@ -10,8 +10,12 @@ import (
 	"path/filepath"
 	"time"
 
+	dockerweb "github.com/lsongdev/docker-go/web"
+
 	"gopkg.in/yaml.v3"
 )
+
+const defaultCatalog = dockerweb.DefaultCatalog
 
 // Config is <dir>/config.yaml (config.yaml.example documents every
 // setting). A missing file, or a setting left out, takes the default.
@@ -74,10 +78,10 @@ func defaultConfig() Config {
 	}
 }
 
-// loadConfig reads dir/config.yaml over the defaults and resolves Data
+// LoadConfig reads dir/config.yaml over the defaults and resolves Data
 // against dir. Unknown settings are errors, so a misspelt one is not
 // silently ignored.
-func loadConfig(dir string) (Config, error) {
+func LoadConfig(dir string) (Config, error) {
 	cfg := defaultConfig()
 	dir, err := filepath.Abs(dir)
 	if err != nil {
