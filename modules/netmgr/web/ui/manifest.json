@@ -1,0 +1,15 @@
+{
+  "contract": 1,
+  "id": "network",
+  "title": "Network",
+  "icon": "⇅",
+  "entry": "module.js",
+  "styles": ["stylesheets.css", "style.css", "network.css"],
+  "home": "/",
+  "nav": [
+    { "path": "/", "title": "Interfaces", "icon": "▤" },
+    { "path": "/routes", "title": "Routes", "icon": "⇢" },
+    { "path": "/ports", "title": "Ports", "icon": "⊙" },
+    { "path": "/tools", "title": "Diagnostics", "icon": "✓" }
+  ]
+}

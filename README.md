@@ -23,6 +23,7 @@ Modules that are still small and change with the panel live in
 | CI (builds and tests in Docker) | [modules/ci](modules/ci) | `ci-go` |
 | Packages (dnf, apt, installing Docker) | [modules/pkgmgr](modules/pkgmgr) | `pkgmgr` |
 | Services (systemd) and logs (journal) | [modules/svcmgr](modules/svcmgr) | `svcmgr` |
+| Network (interfaces and settings, routes, ports, diagnostics) | [modules/netmgr](modules/netmgr) | `netmgr` |
 | Disks (capacity, RAID, SMART health) | [modules/diskmgr](modules/diskmgr) | `diskmgr` |
 | Samba shares, settings and users (smb.conf) | [modules/smbmgr](modules/smbmgr) | `smbmgr` |
 | ZFS pools, datasets, snapshots and schedules | [modules/zfsmgr](modules/zfsmgr) | `zfsmgr` |
@@ -68,6 +69,11 @@ This repository holds the assembly:
   link there when Docker is missing.
 - `modules/svcmgr` manages systemd services and reads the journal; it never stops
   or disables the service running the panel.
+- `modules/netmgr` shows interfaces, routes, DNS servers and listening ports,
+  runs diagnostics, and changes interface settings through NetworkManager or
+  systemd-networkd. A change is on trial: it reverts by itself unless it is
+  kept within two minutes, even if the panel crashes meanwhile. It is left
+  out outside Linux.
 - `modules/diskmgr` shows file system capacity, software RAID arrays and each
   disk's SMART health (through smartctl-go), without waking sleeping disks.
 - `modules/smbmgr` edits Samba's smb.conf (shares, server settings, or the

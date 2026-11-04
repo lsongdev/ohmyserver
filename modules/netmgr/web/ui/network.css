@@ -1,0 +1,39 @@
+/* Network manager styles; everything else comes from style.css. */
+.small { font-size: 12.5px; }
+.section-title { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+.addresses { display: grid; gap: 2px; }
+.rate { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.filters { display: flex; gap: 12px 16px; align-items: end; flex-wrap: wrap; margin-bottom: 16px; }
+.filters > .field { flex: 1 1 200px; min-width: 0; max-width: 360px; }
+
+/* The change on trial. */
+.trial-card { margin-bottom: 16px; }
+.trial-note { margin-top: 12px; }
+.trial { display: flex; gap: 12px 16px; align-items: center; flex-wrap: wrap; }
+.trial-text { flex: 1 1 280px; min-width: 0; }
+.trial-count { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.trial-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Lists of values in the settings form. */
+.rows-title { font-weight: 550; }
+.rows-hint { margin: 2px 0 8px; }
+.rows { display: grid; gap: 6px; }
+.rows-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+.rows-row.route { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+.rows-actions { display: flex; gap: 8px; }
+@media (max-width: 560px) {
+  .rows-row.route { grid-template-columns: minmax(0, 1fr) auto; }
+  .rows-row.route > :nth-child(2) { grid-column: 1; }
+}
+.field-error { color: var(--danger); font-size: 12.5px; margin-top: 4px; }
+
+/* Preview of a change. */
+.diff { margin: 0; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius);
+  font: 12.5px/1.6 var(--mono); overflow-wrap: anywhere; white-space: pre-wrap; }
+.diff-line { display: block; min-height: 1.6em; }
+.diff-add { background: var(--green-soft); color: var(--green); }
+.diff-del { background: var(--danger-soft); color: var(--danger); }
+.preserved { margin: 0; padding-left: 20px; font: 12.5px/1.6 var(--mono); overflow-wrap: anywhere; }
+
+/* Diagnostics output. */
+.tool-output { --log-height: 420px; white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 16px; }
