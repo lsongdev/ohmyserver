@@ -9,7 +9,7 @@ import { State, Capacity, ScanLine, DeviceGroups, layout, scanning } from '../co
 const REFRESH = 15000;
 
 // A pool: its disks and the datasets on it, with where each one's schedule and
-// snapshots are. Opened from Disks, its return link goes back there.
+// snapshots are.
 export default function Pool() {
   const { query, href, link } = usePanel();
   const name = query.name || '';
@@ -20,12 +20,10 @@ export default function Pool() {
   const p = list.data?.pools.find(x => x.name === name);
   const own = (datasets.data || []).filter(d => d.name === name || d.name.startsWith(name + '/'));
   const scheduled = own.some(d => policyText(d.policy));
-  const disks = query.from === 'disks' && link?.('disks', '/');
   const scrubbing = p && scanning(p) && p.scan.function === 'SCRUB';
   const resilvering = p && scanning(p) && p.scan.function === 'RESILVER';
 
   return html`<${Page} title=${name || 'Pool'} subtitle=${p ? layout(p) : null}
-    back=${disks ? { href: disks, label: 'Disks' } : { href: href('/'), label: 'ZFS pools' }}
     actions=${p?.vdevs && !resilvering ? html`<button class="button" onClick=${() => setDialog(scrubbing ? 'stop' : 'start')}>${scrubbing ? 'Cancel scrub' : 'Start scrub'}</button>` : null}>
     <${Notice} error=${list.error || datasets.error || schedule.error} />
     ${list.data?.details_error ? html`<${Notice} tone="warn">${list.data.details_error}<//>` : null}

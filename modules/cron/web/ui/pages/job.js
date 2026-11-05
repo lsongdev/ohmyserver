@@ -11,14 +11,14 @@ export default function Job({ params }) {
   const targets = useApi('/targets');
   const action = useAction();
 
-  if (!job.data) return html`<${Page} title="Job" back=${{ href: href('/'), label: 'Jobs' }}>${job.error ? html`<${Notice} error=${job.error} />` : html`<${Loading} />`}<//>`;
+  if (!job.data) return html`<${Page} title="Job">${job.error ? html`<${Notice} error=${job.error} />` : html`<${Loading} />`}<//>`;
   const j = job.data;
   const target = targets.data?.find(t => t.id === j.target);
   const runNow = () => action.run(async () => {
     const r = await api.post(`/jobs/${j.id}/run`);
     navigate(`/runs/${r.id}`);
   });
-  return html`<${Page} title=${j.name} back=${{ href: href('/'), label: 'Jobs' }}
+  return html`<${Page} title=${j.name}
     actions=${html`
       <button class="button button-primary" disabled=${action.busy || j.running} onClick=${runNow}>Run now</button>
       <a class="button" href=${href(`/jobs/${j.id}/edit`)}>Edit</a>`}>

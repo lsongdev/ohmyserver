@@ -133,8 +133,8 @@ function SettingsForm({ name, path, setting }) {
     </fieldset>
     ${setting.protected ? html`<${Notice} tone="warn">${name} carries this machine's default route or your connection. If the new settings cut you off, wait two minutes: they revert by themselves.<//>` : null}
     <div class="button-actions">
-      <button class="button button-primary" disabled=${save.busy || !changed}>${save.busy ? 'Applying…' : 'Apply settings'}</button>
-      <button type="button" class="button" disabled=${preview.busy || save.busy} onClick=${showPreview}>${preview.busy ? 'Working it out…' : 'Preview changes'}</button>
+      <button class="button button-primary" disabled=${save.busy || !changed}>${save.busy ? 'Applying…' : 'Apply'}</button>
+      <button type="button" class="button" disabled=${preview.busy || save.busy} onClick=${showPreview}>${preview.busy ? 'Working it out…' : 'Preview'}</button>
       <a class="button" href=${href(path)}>Cancel</a>
     </div>
   </form>`;

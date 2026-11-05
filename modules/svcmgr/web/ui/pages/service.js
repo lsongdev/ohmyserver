@@ -6,7 +6,7 @@ import { bytes, datetime, ago } from '../lib/format.js';
 import { useApi, ServiceStatus, Journal, Unsupported, isActive, unitLabel } from '../services.js';
 
 export default function Service({ params }) {
-  const { api, href, query, setQuery } = usePanel();
+  const { api, query, setQuery } = usePanel();
   const name = params.name;
   const path = `/services/${encodeURIComponent(name)}`;
   const service = useApi(path, 5000);
@@ -15,7 +15,7 @@ export default function Service({ params }) {
   const title = unitLabel(name);
 
   if (!service.data) {
-    return html`<${Page} title=${title} back=${{ href: href('/'), label: 'Services' }}>
+    return html`<${Page} title=${title}>
       ${service.error?.code === 'unsupported' ? html`<${Unsupported} />` : service.error ? html`<${Notice} error=${service.error} />` : html`<${Loading} />`}
     <//>`;
   }
@@ -48,7 +48,7 @@ export default function Service({ params }) {
   }
   const exit = s.result && s.result !== 'success' ? `${s.result}${s.exit_status ? ` (exit status ${s.exit_status})` : ''}` : null;
 
-  return html`<${Page} title=${title} back=${{ href: href('/'), label: 'Services' }} subtitle=${s.description}
+  return html`<${Page} title=${title} subtitle=${s.description}
     actions=${html`<span class="page-actions">${buttons}</span>`}>
     ${s.guarded ? html`<${Notice} tone="info">Starting this service shuts down, reboots or switches the system to rescue mode, so the panel leaves it to a shell.<//>` : null}
     ${s.self ? html`<${Notice} tone="info">This service runs the panel. It can be restarted from here; stop or disable it from a shell.<//>` : null}

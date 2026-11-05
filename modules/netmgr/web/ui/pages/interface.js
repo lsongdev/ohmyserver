@@ -36,7 +36,7 @@ export default function InterfaceDetail({ params }) {
     <a class="button button-primary" href=${href(`${path}/settings`)}>Edit settings</a>` : null;
 
   return html`<${Page} title=${name} subtitle=${l ? [l.kind, speed(l.speed_mbps)].filter(Boolean).join(' · ') : null}
-      back=${{ href: href('/'), label: 'Interfaces' }} actions=${actions}>
+      actions=${actions}>
     <${Notice} error=${link.error || toggle.error} />
     ${!l ? (link.error ? null : html`<${Loading} />`) : html`
       ${l.reason ? html`<${Notice} tone="info">${l.reason}<//>` : null}

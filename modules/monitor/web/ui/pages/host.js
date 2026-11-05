@@ -17,7 +17,7 @@ export default function Host({ params, query, setQuery }) {
   const series = useApi(`/hosts/${id}/series?range=${range}`, range === '1h' ? 15000 : 300000);
   const action = useAction();
 
-  if (!host.data) return html`<${Page} title="Host" back=${{ href: href('/'), label: 'Hosts' }}>${host.error ? html`<${Notice} error=${host.error} />` : html`<${Loading} />`}<//>`;
+  if (!host.data) return html`<${Page} title="Host">${host.error ? html`<${Notice} error=${host.error} />` : html`<${Loading} />`}<//>`;
   const h = host.data;
   const s = h.latest;
   const points = series.data?.points || [];
@@ -28,7 +28,6 @@ export default function Host({ params, query, setQuery }) {
   const chart = props => html`<${Chart} points=${points} step=${step} from=${from} to=${to} ...${props} />`;
 
   return html`<${Page} title=${h.name}
-    back=${{ href: href('/'), label: 'Hosts' }}
     subtitle=${html`<${HostStatus} host=${h} />${h.error ? html` <span class="muted">${h.error}</span>` : null}`}
     actions=${h.status === 'gone' ? null : html`<button class="button" disabled=${action.busy} onClick=${toggle}>${h.enabled ? 'Stop monitoring' : 'Start monitoring'}</button>`}>
     <${Notice} error=${action.error || series.error} />

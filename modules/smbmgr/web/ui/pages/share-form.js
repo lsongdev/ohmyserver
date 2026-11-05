@@ -163,10 +163,10 @@ function ShareForm({ share, users, back }) {
       <//>
     </fieldset>
     <div class="button-actions">
-      <button class="button button-primary" disabled=${busy}>${save.busy ? 'Saving…' : isNew ? 'Add share' : 'Save changes'}</button>
+      <button class="button button-primary" disabled=${busy}>${save.busy ? 'Saving…' : isNew ? 'Add share' : 'Save'}</button>
       <a class="button" href=${href(back)}>Cancel</a>
       <span class="spacer"></span>
-      ${isNew ? null : html`<button type="button" class="button button-danger" disabled=${busy} onClick=${del}>${remove.busy ? 'Removing…' : 'Remove share'}</button>`}
+      ${isNew ? null : html`<button type="button" class="button button-danger" disabled=${busy} onClick=${del}>${remove.busy ? 'Removing…' : 'Remove'}</button>`}
     </div>
   </form>`;
 }

@@ -6,8 +6,7 @@ import { bytes } from '../lib/format.js';
 import { useApi, policyText, ScheduleStatus } from '../zfs.js';
 import { SnapshotTable, TakeSnapshotDialog } from '../components/snapshots.js';
 
-// A dataset: its space, its schedule and its snapshots. Opened from Disks, its
-// return link goes back there.
+// A dataset: its space, its schedule and its snapshots.
 export default function Dataset() {
   const { query, href, link } = usePanel();
   const name = query.name || '';
@@ -18,13 +17,11 @@ export default function Dataset() {
   const [taking, setTaking] = useState(false);
   const d = datasets.data?.find(x => x.name === name);
   const children = (datasets.data || []).filter(x => x.name.startsWith(name + '/') && !x.name.slice(name.length + 1).includes('/'));
-  const disks = query.from === 'disks' && link?.('disks', '/');
   const files = d?.type === 'filesystem' && d.mounted && d.mountpoint && link?.('files', '/', { path: d.mountpoint });
   const changed = () => { snapshots.reload(); datasets.reload(); };
   const returnTo = routeURL('/dataset', { name, from: query.from });
 
   return html`<${Page} title=${name || 'Dataset'} subtitle=${d?.mountpoint || d?.type}
-    back=${disks ? { href: disks, label: 'Disks' } : { href: href('/pool', { name: pool }), label: pool }}
     actions=${d ? html`<span class="zfs-actions">
       ${files ? html`<a class="button" href=${files}>Browse files</a>` : null}
       ${d.type === 'filesystem' ? html`<a class="button" href=${href('/dataset/new', { parent: name })}>New child dataset</a>` : null}

@@ -19,7 +19,7 @@ export default function Services() {
 
   if (system.data && !system.data.systemd) return html`<${Page} title="Services"><${Unsupported} /><//>`;
   const units = list.data || [];
-  const show = query.show || 'all';
+  const show = query.show || 'running';
   const text = (query.q || '').trim().toLowerCase();
   const matches = units.filter(FILTERS[show] || FILTERS.all)
     .filter(u => !text || u.name.toLowerCase().includes(text) || u.description?.toLowerCase().includes(text));
@@ -33,7 +33,7 @@ export default function Services() {
 
   return html`<${Page} title="Services" subtitle=${system.data?.version ? `systemd ${system.data.version}` : null}>
     <${Notice} error=${list.error} />
-    <${Tabs} active=${show} onChange=${id => setQuery({ show: id === 'all' ? '' : id })} tabs=${[
+    <${Tabs} active=${show} onChange=${id => setQuery({ show: id })} tabs=${[
       ['all', `All (${units.length})`], ['running', `Running (${count('running')})`],
       ['failed', `Failed (${count('failed')})`], ['enabled', `Enabled (${count('enabled')})`]]} />
     <div class="toolbar">

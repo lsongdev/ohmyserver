@@ -13,7 +13,9 @@ import (
 	"net/http"
 	"net/netip"
 	"os"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/lsongdev/ohmyserver/modules/netmgr/system"
@@ -221,11 +223,34 @@ func (s *Service) Handler() http.Handler {
 		return system.ReadResolvers(r.Context(), s.run, s.resolvConf), nil
 	})
 	handle("GET /ports", func(r *http.Request) (any, error) { return system.Ports(r.Context(), s.run) })
+	handle("POST /ports/{pid}/kill", func(r *http.Request) (any, error) { return s.killPort(r) })
 	mux.HandleFunc("POST /tools/run", s.runTool)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "not_found", "no such endpoint", nil)
 	})
 	return mux
+}
+
+// killPort sends SIGTERM only to a process that still owns a listening
+// socket. Rechecking the PID avoids acting on stale rows or arbitrary PIDs.
+func (s *Service) killPort(r *http.Request) (any, error) {
+	pid, err := strconv.Atoi(r.PathValue("pid"))
+	if err != nil || pid <= 1 || pid == os.Getpid() {
+		return nil, &badRequest{"invalid process id"}
+	}
+	ports, err := system.Ports(r.Context(), s.run)
+	if err != nil {
+		return nil, err
+	}
+	for _, port := range ports {
+		if port.PID == pid {
+			if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
+				return nil, err
+			}
+			return map[string]int{"pid": pid}, nil
+		}
+	}
+	return nil, &badRequest{"process is no longer listening on a port"}
 }
 
 // errInUse refuses what would cut this machine or this client off.
