@@ -1,10 +1,7 @@
 // Runs a module on its own: a minimal host that reads manifest.json for the
 // top navigation and drives mount() from the URL hash, exactly as the panel
-// shell would. A module's standalone entry is:
-//
-//   import { standalone } from '@lsongdev/panel/standalone.js';
-//   import { mount } from './module.js';
-//   standalone(mount);
+// shell would. A module's standalone entry imports standalone() from here and
+// mount() from its module.js, and calls standalone(mount).
 import { html, render } from '@lsongdev/scripts/react/react.js';
 import { Navbar } from '@lsongdev/scripts/react/components/index.js';
 import { createHashNavigation } from '@lsongdev/scripts/navigation/hash.js';
