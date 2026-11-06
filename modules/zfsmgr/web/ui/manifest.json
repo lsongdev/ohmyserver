@@ -4,10 +4,20 @@
   "title": "ZFS",
   "icon": "◍",
   "entry": "module.js",
-  "styles": ["stylesheets.css", "style.css", "zfs.css"],
+  "styles": [
+    "zfs.css"
+  ],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "ZFS pools", "icon": "◍" },
-    { "path": "/snapshots", "title": "Snapshots", "icon": "◷" }
+    {
+      "path": "/",
+      "title": "ZFS pools",
+      "icon": "◍"
+    },
+    {
+      "path": "/snapshots",
+      "title": "Snapshots",
+      "icon": "◷"
+    }
   ]
 }

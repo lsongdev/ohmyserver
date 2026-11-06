@@ -37,7 +37,7 @@ func (s *SSH) Standalone(password string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/api/", http.StripPrefix("/api", s.Handler()))
 	mux.Handle("/", Static(s.Assets()))
-	mux.Handle("/_panel/", http.StripPrefix("/_panel", Static(panel.FS)))
+	mux.Handle("/panel/", http.StripPrefix("/panel", Static(panel.FS)))
 	var h http.Handler = http.NewCrossOriginProtection().Handler(mux)
 	if password != "" {
 		h = basicAuth(h, password)

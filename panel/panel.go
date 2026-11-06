@@ -1,8 +1,11 @@
 // Package panel holds the browser runtime of the panel module contract
 // (docs/module-contract.md) in one place: mount, the page context, form
-// helpers, the API client, formatting and the standalone host. The shell
-// serves it at /_panel/ and a standalone module serves it beside its own UI;
-// either way modules import it as "@lsongdev/panel/…" through an import map.
+// helpers, the API client, formatting, the standalone host and module.css,
+// the styles every module shares. It is always served beside a
+// node_modules holding @lsongdev/stylesheets, which module.css imports from
+// ../node_modules: by the shell at /_shell/panel/ and by a standalone module
+// at /panel/. Modules import its scripts as "@lsongdev/panel/…" through an
+// import map.
 package panel
 
 import (

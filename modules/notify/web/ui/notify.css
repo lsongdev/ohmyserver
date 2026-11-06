@@ -8,8 +8,8 @@
 .notify-more { display: flex; justify-content: center; margin-top: 12px; }
 .notify-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .notify-issue-actions { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-.notify-telegram { display: grid; gap: 8px; padding: 12px; background: var(--surface-2); border-radius: var(--radius); overflow-wrap: anywhere; }
+.notify-telegram { display: grid; gap: 8px; padding: 12px; background: var(--color-surface-subtle); border-radius: var(--radius-md); overflow-wrap: anywhere; }
 .notify-step { margin: 0; }
 .notify-chats { display: grid; gap: 6px; }
-.notify-chat { display: flex; gap: 8px; align-items: baseline; padding: 8px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
-.notify-chat.selected { border-color: var(--primary); background: var(--primary-soft); }
+.notify-chat { display: flex; gap: 8px; align-items: baseline; padding: 8px 10px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; }
+.notify-chat.selected { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface)); }

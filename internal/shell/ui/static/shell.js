@@ -84,7 +84,9 @@ class ModuleHost {
     container.style.visibility = 'hidden';
     this.element.replaceChildren(container);
     this.current = { id: module.id, instance: null };
-    const sheets = [...(module.styles || []).map(sheet => url(module.ui + sheet).href), url('_shell/page.css').href];
+    // The panel runtime's module.css (the library and the modules' shared
+    // conventions) comes first, so a module's own styles can build on it.
+    const sheets = [url('_shell/panel/module.css').href, ...(module.styles || []).map(sheet => url(module.ui + sheet).href), url('_shell/page.css').href];
     await Promise.all(sheets.map(href => new Promise(resolve => {
       const link = Object.assign(document.createElement('link'), { rel: 'stylesheet', href });
       link.onload = link.onerror = resolve;

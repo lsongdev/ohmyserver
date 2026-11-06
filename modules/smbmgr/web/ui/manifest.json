@@ -4,13 +4,35 @@
   "title": "Samba",
   "icon": "⇄",
   "entry": "module.js",
-  "styles": ["stylesheets.css", "style.css", "samba.css"],
+  "styles": [
+    "samba.css"
+  ],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Shares", "icon": "▤" },
-    { "path": "/users", "title": "Users", "icon": "☺" },
-    { "path": "/sessions", "title": "Sessions", "icon": "⇄" },
-    { "path": "/logs", "title": "Logs", "icon": "☰" },
-    { "path": "/global", "title": "Server settings", "icon": "⚙" }
+    {
+      "path": "/",
+      "title": "Shares",
+      "icon": "▤"
+    },
+    {
+      "path": "/users",
+      "title": "Users",
+      "icon": "☺"
+    },
+    {
+      "path": "/sessions",
+      "title": "Sessions",
+      "icon": "⇄"
+    },
+    {
+      "path": "/logs",
+      "title": "Logs",
+      "icon": "☰"
+    },
+    {
+      "path": "/global",
+      "title": "Server settings",
+      "icon": "⚙"
+    }
   ]
 }

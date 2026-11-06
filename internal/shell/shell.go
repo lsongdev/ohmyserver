@@ -200,7 +200,9 @@ func (h *Host) routes() http.Handler {
 	}
 	mux.HandleFunc("GET /{$}", h.serveIndex)
 	mux.Handle("GET /_shell/", http.StripPrefix("/_shell/", staticHandler(ui.FS)))
-	mux.Handle("GET /_panel/", http.StripPrefix("/_panel/", staticHandler(panel.FS)))
+	// The panel runtime sits beside the shell's node_modules, as it does in a
+	// standalone module, so its stylesheet finds the library at ../node_modules.
+	mux.Handle("GET /_shell/panel/", http.StripPrefix("/_shell/panel/", staticHandler(panel.FS)))
 	mux.Handle("GET /_panel.json", protect(http.HandlerFunc(h.serveManifest)))
 	if auth != nil {
 		auth.register(mux)
@@ -267,7 +269,7 @@ const indexPage = `<!doctype html>
 
 // importMap resolves the bare specifiers that the shell and every module
 // import, so they all share one copy of the library and of the panel runtime.
-const importMap = `<script type="importmap">{"imports":{"@lsongdev/scripts/":"./_shell/node_modules/@lsongdev/scripts/","@lsongdev/panel/":"./_panel/"}}</script>`
+const importMap = `<script type="importmap">{"imports":{"@lsongdev/scripts/":"./_shell/node_modules/@lsongdev/scripts/","@lsongdev/panel/":"./_shell/panel/"}}</script>`
 
 // csp allows only the panel's own scripts, styles, images and connections,
 // and the import map by its hash.

@@ -2,7 +2,7 @@
 .num, .table .num { text-align: right; font-variant-numeric: tabular-nums; }
 .small { font-size: 12.5px; }
 .tabs { margin-bottom: 16px; }
-.unit-file { margin: 0; padding: 14px 16px; overflow: auto; white-space: pre; font: 12.5px/1.55 var(--mono); }
+.unit-file { margin: 0; padding: 14px 16px; overflow: auto; white-space: pre; font: 12.5px/1.55 var(--font-mono); }
 .filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 .filters .input { width: auto; flex: 0 1 auto; }
 .filters .grow { flex: 1 1 200px; max-width: 320px; }

@@ -4,9 +4,15 @@
   "title": "Disks",
   "icon": "◍",
   "entry": "module.js",
-  "styles": ["stylesheets.css", "style.css", "disks.css"],
+  "styles": [
+    "disks.css"
+  ],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Overview", "icon": "◍" }
+    {
+      "path": "/",
+      "title": "Overview",
+      "icon": "◍"
+    }
   ]
 }

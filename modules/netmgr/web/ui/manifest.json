@@ -4,12 +4,30 @@
   "title": "Network",
   "icon": "⇅",
   "entry": "module.js",
-  "styles": ["stylesheets.css", "style.css", "network.css"],
+  "styles": [
+    "network.css"
+  ],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Interfaces", "icon": "▤" },
-    { "path": "/routes", "title": "Routes", "icon": "⇢" },
-    { "path": "/ports", "title": "Ports", "icon": "⊙" },
-    { "path": "/tools", "title": "Diagnostics", "icon": "✓" }
+    {
+      "path": "/",
+      "title": "Interfaces",
+      "icon": "▤"
+    },
+    {
+      "path": "/routes",
+      "title": "Routes",
+      "icon": "⇢"
+    },
+    {
+      "path": "/ports",
+      "title": "Ports",
+      "icon": "⊙"
+    },
+    {
+      "path": "/tools",
+      "title": "Diagnostics",
+      "icon": "✓"
+    }
   ]
 }

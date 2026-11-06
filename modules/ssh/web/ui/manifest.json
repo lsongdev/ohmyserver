@@ -4,10 +4,20 @@
   "title": "SSH",
   "icon": "▶",
   "entry": "module.js",
-  "styles": ["stylesheets.css", "style.css", "ssh.css"],
+  "styles": [
+    "ssh.css"
+  ],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Hosts", "icon": "▶" },
-    { "path": "/key", "title": "Panel Key", "icon": "⚿" }
+    {
+      "path": "/",
+      "title": "Hosts",
+      "icon": "▶"
+    },
+    {
+      "path": "/key",
+      "title": "Panel Key",
+      "icon": "⚿"
+    }
   ]
 }

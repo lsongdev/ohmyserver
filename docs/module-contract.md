@@ -163,12 +163,15 @@ document, so its semantic tokens (`--color-canvas`, `--color-surface`,
 `--radius-md`, …) and component tokens (`--button-*`, `--input-*`, …) are
 defined there, light or dark.
 
-A module styles itself with the same library: it lists that library's
-component rules (`.button`, `.input`, `.table`, `.dialog`, …) among its
-`styles` and uses the tokens in its own CSS. Those rules match inside the
-shadow root while the tokens come from the shell, so the module follows the
-panel's theme. Standalone, the module's `index.html` links the same file on
-its own document, which then defines the tokens too.
+Modules share one stylesheet, the runtime's `module.css`: the library's
+component rules (`.button`, `.input`, `.table`, `.dialog`, …) and the
+modules' common conventions (`.section`, `.grid`, `.cell-main`, `.toolbar`,
+…). The shell loads it into every shadow root before the manifest's
+`styles`, so a manifest lists only the module's own stylesheet. Those rules
+match inside the shadow root while the tokens come from the shell, so the
+module follows the panel's theme. Standalone, the module's `index.html`
+links `panel/module.css` on its own document, which then defines the tokens
+too.
 
 ### Shared runtime and imports
 
@@ -178,7 +181,7 @@ module specifiers are resolved by an import map on the hosting document:
 | Specifier | What it is | In the shell |
 |---|---|---|
 | `@lsongdev/scripts/…` | Preact, htm, components, hooks and routing | the shell's copy, `./_shell/node_modules/@lsongdev/scripts/` |
-| `@lsongdev/panel/…` | this contract's runtime (`panel/ui` in this repository): `mount.js` (`createMount`), `panel.js` (`usePanel`), `forms.js`, `hooks.js`, `client.js`, `format.js`, `ui.js` and `standalone.js` | `./_panel/` |
+| `@lsongdev/panel/…` | this contract's runtime (`panel/ui` in this repository): `mount.js` (`createMount`), `panel.js` (`usePanel`), `forms.js`, `hooks.js`, `client.js`, `format.js`, `ui.js` and `standalone.js` | `./_shell/panel/` |
 
 Every module imports both only through these specifiers, never through a
 relative `node_modules` path, so a page and the runtime it uses share one
@@ -188,10 +191,10 @@ by hash; a standalone module does the same for its own.
 ### Standalone
 
 A standalone module serves its own `index.html` from the same assets. It
-links the same stylesheets, maps the two specifiers to its own
-`node_modules` and to a copy of the runtime it serves (modules in this
-repository serve `panel.FS` at `/_panel/`; modules in other repositories ship a
-copy in `ui/panel/`), and runs:
+links `panel/module.css` and its own stylesheet, maps the two specifiers
+to its own `node_modules` and to the runtime it serves beside it (modules in
+this repository serve `panel.FS` at `/panel/`; modules in other repositories
+ship a copy in `ui/panel/`), and runs:
 
 ```js
 import { standalone } from '@lsongdev/panel/standalone.js';

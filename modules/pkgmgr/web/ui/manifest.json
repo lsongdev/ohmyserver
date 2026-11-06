@@ -4,11 +4,25 @@
   "title": "Packages",
   "icon": "▦",
   "entry": "module.js",
-  "styles": ["stylesheets.css", "style.css", "packages.css"],
+  "styles": [
+    "packages.css"
+  ],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Packages", "icon": "▦" },
-    { "path": "/recommended", "title": "Recommended", "icon": "✦" },
-    { "path": "/jobs", "title": "Jobs", "icon": "⟳" }
+    {
+      "path": "/",
+      "title": "Packages",
+      "icon": "▦"
+    },
+    {
+      "path": "/recommended",
+      "title": "Recommended",
+      "icon": "✦"
+    },
+    {
+      "path": "/jobs",
+      "title": "Jobs",
+      "icon": "⟳"
+    }
   ]
 }

@@ -4,10 +4,20 @@
   "title": "Services",
   "icon": "⚙",
   "entry": "module.js",
-  "styles": ["stylesheets.css", "style.css", "services.css"],
+  "styles": [
+    "services.css"
+  ],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Services", "icon": "⚙" },
-    { "path": "/logs", "title": "Logs", "icon": "☰" }
+    {
+      "path": "/",
+      "title": "Services",
+      "icon": "⚙"
+    },
+    {
+      "path": "/logs",
+      "title": "Logs",
+      "icon": "☰"
+    }
   ]
 }

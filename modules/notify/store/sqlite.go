@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	_ "modernc.org/sqlite" // registers the "sqlite" driver for Open
 )
 
 // ErrNotFound reports an issue that does not exist.

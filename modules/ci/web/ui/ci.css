@@ -1,19 +1,19 @@
 /* CI styles; everything else comes from style.css. */
 .num, .table .num { text-align: right; font-variant-numeric: tabular-nums; }
-.commit { font-family: var(--mono); font-size: 12.5px; }
+.commit { font-family: var(--font-mono); font-size: 12.5px; }
 .message { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .build-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 16px; align-items: start; }
 @media (max-width: 760px) { .build-layout { grid-template-columns: 1fr; } }
 .step-list { display: grid; gap: 4px; padding: 8px; }
-.step-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; border-radius: 6px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
-.step-item:hover { background: var(--surface-2); }
-.step-item.active { background: var(--primary-soft); }
+.step-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; border-radius: 6px; background: none; color: var(--color-text); font: inherit; text-align: left; cursor: pointer; }
+.step-item:hover { background: var(--color-surface-subtle); }
+.step-item.active { background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface)); }
 .step-item .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.step-item .time { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
-.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
-.dot.success { background: var(--green); }
-.dot.failure, .dot.error { background: var(--danger); }
-.dot.running, .dot.pending { background: var(--primary); }
+.step-item .time { color: var(--color-text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-text-muted); flex: none; }
+.dot.success { background: var(--color-success); }
+.dot.failure, .dot.error { background: var(--color-danger); }
+.dot.running, .dot.pending { background: var(--color-primary); }
 .dot.running { animation: pulse 1s ease-in-out infinite alternate; }
 @keyframes pulse { to { opacity: .3; } }
 .build-log .log { height: max(420px, calc(100vh - 330px)); }
@@ -24,4 +24,4 @@
   .secret-row { grid-template-columns: minmax(0, 1fr) auto; }
   .secret-row > input:first-child { grid-column: 1 / -1; }
 }
-.example { margin: 0; padding: 12px; border-radius: var(--radius); background: var(--surface-2); font: 12.5px/1.5 var(--mono); white-space: pre; overflow-x: auto; }
+.example { margin: 0; padding: 12px; border-radius: var(--radius-md); background: var(--color-surface-subtle); font: 12.5px/1.5 var(--font-mono); white-space: pre; overflow-x: auto; }

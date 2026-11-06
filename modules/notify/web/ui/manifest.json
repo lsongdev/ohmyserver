@@ -4,10 +4,20 @@
   "title": "Notifications",
   "icon": "◉",
   "entry": "module.js",
-  "styles": ["stylesheets.css", "style.css", "notify.css"],
+  "styles": [
+    "notify.css"
+  ],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Notifications", "icon": "◉" },
-    { "path": "/channels", "title": "Channels", "icon": "➤" }
+    {
+      "path": "/",
+      "title": "Notifications",
+      "icon": "◉"
+    },
+    {
+      "path": "/channels",
+      "title": "Channels",
+      "icon": "➤"
+    }
   ]
 }

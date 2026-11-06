@@ -10,12 +10,12 @@
   .params-row { grid-template-columns: minmax(0, 1fr) auto; }
   .params-row .params-value { grid-column: 1; }
 }
-.params-head { color: var(--muted); font-size: 12.5px; }
+.params-head { color: var(--color-text-muted); font-size: 12.5px; }
 .params-actions { display: flex; gap: 8px; }
 
 /* smb.conf as text. */
 .conf { min-height: 480px; }
-.check { margin: 0; padding-left: 20px; overflow-wrap: anywhere; font: 12.5px/1.6 var(--mono); }
+.check { margin: 0; padding-left: 20px; overflow-wrap: anywhere; font: 12.5px/1.6 var(--font-mono); }
 /* testparm reports one problem per line. */
 .alert { white-space: pre-line; }
 .section-title { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
@@ -26,8 +26,8 @@
 .samba-log-output { --log-height: 560px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .samba-log-status { margin: 8px 0; }
 
-.samba-editor-mode { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.samba-editor-mode { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
 .samba-editor-mode .button { border: 0; border-radius: 0; }
-.samba-editor-mode .button.active { background: var(--primary-soft); color: var(--primary); }
+.samba-editor-mode .button.active { background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface)); color: var(--color-primary); }
 
 .samba-settings-fields { display: flex; flex-direction: column; gap: 16px; }

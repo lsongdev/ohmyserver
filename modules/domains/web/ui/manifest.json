@@ -4,10 +4,20 @@
   "title": "Domains",
   "icon": "◎",
   "entry": "module.js",
-  "styles": ["stylesheets.css", "style.css", "domains.css"],
+  "styles": [
+    "domains.css"
+  ],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Domains", "icon": "◎" },
-    { "path": "/accounts", "title": "Accounts", "icon": "⚿" }
+    {
+      "path": "/",
+      "title": "Domains",
+      "icon": "◎"
+    },
+    {
+      "path": "/accounts",
+      "title": "Accounts",
+      "icon": "⚿"
+    }
   ]
 }

@@ -25,15 +25,15 @@
   .rows-row.route { grid-template-columns: minmax(0, 1fr) auto; }
   .rows-row.route > :nth-child(2) { grid-column: 1; }
 }
-.field-error { color: var(--danger); font-size: 12.5px; margin-top: 4px; }
+.field-error { color: var(--color-danger); font-size: 12.5px; margin-top: 4px; }
 
 /* Preview of a change. */
-.diff { margin: 0; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius);
-  font: 12.5px/1.6 var(--mono); overflow-wrap: anywhere; white-space: pre-wrap; }
+.diff { margin: 0; padding: 10px 12px; background: var(--color-surface-subtle); border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  font: 12.5px/1.6 var(--font-mono); overflow-wrap: anywhere; white-space: pre-wrap; }
 .diff-line { display: block; min-height: 1.6em; }
-.diff-add { background: var(--green-soft); color: var(--green); }
-.diff-del { background: var(--danger-soft); color: var(--danger); }
-.preserved { margin: 0; padding-left: 20px; font: 12.5px/1.6 var(--mono); overflow-wrap: anywhere; }
+.diff-add { background: color-mix(in srgb, var(--color-success) 12%, var(--color-surface)); color: var(--color-success); }
+.diff-del { background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface)); color: var(--color-danger); }
+.preserved { margin: 0; padding-left: 20px; font: 12.5px/1.6 var(--font-mono); overflow-wrap: anywhere; }
 
 /* Diagnostics output. */
 .tool-output { --log-height: 420px; white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 16px; }

@@ -37,7 +37,7 @@ func (p *Packages) Standalone(password string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/api/", http.StripPrefix("/api", p.Handler()))
 	mux.Handle("/", Static(p.Assets()))
-	mux.Handle("/_panel/", http.StripPrefix("/_panel", Static(panel.FS)))
+	mux.Handle("/panel/", http.StripPrefix("/panel", Static(panel.FS)))
 	var h http.Handler = http.NewCrossOriginProtection().Handler(mux)
 	if password != "" {
 		h = basicAuth(h, password)

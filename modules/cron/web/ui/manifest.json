@@ -4,9 +4,15 @@
   "title": "Scheduled Jobs",
   "icon": "◷",
   "entry": "module.js",
-  "styles": ["stylesheets.css", "style.css", "cron.css"],
+  "styles": [
+    "cron.css"
+  ],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Jobs", "icon": "◷" }
+    {
+      "path": "/",
+      "title": "Jobs",
+      "icon": "◷"
+    }
   ]
 }

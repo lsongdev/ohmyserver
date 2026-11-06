@@ -4,10 +4,20 @@
   "title": "Files",
   "icon": "▤",
   "entry": "module.js",
-  "styles": ["stylesheets.css", "style.css", "files.css"],
+  "styles": [
+    "files.css"
+  ],
   "home": "/",
   "nav": [
-    { "path": "/", "title": "Files", "icon": "▤" },
-    { "path": "/trash", "title": "Trash", "icon": "⌫" }
+    {
+      "path": "/",
+      "title": "Files",
+      "icon": "▤"
+    },
+    {
+      "path": "/trash",
+      "title": "Trash",
+      "icon": "⌫"
+    }
   ]
 }
