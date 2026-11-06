@@ -7,9 +7,12 @@
 package shell
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/lsongdev/ohmyserver/panel"
 	"html"
 	"io/fs"
 	"net/http"
@@ -197,6 +200,7 @@ func (h *Host) routes() http.Handler {
 	}
 	mux.HandleFunc("GET /{$}", h.serveIndex)
 	mux.Handle("GET /_shell/", http.StripPrefix("/_shell/", staticHandler(ui.FS)))
+	mux.Handle("GET /_panel/", http.StripPrefix("/_panel/", staticHandler(panel.FS)))
 	mux.Handle("GET /_panel.json", protect(http.HandlerFunc(h.serveManifest)))
 	if auth != nil {
 		auth.register(mux)
@@ -251,6 +255,7 @@ const indexPage = `<!doctype html>
   <link rel="stylesheet" href="_shell/stylesheets.css">
   <link rel="stylesheet" href="_shell/style.css">
   <link rel="stylesheet" href="_shell/page.css">
+  ` + importMap + `
   <script type="module" src="_shell/shell.js"></script>
 </head>
 <body>
@@ -260,9 +265,19 @@ const indexPage = `<!doctype html>
 </html>
 `
 
-// csp allows only the panel's own scripts, styles, images and connections.
-const csp = "default-src 'self'; script-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; " +
-	"connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+// importMap resolves the bare specifiers that the shell and every module
+// import, so they all share one copy of the library and of the panel runtime.
+const importMap = `<script type="importmap">{"imports":{"@lsongdev/scripts/":"./_shell/node_modules/@lsongdev/scripts/","@lsongdev/panel/":"./_panel/"}}</script>`
+
+// csp allows only the panel's own scripts, styles, images and connections,
+// and the import map by its hash.
+var csp = func() string {
+	content := strings.TrimSuffix(strings.TrimPrefix(importMap, `<script type="importmap">`), `</script>`)
+	sum := sha256.Sum256([]byte(content))
+	return "default-src 'self'; script-src 'self' 'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'; " +
+		"img-src 'self' data:; style-src 'self' 'unsafe-inline'; " +
+		"connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+}()
 
 func (h *Host) serveIndex(w http.ResponseWriter, r *http.Request) {
 	hdr := w.Header()

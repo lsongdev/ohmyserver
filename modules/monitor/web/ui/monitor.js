@@ -1,9 +1,9 @@
 // Host monitor UI helpers: formatting, status, meters and charts.
-import { html, useState } from './lib/html.js';
-import { useResource } from './lib/hooks.js';
-import { usePanel } from './lib/panel.js';
-import { Status } from './lib/ui.js';
-import { bytes } from './lib/format.js';
+import { html, useState } from '@lsongdev/panel/html.js';
+import { useResource } from '@lsongdev/panel/hooks.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { Status } from '@lsongdev/panel/ui.js';
+import { bytes } from '@lsongdev/panel/format.js';
 
 // useApi loads a GET endpoint, polling every interval milliseconds.
 export function useApi(path, interval) {

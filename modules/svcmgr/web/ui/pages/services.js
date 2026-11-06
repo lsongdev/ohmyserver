@@ -1,7 +1,7 @@
-import { html } from '../lib/html.js';
-import { useBusy } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Tabs, Table, toastError } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useBusy } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, Tabs, Table, toastError } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, ServiceStatus, Unsupported, isActive, unitLabel } from '../services.js';
 
 const FILTERS = {

@@ -1,6 +1,6 @@
-import { html } from '../lib/html.js';
-import { Notice, Loading, Empty, Table, Badge, Field } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html } from '@lsongdev/panel/html.js';
+import { Notice, Loading, Empty, Table, Badge, Field } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { Page, useApi } from '../network.js';
 
 export default function Routes({ query, setQuery }) {

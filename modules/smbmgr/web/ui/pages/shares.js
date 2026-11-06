@@ -1,7 +1,7 @@
-import { html } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Badge, toast } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, Table, Badge, toast } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, Unsupported, ServiceStatus } from '../samba.js';
 
 export default function Shares() {

@@ -1,6 +1,6 @@
-import { html } from '../lib/html.js';
-import { Page, Notice, Loading, Empty, Table } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html } from '@lsongdev/panel/html.js';
+import { Page, Notice, Loading, Empty, Table } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, BuildStatus, EVENTS, active, datetime, short, duration } from '../ci.js';
 
 export default function Builds() {

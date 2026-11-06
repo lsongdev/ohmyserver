@@ -1,8 +1,8 @@
-import { html, useState } from '../lib/html.js';
-import { useAction, useBusy } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Badge, Field, Modal, toast, toastError } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { useUnsavedChanges } from '../lib/forms.js';
+import { html, useState } from '@lsongdev/panel/html.js';
+import { useAction, useBusy } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, Table, Badge, Field, Modal, toast, toastError } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { useApi } from '../samba.js';
 
 export default function Users() {

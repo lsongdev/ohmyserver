@@ -1,7 +1,7 @@
-import { html, useMemo, useState } from '../lib/html.js';
-import { Page, Notice, Loading, Empty } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { routeURL } from '../lib/forms.js';
+import { html, useMemo, useState } from '@lsongdev/panel/html.js';
+import { Page, Notice, Loading, Empty } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { routeURL } from '@lsongdev/panel/forms.js';
 import { useApi } from '../zfs.js';
 import { SnapshotTable, TakeSnapshotDialog } from '../components/snapshots.js';
 

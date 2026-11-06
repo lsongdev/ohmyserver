@@ -1,7 +1,7 @@
-import { html, useEffect, useRef, useState } from '../lib/html.js';
-import { Notice, Field } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { ApiError } from '../lib/client.js';
+import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
+import { Notice, Field } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { ApiError } from '@lsongdev/panel/client.js';
 import { Page } from '../network.js';
 
 const TOOLS = {

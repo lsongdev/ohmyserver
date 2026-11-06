@@ -1,7 +1,7 @@
-import { html } from '../lib/html.js';
-import { Page, Notice, Loading, Empty, Badge } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { bytes } from '../lib/format.js';
+import { html } from '@lsongdev/panel/html.js';
+import { Page, Notice, Loading, Empty, Badge } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { bytes } from '@lsongdev/panel/format.js';
 import { useApi } from '../zfs.js';
 import { State, Capacity, ScanFlags, layout, scanning } from '../components/pool.js';
 

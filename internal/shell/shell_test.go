@@ -103,7 +103,7 @@ func TestIndexHasStrictCSP(t *testing.T) {
 	h, _ := New(Options{Title: "<Panel>"}, module("docker"))
 	w := httptest.NewRecorder()
 	h.Handler().ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
-	if csp := w.Header().Get("Content-Security-Policy"); !strings.Contains(csp, "script-src 'self';") {
+	if csp := w.Header().Get("Content-Security-Policy"); !strings.Contains(csp, "script-src 'self' 'sha256-") {
 		t.Fatalf("csp = %s", csp)
 	}
 	if body := w.Body.String(); !strings.Contains(body, "&lt;Panel&gt;") || strings.Contains(body, "<script>") {

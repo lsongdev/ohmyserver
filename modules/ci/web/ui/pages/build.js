@@ -1,7 +1,7 @@
-import { html, useEffect, useRef, useState } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, LogView } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, LogView } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, BuildStatus, EVENTS, active, datetime, short, duration } from '../ci.js';
 
 export default function Build({ params }) {

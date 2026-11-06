@@ -1,6 +1,6 @@
 // Domains UI helpers shared by the pages.
-import { useResource } from './lib/hooks.js';
-import { usePanel } from './lib/panel.js';
+import { useResource } from '@lsongdev/panel/hooks.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 
 // useApi loads a GET endpoint; a null path loads nothing yet.
 export function useApi(path, interval) {

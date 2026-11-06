@@ -1,8 +1,8 @@
-import { html, useCallback, useEffect, useState } from '../lib/html.js';
-import { useAction, useResource } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Badge, Modal, Field, toast, toastError } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { ago, datetime } from '../lib/format.js';
+import { html, useCallback, useEffect, useState } from '@lsongdev/panel/html.js';
+import { useAction, useResource } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, Table, Badge, Modal, Field, toast, toastError } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { ago, datetime } from '@lsongdev/panel/format.js';
 
 const LEVELS = ['critical', 'warning', 'info', 'debug'];
 const TONES = { critical: 'red', warning: 'amber', info: 'blue' };

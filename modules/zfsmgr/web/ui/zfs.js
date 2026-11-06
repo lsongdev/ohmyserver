@@ -1,9 +1,9 @@
 // ZFS snapshot manager UI helpers shared by the pages.
-import { html, useState } from './lib/html.js';
-import { useAction, useResource } from './lib/hooks.js';
-import { usePanel } from './lib/panel.js';
-import { Badge, Modal, Notice, toast } from './lib/ui.js';
-import { datetime } from './lib/format.js';
+import { html, useState } from '@lsongdev/panel/html.js';
+import { useAction, useResource } from '@lsongdev/panel/hooks.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { Badge, Modal, Notice, toast } from '@lsongdev/panel/ui.js';
+import { datetime } from '@lsongdev/panel/format.js';
 
 // useApi loads a GET endpoint with an optional query, polling every interval
 // milliseconds when that is positive; a null path loads nothing yet.

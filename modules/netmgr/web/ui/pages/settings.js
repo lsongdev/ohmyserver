@@ -1,8 +1,8 @@
-import { html, useEffect, useState } from '../lib/html.js';
-import { useAction, useResource } from '../lib/hooks.js';
-import { Notice, Loading, Field, Check, toast } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { FormSection, useUnsavedChanges } from '../lib/forms.js';
+import { html, useEffect, useState } from '@lsongdev/panel/html.js';
+import { useAction, useResource } from '@lsongdev/panel/hooks.js';
+import { Notice, Loading, Field, Check, toast } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { FormSection, useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { Page, useChanged } from '../network.js';
 
 // Settings of an interface, on its own page: saving puts them on trial (see

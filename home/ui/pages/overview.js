@@ -1,10 +1,10 @@
 // The overview links into other modules with ctx.link, which returns null
 // for modules that are not mounted, so this page adapts to the build.
-import { html, useMemo } from '../../../../_shell/html.js';
-import { useResource } from '../../../../_shell/hooks.js';
-import { createClient } from '../../../../_shell/client.js';
-import { Page, Notice, Loading, Status, Badge, Table } from '../../../../_shell/ui.js';
-import { bytes } from '../../../../_shell/format.js';
+import { html, useMemo } from '@lsongdev/panel/html.js';
+import { useResource } from '@lsongdev/panel/hooks.js';
+import { createClient } from '@lsongdev/panel/client.js';
+import { Page, Notice, Loading, Status, Badge, Table } from '@lsongdev/panel/ui.js';
+import { bytes } from '@lsongdev/panel/format.js';
 
 function Card({ title, to, value, sub, error }) {
   const body = html`<span class="stat-label">${title}</span>

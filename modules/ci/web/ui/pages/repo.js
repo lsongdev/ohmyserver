@@ -1,7 +1,7 @@
-import { html, useState } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, KV, CopyButton, confirmDanger, toast, Table } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html, useState } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, KV, CopyButton, confirmDanger, toast, Table } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, BuildStatus, EVENTS, active, datetime, short, duration } from '../ci.js';
 
 const EXAMPLE = `when:

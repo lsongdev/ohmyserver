@@ -1,8 +1,8 @@
-import { html, useState } from '../lib/html.js';
-import { useResource } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Status, toast, toastError } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { ago, datetime } from '../lib/format.js';
+import { html, useState } from '@lsongdev/panel/html.js';
+import { useResource } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, Table, Status, toast, toastError } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { ago, datetime } from '@lsongdev/panel/format.js';
 
 const STATES = {
   pending: ['pending', 'Waiting'],

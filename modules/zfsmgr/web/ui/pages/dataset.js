@@ -1,8 +1,8 @@
-import { html, useState } from '../lib/html.js';
-import { Page, Notice, Loading, Empty, Badge, KV } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { routeURL } from '../lib/forms.js';
-import { bytes } from '../lib/format.js';
+import { html, useState } from '@lsongdev/panel/html.js';
+import { Page, Notice, Loading, Empty, Badge, KV } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { routeURL } from '@lsongdev/panel/forms.js';
+import { bytes } from '@lsongdev/panel/format.js';
 import { useApi, policyText, ScheduleStatus } from '../zfs.js';
 import { SnapshotTable, TakeSnapshotDialog } from '../components/snapshots.js';
 

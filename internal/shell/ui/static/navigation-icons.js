@@ -1,4 +1,4 @@
-import { html } from './html.js';
+import { html } from '@lsongdev/panel/html.js';
 
 // The shell chooses its icon set; module manifests stay independent of it.
 const icons = {

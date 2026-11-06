@@ -1,6 +1,6 @@
-import { html } from '../lib/html.js';
-import { Page, Notice, Loading, Empty, Table, Badge } from '../lib/ui.js';
-import { datetime, ago } from '../lib/format.js';
+import { html } from '@lsongdev/panel/html.js';
+import { Page, Notice, Loading, Empty, Table, Badge } from '@lsongdev/panel/ui.js';
+import { datetime, ago } from '@lsongdev/panel/format.js';
 import { useApi } from '../samba.js';
 
 const since = t => html`<span title=${datetime(t)}>${ago(t)}</span>`;

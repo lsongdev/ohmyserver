@@ -1,8 +1,8 @@
-import { html, useState } from '../lib/html.js';
-import { useAction, useResource } from '../lib/hooks.js';
-import { Page, Notice, Loading, Field, Check } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { FormSection, returnPath, useUnsavedChanges } from '../lib/forms.js';
+import { html, useState } from '@lsongdev/panel/html.js';
+import { useAction, useResource } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Field, Check } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { FormSection, returnPath, useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { canon, bool, lookup, savedToast, useApi, ParamsEditor } from '../samba.js';
 
 export default function ShareEditor({ params }) {

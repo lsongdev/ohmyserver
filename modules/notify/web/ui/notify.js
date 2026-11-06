@@ -1,8 +1,8 @@
 // Notification center helpers shared by the pages.
-import { html } from './lib/html.js';
-import { useResource } from './lib/hooks.js';
-import { usePanel } from './lib/panel.js';
-import { Notice } from './lib/ui.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useResource } from '@lsongdev/panel/hooks.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { Notice } from '@lsongdev/panel/ui.js';
 
 // What a channel can send to. Group bots and the like are plain web hooks.
 export const KINDS = [

@@ -1,8 +1,8 @@
 // Job scheduler UI helpers shared by the pages.
-import { html } from './lib/html.js';
-import { useResource } from './lib/hooks.js';
-import { usePanel } from './lib/panel.js';
-import { Status } from './lib/ui.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useResource } from '@lsongdev/panel/hooks.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { Status } from '@lsongdev/panel/ui.js';
 
 // useApi loads a GET endpoint, polling every interval(data) milliseconds
 // while that returns a positive number. A null path loads nothing yet.

@@ -1,9 +1,9 @@
-import { html, useEffect, useRef, useState } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Modal, Field, toast, toastError } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { routeURL, useUnsavedChanges } from '../lib/forms.js';
-import { bytes, datetime } from '../lib/format.js';
+import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, Table, Modal, Field, toast, toastError } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { routeURL, useUnsavedChanges } from '@lsongdev/panel/forms.js';
+import { bytes, datetime } from '@lsongdev/panel/format.js';
 import { useApi, join, parent, isDir, icon, upload, ConfirmDelete } from '../files.js';
 
 // Huge directories render their first entries; the filter finds the rest.

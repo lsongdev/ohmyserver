@@ -1,6 +1,6 @@
-import { html, useState } from '../lib/html.js';
-import { Page, Notice, Loading, Status, Field } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html, useState } from '@lsongdev/panel/html.js';
+import { Page, Notice, Loading, Status, Field } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, useSystem, useStartJob, RunningJob, Unsupported } from '../packages.js';
 
 export default function Recommended() {

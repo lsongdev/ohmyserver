@@ -1,10 +1,10 @@
 // Parts of a pool shared by the list and its page: state, how it is built,
 // its latest scrub, and its devices as small cards, since a nested table gets
 // long and says more than a glance needs.
-import { html } from '../lib/html.js';
-import { Status, Badge } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { bytes, ago, datetime } from '../lib/format.js';
+import { html } from '@lsongdev/panel/html.js';
+import { Status, Badge } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { bytes, ago, datetime } from '@lsongdev/panel/format.js';
 
 const STALE_DAYS = 35;
 const CLASSES = { log: 'Log', l2cache: 'Cache', spare: 'Spare', special: 'Special', dedup: 'Dedup' };

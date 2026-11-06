@@ -1,9 +1,9 @@
 // File manager UI helpers shared by the pages.
-import { html, useEffect, useState } from './lib/html.js';
-import { useResource, useAction } from './lib/hooks.js';
-import { usePanel } from './lib/panel.js';
-import { Modal, Notice, Loading, Field } from './lib/ui.js';
-import { bytes } from './lib/format.js';
+import { html, useEffect, useState } from '@lsongdev/panel/html.js';
+import { useResource, useAction } from '@lsongdev/panel/hooks.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { Modal, Notice, Loading, Field } from '@lsongdev/panel/ui.js';
+import { bytes } from '@lsongdev/panel/format.js';
 
 // useApi loads a GET endpoint, polling every interval(data) milliseconds
 // while that returns a positive number. A null path loads nothing yet.

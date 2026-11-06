@@ -1,9 +1,9 @@
-import { html } from '../lib/html.js';
-import { useAction, useResource } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Badge, confirmDanger, Table } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { routeURL } from '../lib/forms.js';
-import { ago } from '../lib/format.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useAction, useResource } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, Badge, confirmDanger, Table } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { routeURL } from '@lsongdev/panel/forms.js';
+import { ago } from '@lsongdev/panel/format.js';
 
 export const AUTH = { password: 'Password', key: 'Private key', panel: 'Panel key' };
 

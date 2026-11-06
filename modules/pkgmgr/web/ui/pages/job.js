@@ -1,7 +1,7 @@
-import { html } from '../lib/html.js';
-import { Page, Notice, Loading, KV, LogView } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { datetime } from '../lib/format.js';
+import { html } from '@lsongdev/panel/html.js';
+import { Page, Notice, Loading, KV, LogView } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { datetime } from '@lsongdev/panel/format.js';
 import { useApi, JobStatus, duration } from '../packages.js';
 
 export default function Job({ params }) {

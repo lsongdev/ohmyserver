@@ -1,7 +1,7 @@
-import { html, useEffect, useRef, useState } from '../lib/html.js';
-import { useAction, useResource } from '../lib/hooks.js';
-import { Page, Notice, Loading, Status, confirmDanger } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
+import { useAction, useResource } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Status, confirmDanger } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { target } from './hosts.js';
 
 // Close codes the API uses besides the standard ones.

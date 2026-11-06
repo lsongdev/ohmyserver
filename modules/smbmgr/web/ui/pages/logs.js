@@ -1,7 +1,7 @@
-import { html, useEffect, useState } from '../lib/html.js';
-import { useResource } from '../lib/hooks.js';
-import { Page, Notice, Loading, Field, Check, LogView } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html, useEffect, useState } from '@lsongdev/panel/html.js';
+import { useResource } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Field, Check, LogView } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 
 export default function Logs() {
   const { query, setQuery } = usePanel();

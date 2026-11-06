@@ -1,7 +1,7 @@
-import { html } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, KV, Badge, Table } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, KV, Badge, Table } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, HostStatus, Meter, Chart, KINDS, bytes, rate, pct, fixed, uptime } from '../monitor.js';
 
 const RANGES = [['1h', '1 hour'], ['6h', '6 hours'], ['24h', '24 hours'], ['7d', '7 days'], ['30d', '30 days'], ['90d', '90 days']];

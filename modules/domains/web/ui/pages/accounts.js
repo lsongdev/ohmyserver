@@ -1,8 +1,8 @@
-import { html } from '../lib/html.js';
-import { useBusy } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Status, confirmDanger, toastError } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { ago } from '../lib/format.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useBusy } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, Table, Status, confirmDanger, toastError } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { ago } from '@lsongdev/panel/format.js';
 import { useApi } from '../domains.js';
 
 export default function Accounts() {

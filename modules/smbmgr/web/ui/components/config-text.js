@@ -1,5 +1,5 @@
-import { html } from '../lib/html.js';
-import { Notice } from '../lib/ui.js';
+import { html } from '@lsongdev/panel/html.js';
+import { Notice } from '@lsongdev/panel/ui.js';
 
 export function ConfigText({ text, onChange, path }) {
   return html`

@@ -1,9 +1,9 @@
-import { html, useMemo, useState } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Field, Modal, toast } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { useUnsavedChanges, routeURL } from '../lib/forms.js';
-import { bytes } from '../lib/format.js';
+import { html, useMemo, useState } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, Field, Modal, toast } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { useUnsavedChanges, routeURL } from '@lsongdev/panel/forms.js';
+import { bytes } from '@lsongdev/panel/format.js';
 import { useApi } from '../zfs.js';
 
 const LAYOUTS = [

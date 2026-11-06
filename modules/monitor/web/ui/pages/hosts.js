@@ -1,7 +1,7 @@
-import { html } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Badge, confirmDanger, Table } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, Badge, confirmDanger, Table } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, HostStatus, Meter, Sparkline, KINDS, bytes, rate, pct, uptime } from '../monitor.js';
 
 export default function Hosts() {

@@ -1,6 +1,6 @@
-import { html } from '../lib/html.js';
-import { Notice, Loading, Empty, Table, Badge } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html } from '@lsongdev/panel/html.js';
+import { Notice, Loading, Empty, Table, Badge } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { Page, useApi, useChanged, useRates, LinkStatus, rate, speed, globalAddresses, cidr } from '../network.js';
 
 export default function Interfaces() {

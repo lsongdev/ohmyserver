@@ -1,8 +1,8 @@
-import { html } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, KV, Tabs, toast } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { bytes, datetime, ago } from '../lib/format.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, KV, Tabs, toast } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { bytes, datetime, ago } from '@lsongdev/panel/format.js';
 import { useApi, ServiceStatus, Journal, Unsupported, isActive, unitLabel } from '../services.js';
 
 export default function Service({ params }) {

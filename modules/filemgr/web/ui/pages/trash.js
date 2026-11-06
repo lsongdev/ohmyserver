@@ -1,8 +1,8 @@
-import { html, useState } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Table, toast } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { bytes, datetime } from '../lib/format.js';
+import { html, useState } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, Table, toast } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { bytes, datetime } from '@lsongdev/panel/format.js';
 import { useApi, ConfirmDelete, count } from '../files.js';
 
 export default function Trash() {

@@ -1,8 +1,8 @@
-import { html } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Notice, Loading, Empty, Table, Badge, KV, toast } from '../lib/ui.js';
-import { bytes } from '../lib/format.js';
-import { usePanel } from '../lib/panel.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Notice, Loading, Empty, Table, Badge, KV, toast } from '@lsongdev/panel/ui.js';
+import { bytes } from '@lsongdev/panel/format.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { Page, useApi, useChanged, useRates, LinkStatus, rate, speed, cidr } from '../network.js';
 
 export default function InterfaceDetail({ params }) {

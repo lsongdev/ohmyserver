@@ -1,7 +1,7 @@
-import { html, useState } from '../lib/html.js';
-import { Page, Notice, Loading, Empty, Badge, Tabs, Table, confirmDanger } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { bytes } from '../lib/format.js';
+import { html, useState } from '@lsongdev/panel/html.js';
+import { Page, Notice, Loading, Empty, Badge, Tabs, Table, confirmDanger } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { bytes } from '@lsongdev/panel/format.js';
 import { useApi, useSystem, useStartJob, RunningJob, Unsupported, PackageInfo } from '../packages.js';
 
 // The installed list can hold thousands of packages: show the first ones

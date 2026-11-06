@@ -1,6 +1,6 @@
-import { html, useState } from '../lib/html.js';
-import { Page, Check } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html, useState } from '@lsongdev/panel/html.js';
+import { Page, Check } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, Journal, Unsupported, unitLabel } from '../services.js';
 
 const PRIORITIES = [['', 'All priorities'], ['3', 'Errors'], ['4', 'Warnings and above'], ['5', 'Notices and above'], ['6', 'Info and above']];

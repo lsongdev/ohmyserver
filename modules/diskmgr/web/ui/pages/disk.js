@@ -1,8 +1,8 @@
-import { html } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, KV, Table, toast } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { bytes, datetime } from '../lib/format.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, KV, Table, toast } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { bytes, datetime } from '@lsongdev/panel/format.js';
 import { useApi, kind, uptime, usage, HealthStatus } from '../disks.js';
 
 // Attributes whose raw count means trouble when it is above zero.

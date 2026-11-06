@@ -1,8 +1,8 @@
-import { html, useEffect, useState } from '../lib/html.js';
-import { useAction, useResource } from '../lib/hooks.js';
-import { Page, Notice, Loading, Field, toast } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { FormSection, returnPath, useUnsavedChanges } from '../lib/forms.js';
+import { html, useEffect, useState } from '@lsongdev/panel/html.js';
+import { useAction, useResource } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Field, toast } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { FormSection, returnPath, useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { useApi } from '../cron.js';
 
 export default function JobEditor({ params }) {

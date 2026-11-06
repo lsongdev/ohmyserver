@@ -1,11 +1,11 @@
 // The snapshot table and the dialog that takes one, shared by the Snapshots
 // page and a dataset's page.
-import { html, useMemo, useState } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Notice, Table, Field, Check, Modal, toast } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { useUnsavedChanges } from '../lib/forms.js';
-import { bytes, datetime, ago } from '../lib/format.js';
+import { html, useMemo, useState } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Notice, Table, Field, Check, Modal, toast } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { useUnsavedChanges } from '@lsongdev/panel/forms.js';
+import { bytes, datetime, ago } from '@lsongdev/panel/format.js';
 import { SnapshotTags, DeleteDialog, pinned } from '../zfs.js';
 
 // SnapshotTable lists snapshots with selection and deleting. returnTo is where

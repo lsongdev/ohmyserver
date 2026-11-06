@@ -1,8 +1,8 @@
 // Network manager UI helpers shared by the pages.
-import { html, useEffect, useRef, useState } from './lib/html.js';
-import { useAction, useResource } from './lib/hooks.js';
-import { usePanel } from './lib/panel.js';
-import { Page as BasePage, Notice, Status, toast } from './lib/ui.js';
+import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
+import { useAction, useResource } from '@lsongdev/panel/hooks.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { Page as BasePage, Notice, Status, toast } from '@lsongdev/panel/ui.js';
 
 export function useApi(path, interval) {
   const { api } = usePanel();

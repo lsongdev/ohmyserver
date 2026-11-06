@@ -1,7 +1,7 @@
-import { html } from '../lib/html.js';
-import { useResource } from '../lib/hooks.js';
-import { Page, Notice, Loading, CopyButton } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useResource } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, CopyButton } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
 
 export default function Key() {
   const { api } = usePanel();

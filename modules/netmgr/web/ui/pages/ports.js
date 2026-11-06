@@ -1,7 +1,7 @@
-import { html } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { usePanel } from '../lib/panel.js';
-import { Notice, Loading, Empty, Table, Badge, Field } from '../lib/ui.js';
+import { html } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { Notice, Loading, Empty, Table, Badge, Field } from '@lsongdev/panel/ui.js';
 import { Page, useApi } from '../network.js';
 
 const loopback = a => a.startsWith('127.') || a === '::1' || a.endsWith('%lo');

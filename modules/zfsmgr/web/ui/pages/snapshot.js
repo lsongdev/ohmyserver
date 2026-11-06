@@ -1,9 +1,9 @@
-import { html, useState } from '../lib/html.js';
-import { useAction } from '../lib/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Field, Modal, Badge, KV, toast } from '../lib/ui.js';
-import { usePanel } from '../lib/panel.js';
-import { useUnsavedChanges, returnPath, routeURL } from '../lib/forms.js';
-import { bytes, datetime, ago } from '../lib/format.js';
+import { html, useState } from '@lsongdev/panel/html.js';
+import { useAction } from '@lsongdev/panel/hooks.js';
+import { Page, Notice, Loading, Empty, Table, Field, Modal, Badge, KV, toast } from '@lsongdev/panel/ui.js';
+import { usePanel } from '@lsongdev/panel/panel.js';
+import { useUnsavedChanges, returnPath, routeURL } from '@lsongdev/panel/forms.js';
+import { bytes, datetime, ago } from '@lsongdev/panel/format.js';
 import { useApi, SnapshotTags, DeleteDialog, pinned } from '../zfs.js';
 
 export default function Snapshot() {

@@ -170,12 +170,38 @@ shadow root while the tokens come from the shell, so the module follows the
 panel's theme. Standalone, the module's `index.html` links the same file on
 its own document, which then defines the tokens too.
 
+### Shared runtime and imports
+
+Modules don't carry their own copies of the browser plumbing. Two bare
+module specifiers are resolved by an import map on the hosting document:
+
+| Specifier | What it is | In the shell |
+|---|---|---|
+| `@lsongdev/scripts/…` | Preact, htm, components, hooks and routing | the shell's copy, `./_shell/node_modules/@lsongdev/scripts/` |
+| `@lsongdev/panel/…` | this contract's runtime (`panel/ui` in this repository): `mount.js` (`createMount`), `panel.js` (`usePanel`), `forms.js`, `hooks.js`, `client.js`, `format.js`, `ui.js` and `standalone.js` | `./_panel/` |
+
+Every module imports both only through these specifiers, never through a
+relative `node_modules` path, so a page and the runtime it uses share one
+copy of Preact. The shell allows its import map in the Content-Security-Policy
+by hash; a standalone module does the same for its own.
+
 ### Standalone
 
 A standalone module serves its own `index.html` from the same assets. It
-links the same stylesheets and calls the same `mount` with a context it
-builds itself (typically a small hash router and `apiBase: "api/"`). The
-manifest is still served and simply unused.
+links the same stylesheets, maps the two specifiers to its own
+`node_modules` and to a copy of the runtime it serves (modules in this
+repository serve `panel.FS` at `/_panel/`; modules in other repositories ship a
+copy in `ui/panel/`), and runs:
+
+```js
+import { standalone } from '@lsongdev/panel/standalone.js';
+import { mount } from './module.js';
+
+standalone(mount);
+```
+
+which builds the context with a hash router and `apiBase: "api/"`. The
+manifest supplies its navigation.
 
 ## 4. Storage
 

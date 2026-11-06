@@ -2,9 +2,9 @@
 // (docs/module-contract.md). Each module renders into its own shadow root,
 // receives its route through mount/update, and changes it through
 // ctx.navigate. The shell owns the address bar: "#/<module id><module path>".
-import { html, render, useState } from './html.js';
-import { Sidebar } from './node_modules/@lsongdev/scripts/react/components/index.js';
-import { createHashNavigation } from './node_modules/@lsongdev/scripts/navigation/hash.js';
+import { html, render, useState } from '@lsongdev/panel/html.js';
+import { Sidebar } from '@lsongdev/scripts/react/components/index.js';
+import { createHashNavigation } from '@lsongdev/scripts/navigation/hash.js';
 import { faIcon, navigationIcon } from './navigation-icons.js';
 
 const navigation = createHashNavigation({ event: 'panel:routechange', stateKey: 'panelNavigation' });
