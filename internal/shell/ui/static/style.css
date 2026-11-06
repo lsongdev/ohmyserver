@@ -99,7 +99,7 @@ code,
   white-space: nowrap;
 }
 
-/* Page (the header, with its return link, comes from page.css) */
+/* Page (the header, with its return link, comes from the library) */
 .section {
   margin-top: 24px;
 }

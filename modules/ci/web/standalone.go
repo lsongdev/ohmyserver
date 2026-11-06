@@ -39,7 +39,7 @@ func (c *CI) Standalone(password string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/api/", api)
 	mux.Handle("/", Static(c.Assets()))
-	mux.Handle("/panel/", http.StripPrefix("/panel", Static(panel.FS)))
+	mux.Handle("/lib/", http.StripPrefix("/lib", Static(panel.FS)))
 	var private http.Handler = mux
 	if password != "" {
 		private = basicAuth(mux, password)

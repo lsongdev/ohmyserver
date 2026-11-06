@@ -86,7 +86,7 @@ class ModuleHost {
     this.current = { id: module.id, instance: null };
     // The panel runtime's module.css (the library and the modules' shared
     // conventions) comes first, so a module's own styles can build on it.
-    const sheets = [url('_shell/panel/module.css').href, ...(module.styles || []).map(sheet => url(module.ui + sheet).href), url('_shell/page.css').href];
+    const sheets = [url('_shell/panel/module.css').href, ...(module.styles || []).map(sheet => url(module.ui + sheet).href)];
     await Promise.all(sheets.map(href => new Promise(resolve => {
       const link = Object.assign(document.createElement('link'), { rel: 'stylesheet', href });
       link.onload = link.onerror = resolve;

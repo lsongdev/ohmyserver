@@ -170,7 +170,7 @@ modules' common conventions (`.section`, `.grid`, `.cell-main`, `.toolbar`,
 `styles`, so a manifest lists only the module's own stylesheet. Those rules
 match inside the shadow root while the tokens come from the shell, so the
 module follows the panel's theme. Standalone, the module's `index.html`
-links `panel/module.css` on its own document, which then defines the tokens
+links `lib/module.css` on its own document, which then defines the tokens
 too.
 
 ### Shared runtime and imports
@@ -191,13 +191,16 @@ by hash; a standalone module does the same for its own.
 ### Standalone
 
 A standalone module serves its own `index.html` from the same assets. It
-links `panel/module.css` and its own stylesheet, maps the two specifiers
-to its own `node_modules` and to the runtime it serves beside it (modules in
-this repository serve `panel.FS` at `/panel/`; modules in other repositories
-ship a copy in `ui/panel/`), and runs:
+links `lib/module.css` and its own stylesheet, maps `@lsongdev/scripts/…`
+to its own `node_modules`, and serves the runtime beside them at `lib/`.
+Modules in this repository serve `panel.FS` there and import it as
+`@lsongdev/panel/…`, which their import map also points at `./lib/`. A
+module in another repository keeps its own `ui/lib/`, imported with relative
+paths, so it is the same inside the shell and on its own; it only shares
+`@lsongdev/scripts` with the shell. Its entry runs:
 
 ```js
-import { standalone } from '@lsongdev/panel/standalone.js';
+import { standalone } from '@lsongdev/panel/standalone.js'; // or './lib/standalone.js'
 import { mount } from './module.js';
 
 standalone(mount);

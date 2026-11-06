@@ -4,7 +4,7 @@
 // the styles every module shares. It is always served beside a
 // node_modules holding @lsongdev/stylesheets, which module.css imports from
 // ../node_modules: by the shell at /_shell/panel/ and by a standalone module
-// at /panel/. Modules import its scripts as "@lsongdev/panel/…" through an
+// at /lib/. Modules import its scripts as "@lsongdev/panel/…" through an
 // import map.
 package panel
 

@@ -37,7 +37,7 @@ func (c *Cron) Standalone(password string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/api/", http.StripPrefix("/api", c.Handler()))
 	mux.Handle("/", Static(c.Assets()))
-	mux.Handle("/panel/", http.StripPrefix("/panel", Static(panel.FS)))
+	mux.Handle("/lib/", http.StripPrefix("/lib", Static(panel.FS)))
 	var h http.Handler = http.NewCrossOriginProtection().Handler(mux)
 	if password != "" {
 		h = basicAuth(h, password)
