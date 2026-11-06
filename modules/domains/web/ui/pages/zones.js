@@ -1,6 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Badge } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Table, Badge } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi } from '../domains.js';
 
@@ -14,12 +14,12 @@ export default function Zones() {
   const text = (query.q || '').trim().toLowerCase();
   const list = (zones.data || []).filter(z => !text || z.name.includes(text));
 
-  return html`<${Page} title="Domains" subtitle="Zones hosted by your DNS provider accounts."
+  return html`<${PageHeader} title="Domains" subtitle="Zones hosted by your DNS provider accounts."
     actions=${html`<span class="page-actions">
       <button class="button" disabled=${refresh.busy} onClick=${reload}>${refresh.busy ? 'Refreshing…' : 'Refresh'}</button>
-      <a class="button button-primary" href=${href('/accounts/new')}>Add account</a></span>`}>
-    <${Notice} error=${zones.error || refresh.error} />
-    ${failing.map(a => html`<${Notice} key=${a.id} tone="warn">${a.name}: ${a.error}. <a href=${href(`/accounts/${a.id}`)}>Check the account</a>.<//>`)}
+      <a class="button button-primary" href=${href('/accounts/new')}>Add account</a></span>`} />
+    <${Alert} error=${zones.error || refresh.error} />
+    ${failing.map(a => html`<${Alert} key=${a.id} variant="warning">${a.name}: ${a.error}. <a href=${href(`/accounts/${a.id}`)}>Check the account</a>.<//>`)}
     ${accounts.data && accounts.data.length === 0 ? html`<${Empty}>
       No DNS provider accounts yet. <a href=${href('/accounts/new')}>Add one</a> (Cloudflare) to manage its domains here and to issue
       certificates for them, wildcards included, without opening a port.<//>` : html`
@@ -33,9 +33,8 @@ export default function Zones() {
           <tbody>${list.map(z => html`<tr key=${z.account + z.id}>
             <td><a class="cell-main" href=${href(`/zones/${z.account}/${encodeURIComponent(z.id)}`)}>${z.name}</a></td>
             <td>${z.account_name}</td>
-            <td>${z.status ? html`<${Badge} tone=${z.status === 'active' ? 'green' : 'amber'}>${z.status}<//>` : '—'}</td>
+            <td>${z.status ? html`<${Badge} variant=${z.status === 'active' ? 'success' : 'warning'}>${z.status}<//>` : '—'}</td>
             <td class="mono small">${(z.name_servers || []).join(', ') || '—'}</td>
           </tr>`)}</tbody>
-        <//>`}`}
-  <//>`;
+        <//>`}`}`;
 }

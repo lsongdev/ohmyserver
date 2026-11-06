@@ -2,7 +2,7 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useResource } from '@lsongdev/panel/hooks.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
-import { Notice } from '@lsongdev/panel/ui.js';
+import { Alert } from '@lsongdev/scripts/react/components/index.js';
 
 // What a channel can send to. Group bots and the like are plain web hooks.
 export const KINDS = [
@@ -28,5 +28,5 @@ export function ruleText(c) {
 export function Unprotected() {
   const { api } = usePanel();
   const info = useResource(signal => api.get('/info', { signal }), []);
-  return info.data?.unauthenticated ? html`<${Notice} tone="warn">This panel has no password: anyone who can reach it can change where notifications go, and send them as anyone. Set a password before relying on this.<//>` : null;
+  return info.data?.unauthenticated ? html`<${Alert} variant="warning">This panel has no password: anyone who can reach it can change where notifications go, and send them as anyone. Set a password before relying on this.<//>` : null;
 }

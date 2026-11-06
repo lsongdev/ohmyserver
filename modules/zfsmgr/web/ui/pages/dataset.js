@@ -1,5 +1,5 @@
 import { html, useState } from '@lsongdev/panel/html.js';
-import { Page, Notice, Loading, Empty, Badge, KV } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Badge, KeyValue } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { routeURL } from '@lsongdev/panel/forms.js';
 import { bytes } from '@lsongdev/panel/format.js';
@@ -21,20 +21,20 @@ export default function Dataset() {
   const changed = () => { snapshots.reload(); datasets.reload(); };
   const returnTo = routeURL('/dataset', { name, from: query.from });
 
-  return html`<${Page} title=${name || 'Dataset'} subtitle=${d?.mountpoint || d?.type}
+  return html`<${PageHeader} title=${name || 'Dataset'} subtitle=${d?.mountpoint || d?.type}
     actions=${d ? html`<span class="zfs-actions">
       ${files ? html`<a class="button" href=${files}>Browse files</a>` : null}
       ${d.type === 'filesystem' ? html`<a class="button" href=${href('/dataset/new', { parent: name })}>New child dataset</a>` : null}
-    </span>` : null}>
-    <${Notice} error=${datasets.error || snapshots.error || schedule.error} />
+    </span>` : null} />
+    <${Alert} error=${datasets.error || snapshots.error || schedule.error} />
     ${!datasets.data ? (datasets.error ? null : html`<${Loading} />`) : !d ? html`<${Empty}>No dataset named ${name}.<//>` : html`
       <div class="card">
-        <${KV} items=${[
+        <${KeyValue} items=${[
           ['Used', html`${bytes(d.used)} <span class="muted">${bytes(d.snapshot_used)} of it only in snapshots</span>`],
           ['Available', bytes(d.available)],
           ['Compression', d.compression || '—'],
           ['Quota', d.quota ? bytes(d.quota) : 'None'],
-          d.mounted || d.type !== 'filesystem' ? null : ['Mounted', html`<${Badge} tone="amber">Not mounted<//>`],
+          d.mounted || d.type !== 'filesystem' ? null : ['Mounted', html`<${Badge} variant="warning">Not mounted<//>`],
         ].filter(Boolean)} />
       </div>
       <section class="section">
@@ -44,10 +44,10 @@ export default function Dataset() {
         </div>
         <${ScheduleStatus} schedule=${schedule.data} scheduled=${!!policyText(d.policy)} />
         <div class="card">
-          ${d.policy_invalid ? html`<${Badge} tone="red" title=${d.policy_invalid}>Unreadable<//>`
+          ${d.policy_invalid ? html`<${Badge} variant="danger" title=${d.policy_invalid}>Unreadable<//>`
             : policyText(d.policy) ? html`Keeps ${policyText(d.policy)}${d.policy_source && d.policy_source !== 'local' ? html` <span class="muted">· from ${d.policy_source}</span>` : null}`
             : html`<span class="muted">No automatic snapshots</span>`}
-          ${d.schedule_error ? html`<div class="pool-line"><${Badge} tone="red" title=${d.schedule_error}>Last run failed<//></div>` : null}
+          ${d.schedule_error ? html`<div class="pool-line"><${Badge} variant="danger" title=${d.schedule_error}>Last run failed<//></div>` : null}
         </div>
       </section>
       ${children.length ? html`<section class="section">
@@ -64,6 +64,5 @@ export default function Dataset() {
           ? html`<${Empty}>No snapshots of this dataset yet.<//>`
           : html`<${SnapshotTable} snapshots=${snapshots.data} returnTo=${returnTo} showDataset=${false} onChanged=${changed} />`}
       </section>`}
-    ${taking ? html`<${TakeSnapshotDialog} datasets=${datasets.data} dataset=${name} fixed=${true} onClose=${() => setTaking(false)} onCreated=${changed} />` : null}
-  <//>`;
+    ${taking ? html`<${TakeSnapshotDialog} datasets=${datasets.data} dataset=${name} fixed=${true} onClose=${() => setTaking(false)} onCreated=${changed} />` : null}`;
 }

@@ -1,6 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, KV, LogView } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, KeyValue, LogView } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, RunStatus, TRIGGERS, datetime, duration } from '../cron.js';
 
@@ -11,16 +11,16 @@ export default function Run({ params }) {
   const job = useApi(run.data ? `/jobs/${run.data.job_id}` : null);
   const cancel = useAction();
 
-  if (!run.data) return html`<${Page} title="Run" back=${{ href: href('/'), label: 'Jobs' }}>${run.error ? html`<${Notice} error=${run.error} />` : html`<${Loading} />`}<//>`;
+  if (!run.data) return html`<${PageHeader} title="Run" back=${{ href: href('/'), label: 'Jobs' }} />${run.error ? html`<${Alert} error=${run.error} />` : html`<${Loading} />`}`;
   const r = run.data;
   const lines = r.output ? r.output.replace(/\n$/, '').split('\n') : [];
-  return html`<${Page} title=${job.data ? `${job.data.name} · #${r.id}` : `#${r.id}`}
+  return html`<${PageHeader} title=${job.data ? `${job.data.name} · #${r.id}` : `#${r.id}`}
     back=${{ href: href(`/jobs/${r.job_id}`), label: 'Job' }}
     actions=${r.status === 'running' ? html`<button class="button button-danger" disabled=${cancel.busy}
-      onClick=${() => cancel.run(async () => { await api.post(`/runs/${r.id}/cancel`); run.reload(); })}>Cancel run</button>` : null}>
-    <${Notice} error=${cancel.error} />
+      onClick=${() => cancel.run(async () => { await api.post(`/runs/${r.id}/cancel`); run.reload(); })}>Cancel run</button>` : null} />
+    <${Alert} error=${cancel.error} />
     <div class="card">
-      <${KV} items=${[
+      <${KeyValue} items=${[
         ['Status', html`<${RunStatus} run=${r} />`],
         ['Trigger', TRIGGERS[r.trigger] || r.trigger],
         ['Started', datetime(r.started_at)],
@@ -33,6 +33,5 @@ export default function Run({ params }) {
     <section class="section">
       <h2>Output</h2>
       <${LogView} lines=${lines} empty=${r.status === 'running' ? 'Waiting for output…' : 'No output'} />
-    </section>
-  <//>`;
+    </section>`;
 }

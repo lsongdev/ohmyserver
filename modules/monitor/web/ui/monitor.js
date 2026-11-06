@@ -28,13 +28,13 @@ export function uptime(seconds) {
 }
 
 const STATUS = {
-  online: ['Online', 'green'], offline: ['Offline', 'red'], pending: ['Collecting', 'blue'],
-  disabled: ['Disabled', 'gray'], gone: ['Removed', 'gray'],
+  online: ['Online', 'success'], offline: ['Offline', 'danger'], pending: ['Collecting', 'info'],
+  disabled: ['Disabled', undefined], gone: ['Removed', undefined],
 };
 
 export function HostStatus({ host }) {
-  const [label, tone] = STATUS[host.status] || [host.status, 'gray'];
-  return html`<${Status} state=${host.status} label=${label} tone=${tone} title=${host.error} />`;
+  const [label, tone] = STATUS[host.status] || [host.status, undefined];
+  return html`<${Status} state=${host.status} label=${label} variant=${tone} title=${host.error} />`;
 }
 
 export const KINDS = { local: 'Local', ssh: 'SSH' };

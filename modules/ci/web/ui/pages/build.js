@@ -1,6 +1,6 @@
 import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, LogView } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, LogView } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, BuildStatus, EVENTS, active, datetime, short, duration } from '../ci.js';
 
@@ -11,7 +11,7 @@ export default function Build({ params }) {
   const action = useAction();
   const [chosen, setChosen] = useState(null);
 
-  if (!build.data) return html`<${Page} title="Build" back=${{ href: href('/'), label: 'Repositories' }}>${build.error ? html`<${Notice} error=${build.error} />` : html`<${Loading} />`}<//>`;
+  if (!build.data) return html`<${PageHeader} title="Build" back=${{ href: href('/'), label: 'Repositories' }} />${build.error ? html`<${Alert} error=${build.error} />` : html`<${Loading} />`}`;
   const b = build.data;
   const steps = b.steps || [];
   // Follow the running step until one is chosen; otherwise show the failing
@@ -23,17 +23,17 @@ export default function Build({ params }) {
   const cancel = () => action.run(async () => { await api.post(`/builds/${b.id}/cancel`); build.reload(); });
   const restart = () => action.run(async () => { const nb = await api.post(`/builds/${b.id}/restart`); navigate(`/builds/${nb.id}`); });
 
-  return html`<${Page} title=${`${repo.data?.name || ''} #${b.number}`}
+  return html`<${PageHeader} title=${`${repo.data?.name || ''} #${b.number}`}
     back=${{ href: href(`/repos/${b.repo_id}`), label: repo.data?.name || 'Repository' }}
     subtitle=${html`<${BuildStatus} status=${b.status} /> · <span class="mono">${b.branch}</span>${b.commit ? html` · <span class="commit">${short(b.commit)}</span>` : null}${
       ' · ' + [b.message, EVENTS[b.event] || b.event, b.author, datetime(b.created_at), duration(b.started_at, b.finished_at)].filter(Boolean).join(' · ')}`}
     actions=${active(b.status)
       ? html`<button class="button button-danger" disabled=${action.busy} onClick=${cancel}>Cancel</button>`
-      : html`<button class="button" disabled=${action.busy} onClick=${restart}>Run again</button>`}>
-    <${Notice} error=${action.error} />
-    ${b.error ? html`<${Notice} tone=${b.status === 'canceled' ? 'warn' : 'error'}>${b.error}<//>` : null}
-    ${b.status === 'skipped' ? html`<${Notice} tone="info">The when condition in the configuration excludes this branch or event, so no steps ran.<//>` : null}
-    ${b.status === 'pending' ? html`<${Notice} tone="info">Queued behind earlier builds.<//>` : null}
+      : html`<button class="button" disabled=${action.busy} onClick=${restart}>Run again</button>`} />
+    <${Alert} error=${action.error} />
+    ${b.error ? html`<${Alert} variant=${b.status === 'canceled' ? 'warning' : 'danger'}>${b.error}<//>` : null}
+    ${b.status === 'skipped' ? html`<${Alert} variant="info">The when condition in the configuration excludes this branch or event, so no steps ran.<//>` : null}
+    ${b.status === 'pending' ? html`<${Alert} variant="info">Queued behind earlier builds.<//>` : null}
     ${steps.length ? html`<div class="build-layout">
       <div class="card" style="padding:0"><div class="step-list">
         ${steps.map(s => html`<button key=${s.position} class=${`step-item ${s === step ? 'active' : ''}`} onClick=${() => setChosen(s.position)}>
@@ -42,8 +42,7 @@ export default function Build({ params }) {
         </button>`)}
       </div></div>
       <div class="build-log">${step ? html`<${StepLog} key=${`${b.id}-${step.position}`} build=${b.id} step=${step} />` : null}</div>
-    </div>` : null}
-  <//>`;
+    </div>` : null}`;
 }
 
 // StepLog shows a step's log, appending to it while the step runs.
@@ -73,7 +72,7 @@ function StepLog({ build, step }) {
   }, [build, step.position, running]);
   const lines = text ? text.replace(/\r\n?/g, '\n').replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '').replace(/\n$/, '').split('\n') : [];
   return html`<div>
-    <${Notice} error=${error} />
+    <${Alert} error=${error} />
     <${LogView} lines=${lines} empty=${step.status === 'skipped' ? 'Skipped' : running ? 'Waiting for output…' : 'No output'} />
   </div>`;
 }

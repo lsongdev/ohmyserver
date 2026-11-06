@@ -1,6 +1,7 @@
 import { html, useMemo, useState } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Field, Modal, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Field, toast } from '@lsongdev/scripts/react/components/index.js';
+import { Modal } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useUnsavedChanges, routeURL } from '@lsongdev/panel/forms.js';
 import { bytes } from '@lsongdev/panel/format.js';
@@ -19,16 +20,15 @@ export default function PoolNew() {
   const disks = useApi('/disks');
   const free = (disks.data || []).filter(d => !d.in_use);
   const taken = (disks.data || []).filter(d => d.in_use);
-  return html`<${Page} title="Create pool" subtitle="Combine empty disks into a new pool" back=${{ href: href('/'), label: 'ZFS pools' }}>
-    <${Notice} error=${disks.error} />
+  return html`<${PageHeader} title="Create pool" subtitle="Combine empty disks into a new pool" back=${{ href: href('/'), label: 'ZFS pools' }} />
+    <${Alert} error=${disks.error} />
     ${!disks.data ? (disks.error ? null : html`<${Loading}>Checking disks…<//>`) : html`
       ${free.length ? html`<${Form} disks=${free} />` : html`<${Empty}>No empty disks on this server. A pool needs disks with nothing on them.<//>`}
       ${taken.length ? html`<section class="section">
         <h2 class="section-title">Not available</h2>
         <ul class="disk-unavailable">${taken.map(d => html`<li key=${d.name}><strong>${d.name}</strong>${d.model ? ` ${d.model}` : ''} · ${bytes(d.size)} · ${d.in_use}</li>`)}</ul>
         <p class="muted small">This page never clears a disk. To reuse one, wipe it on the server first.</p>
-      </section>` : null}`}
-  <//>`;
+      </section>` : null}`}`;
 }
 
 function Form({ disks }) {
@@ -53,7 +53,7 @@ function Form({ disks }) {
     run(async () => setPreview(await api.post('/pools/preview', spec)));
   };
   return html`<form class="form settings-form" onSubmit=${review}>
-    <${Notice} error=${error} />
+    <${Alert} error=${error} />
     <div class="card">
       <h2 class="section-title">Disks</h2>
       <div class="form-fields" style="gap:10px">
@@ -125,10 +125,10 @@ function ConfirmDialog({ spec, preview, onClose, onCreated }) {
     <button class="button" type="button" autofocus disabled=${busy} onClick=${close}>Cancel</button>
     <button class="button button-danger" type="submit" form="pool-confirm" disabled=${busy || typed !== spec.name}>${busy ? 'Creating…' : 'Create pool'}</button>`}>
     <form id="pool-confirm" class="form" onSubmit=${submit}>
-      <${Notice} error=${error} />
+      <${Alert} error=${error} />
       <p style="margin:0">About <strong>${bytes(preview.usable)}</strong> usable. Anything on these disks becomes unreachable:</p>
       <ul class="zfs-names">${preview.disks.map(d => html`<li key=${d.id}>${d.name}${d.model ? ` ${d.model}` : ''} · ${bytes(d.size)}</li>`)}</ul>
-      ${preview.warnings.map(w => html`<${Notice} key=${w} tone="warn">${w}<//>`)}
+      ${preview.warnings.map(w => html`<${Alert} key=${w} variant="warning">${w}<//>`)}
       ${preview.output ? html`<pre class="preview-output">${preview.output}</pre>` : null}
       <${Field} label=${`Type ${spec.name} to confirm`}>
         <input class="input mono" autocomplete="off" spellcheck="false" disabled=${busy} value=${typed} onInput=${e => setTyped(e.currentTarget.value)} />

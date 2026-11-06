@@ -1,6 +1,6 @@
 import { html, useEffect, useState } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
-import { Notice, Loading, Field, Check, toast } from '@lsongdev/panel/ui.js';
+import { Alert, Loading, Field, Check, toast } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { FormSection, useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { Page, useChanged } from '../network.js';
@@ -15,8 +15,8 @@ export default function Settings({ params }) {
   useChanged(setting.reload);
   const s = setting.data;
   return html`<${Page} title=${`Settings of ${name}`} subtitle=${s ? s.target : null} back=${{ href: href(path), label: name }}>
-    ${!s ? (setting.error ? html`<${Notice} error=${setting.error} />` : html`<${Loading} />`)
-      : s.reason ? html`<${Notice} tone="info">${s.reason}<//>`
+    ${!s ? (setting.error ? html`<${Alert} error=${setting.error} />` : html`<${Loading} />`)
+      : s.reason ? html`<${Alert} variant="info">${s.reason}<//>`
       : html`<${SettingsForm} key=${s.version} name=${name} path=${path} setting=${s} />`}
   <//>`;
 }
@@ -85,7 +85,7 @@ function SettingsForm({ name, path, setting }) {
 
   return html`<form class="form settings-form" onSubmit=${submit}>
     <fieldset class="form-fields" disabled=${save.busy}>
-      <${Notice} error=${noFields(save.error) || noFields(preview.error)} />
+      <${Alert} error=${noFields(save.error) || noFields(preview.error)} />
       <${FormSection} title="Addresses" description="Automatic addresses come from the network; static ones are always there. Both can be used together.">
         <div class="form-grid">
           <${Check} label="Get an IPv4 address automatically (DHCP)" checked=${f.dhcp4} onChange=${e => set({ dhcp4: e.currentTarget.checked })} />
@@ -131,7 +131,7 @@ function SettingsForm({ name, path, setting }) {
         <${Diff} before=${plan.before} after=${plan.after} />
       <//>` : null}
     </fieldset>
-    ${setting.protected ? html`<${Notice} tone="warn">${name} carries this machine's default route or your connection. If the new settings cut you off, wait two minutes: they revert by themselves.<//>` : null}
+    ${setting.protected ? html`<${Alert} variant="warning">${name} carries this machine's default route or your connection. If the new settings cut you off, wait two minutes: they revert by themselves.<//>` : null}
     <div class="button-actions">
       <button class="button button-primary" disabled=${save.busy || !changed}>${save.busy ? 'Applying…' : 'Apply'}</button>
       <button type="button" class="button" disabled=${preview.busy || save.busy} onClick=${showPreview}>${preview.busy ? 'Working it out…' : 'Preview'}</button>

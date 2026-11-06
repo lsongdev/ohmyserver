@@ -1,6 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Badge, confirmDanger, Table } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Badge, Table } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, HostStatus, Meter, Sparkline, KINDS, bytes, rate, pct, uptime } from '../monitor.js';
 
@@ -12,11 +12,11 @@ export default function Hosts() {
   const active = list.filter(h => h.status !== 'gone');
   const gone = list.filter(h => h.status === 'gone');
   const remove = h => {
-    if (!confirmDanger(`Delete all monitoring data of ${h.name}?`)) return;
+    if (!window.confirm(`Delete all monitoring data of ${h.name}?`)) return;
     action.run(async () => { await api.del(`/hosts/${encodeURIComponent(h.id)}`); hosts.reload(); });
   };
-  return html`<${Page} title="Hosts" subtitle="This machine and the saved SSH hosts, sampled every 15 seconds.">
-    <${Notice} error=${hosts.error || action.error} />
+  return html`<${PageHeader} title="Hosts" subtitle="This machine and the saved SSH hosts, sampled every 15 seconds." />
+    <${Alert} error=${hosts.error || action.error} />
     ${hosts.data === undefined ? (hosts.error ? null : html`<${Loading} />`) : !active.length ? html`<${Empty}>No hosts to monitor.<//>` : html`
       <div class="host-grid">${active.map(h => html`<${HostCard} key=${h.id} host=${h} />`)}</div>`}
     ${gone.length ? html`<section class="section">
@@ -30,8 +30,7 @@ export default function Hosts() {
           <td class="actions"><button class="button button-small button-danger" disabled=${action.busy} onClick=${() => remove(h)}>Delete data</button></td>
         </tr>`)}</tbody>
       <//>
-    </section>` : null}
-  <//>`;
+    </section>` : null}`;
 }
 
 function HostCard({ host: h }) {

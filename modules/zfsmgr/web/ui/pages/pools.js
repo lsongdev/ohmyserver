@@ -1,5 +1,5 @@
 import { html } from '@lsongdev/panel/html.js';
-import { Page, Notice, Loading, Empty, Badge } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Badge } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { bytes } from '@lsongdev/panel/format.js';
 import { useApi } from '../zfs.js';
@@ -22,9 +22,9 @@ function PoolCard({ pool: p, datasets }) {
     <${Capacity} pool=${p} />
     <div class="pool-line">
       <span>${[built, plural(own.length, 'dataset'), plural(snapshots, 'snapshot')].filter(Boolean).join(' · ')}</span>
-      ${scanning(p) ? html`<${Badge} tone="blue">${p.scan.function === 'RESILVER' ? 'Resilvering' : 'Scrubbing'}<//>` : null}
+      ${scanning(p) ? html`<${Badge} variant="info">${p.scan.function === 'RESILVER' ? 'Resilvering' : 'Scrubbing'}<//>` : null}
       <${ScanFlags} pool=${p} />
-      ${p.errors ? html`<${Badge} tone="red">${p.errors} data errors<//>` : null}
+      ${p.errors ? html`<${Badge} variant="danger">${p.errors} data errors<//>` : null}
     </div>
   </a>`;
 }
@@ -34,12 +34,11 @@ export default function Pools() {
   const list = useApi('/pools', undefined, REFRESH);
   const datasets = useApi('/datasets');
   const data = list.data;
-  return html`<${Page} title="ZFS pools" subtitle="Each pool combines disks into one space, and holds the datasets that keep your files"
-    actions=${html`<a class="button button-primary" href=${href('/pool/new')}>Create pool</a>`}>
-    <${Notice} error=${list.error || datasets.error} />
-    ${data?.details_error ? html`<${Notice} tone="warn">${data.details_error}<//>` : null}
+  return html`<${PageHeader} title="ZFS pools" subtitle="Each pool combines disks into one space, and holds the datasets that keep your files"
+    actions=${html`<a class="button button-primary" href=${href('/pool/new')}>Create pool</a>`} />
+    <${Alert} error=${list.error || datasets.error} />
+    ${data?.details_error ? html`<${Alert} variant="warning">${data.details_error}<//>` : null}
     ${!data ? (list.error ? null : html`<${Loading} />`)
       : data.pools.length === 0 ? html`<${Empty}>No pools on this server.<//>`
-      : data.pools.map(p => html`<${PoolCard} key=${p.name} pool=${p} datasets=${datasets.data || []} />`)}
-  <//>`;
+      : data.pools.map(p => html`<${PoolCard} key=${p.name} pool=${p} datasets=${datasets.data || []} />`)}`;
 }

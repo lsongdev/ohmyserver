@@ -1,15 +1,16 @@
 import { html, useCallback, useEffect, useState } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Badge, Modal, Field, toast, toastError } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Table, Badge, Field, toast } from '@lsongdev/scripts/react/components/index.js';
+import { Modal, toastError } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { ago, datetime } from '@lsongdev/panel/format.js';
 
 const LEVELS = ['critical', 'warning', 'info', 'debug'];
-const TONES = { critical: 'red', warning: 'amber', info: 'blue' };
+const TONES = { critical: 'danger', warning: 'warning', info: 'info' };
 const REFRESH = 15000;
 const PAGE = 100;
 
-const Level = ({ level }) => html`<${Badge} tone=${TONES[level]}>${level[0].toUpperCase() + level.slice(1)}<//>`;
+const Level = ({ level }) => html`<${Badge} variant=${TONES[level]}>${level[0].toUpperCase() + level.slice(1)}<//>`;
 const When = ({ at }) => html`<span class="nowrap" title=${datetime(at)}>${ago(at)}</span>`;
 
 // target turns an event's link, a path within its source module, into a URL.
@@ -58,7 +59,7 @@ function Issues() {
   };
   return html`<section>
     <h2 class="section-title">Open issues${issues.data?.length ? ` (${issues.data.length})` : ''}</h2>
-    <${Notice} error=${issues.error} />
+    <${Alert} error=${issues.error} />
     ${!issues.data ? (issues.error ? null : html`<${Loading} />`) : issues.data.length === 0 ? html`<${Empty}>Nothing needs attention.<//>` : html`
       <${Table}>
         <thead><tr><th>Level</th><th>Issue</th><th>Source</th><th>Since</th><th class="actions"></th></tr></thead>
@@ -106,7 +107,7 @@ function MuteDialog({ issue, onClose, onDone }) {
     <button class="button" type="button" disabled=${busy} onClick=${close}>Cancel</button>
     <button class="button button-primary" type="submit" form="mute-form" disabled=${busy}>${busy ? 'Muting…' : 'Mute'}</button>`}>
     <form id="mute-form" class="form" onSubmit=${submit}>
-      <${Notice} error=${error} />
+      <${Alert} error=${error} />
       <p style="margin:0">${issue.title}. It stays listed here, but is not sent to any channel, including if it gets worse.</p>
       <${Field} label="For">
         <select class="input" autofocus disabled=${busy} value=${minutes} onChange=${e => setMinutes(e.currentTarget.value)}>
@@ -146,7 +147,7 @@ function Events() {
   }), [list, key]);
   return html`<section class="section">
     <h2 class="section-title">Events</h2>
-    <${Notice} error=${latest.error || error} />
+    <${Alert} error=${latest.error || error} />
     <div class="notify-filters">
       <select class="input" aria-label="Level" value=${level} onChange=${e => setQuery({ level: e.currentTarget.value })}>
         <option value="">All levels</option>
@@ -162,7 +163,7 @@ function Events() {
       <${Table}>
         <thead><tr><th>Level</th><th>Event</th><th>Source</th><th>When</th></tr></thead>
         <tbody>${list.map(e => html`<tr key=${e.id}>
-          <td>${e.kind === 'resolved' ? html`<${Badge} tone="green">Resolved<//>` : html`<${Level} level=${e.level} />`}</td>
+          <td>${e.kind === 'resolved' ? html`<${Badge} variant="success">Resolved<//>` : html`<${Level} level=${e.level} />`}</td>
           <td>
             <${Linked} href=${target(e.source, e.link)}>${e.title}<//>
             ${e.body ? html`<div class="cell-sub notify-body">${e.body}</div>` : null}
@@ -176,8 +177,7 @@ function Events() {
 }
 
 export default function Center() {
-  return html`<${Page} title="Notifications" subtitle="What needs attention now, and what has happened">
+  return html`<${PageHeader} title="Notifications" subtitle="What needs attention now, and what has happened" />
     <${Issues} />
-    <${Events} />
-  <//>`;
+    <${Events} />`;
 }

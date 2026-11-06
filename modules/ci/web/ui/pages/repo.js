@@ -1,6 +1,6 @@
 import { html, useState } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, KV, CopyButton, confirmDanger, toast, Table } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, KeyValue, CopyButton, toast, Table } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, BuildStatus, EVENTS, active, datetime, short, duration } from '../ci.js';
 
@@ -24,7 +24,7 @@ export default function Repo({ params }) {
   const action = useAction();
   const [branch, setBranch] = useState('');
 
-  if (!repo.data) return html`<${Page} title="Repository" back=${{ href: href('/'), label: 'Repositories' }}>${repo.error ? html`<${Notice} error=${repo.error} />` : html`<${Loading} />`}<//>`;
+  if (!repo.data) return html`<${PageHeader} title="Repository" back=${{ href: href('/'), label: 'Repositories' }} />${repo.error ? html`<${Alert} error=${repo.error} />` : html`<${Loading} />`}`;
   const r = repo.data;
   const hook = client.url(`hooks/${r.id}`).href;
   const run = () => action.run(async () => {
@@ -32,21 +32,21 @@ export default function Repo({ params }) {
     navigate(`/builds/${b.id}`);
   });
   const rotate = () => {
-    if (!confirmDanger('Replace the webhook secret? The old one stops working at once; update it on the code host.')) return;
+    if (!window.confirm('Replace the webhook secret? The old one stops working at once; update it on the code host.')) return;
     action.run(async () => { await api.post(`/repos/${r.id}/webhook-secret`); repo.reload(); toast('Webhook secret replaced', 'success'); });
   };
   const remove = () => {
-    if (!confirmDanger(`Delete ${r.name} and all its builds?`)) return;
+    if (!window.confirm(`Delete ${r.name} and all its builds?`)) return;
     action.run(async () => { await api.del(`/repos/${r.id}`); navigate('/'); });
   };
 
-  return html`<${Page} title=${r.name} back=${{ href: href('/'), label: 'Repositories' }} subtitle=${html`<span class="mono">${r.url}</span>`}
+  return html`<${PageHeader} title=${r.name} back=${{ href: href('/'), label: 'Repositories' }} subtitle=${html`<span class="mono">${r.url}</span>`}
     actions=${html`
       <input class="input mono" style="width:160px" placeholder=${r.branch} value=${branch} onInput=${e => setBranch(e.currentTarget.value)} aria-label="Branch" />
       <button class="button button-primary" disabled=${action.busy} onClick=${run}>Run</button>
       <a class="button" href=${href(`/repos/${r.id}/edit`)}>Edit</a>
-      <button class="button button-danger" onClick=${remove}>Delete</button>`}>
-    <${Notice} error=${action.error || builds.error} />
+      <button class="button button-danger" onClick=${remove}>Delete</button>`} />
+    <${Alert} error=${action.error || builds.error} />
     <section>
       ${builds.data === undefined ? html`<${Loading} />` : !builds.data.length ? html`<${Empty}>No builds yet. Click Run, or set up the webhook below and push.<//>` : html`
         <${Table}>
@@ -66,7 +66,7 @@ export default function Repo({ params }) {
       <div class="card">
         <h2>Webhook</h2>
         <p class="muted" style="margin-top:0">In the repository settings on GitHub, Gitea or GitLab, add a webhook for push events with content type application/json.</p>
-        <${KV} items=${[
+        <${KeyValue} items=${[
           ['URL', html`<span class="copy-row"><code>${hook}</code><${CopyButton} text=${hook} /></span>`],
           ['Secret', html`<span class="copy-row"><code>${r.webhook_secret}</code><${CopyButton} text=${r.webhook_secret} />
             <button class="button button-small" onClick=${rotate}>Replace</button></span>`],
@@ -77,6 +77,5 @@ export default function Repo({ params }) {
         <h2>Example ${r.config_path}</h2>
         <pre class="example">${EXAMPLE}</pre>
       </div>
-    </div>
-  <//>`;
+    </div>`;
 }

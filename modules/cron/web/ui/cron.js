@@ -12,14 +12,14 @@ export function useApi(path, interval) {
 }
 
 const RUN = {
-  running: ['Running', 'blue'], succeeded: ['Succeeded', 'green'], failed: ['Failed', 'red'],
-  timeout: ['Timed out', 'red'], canceled: ['Canceled', 'gray'], interrupted: ['Interrupted', 'amber'],
+  running: ['Running', 'info'], succeeded: ['Succeeded', 'success'], failed: ['Failed', 'danger'],
+  timeout: ['Timed out', 'danger'], canceled: ['Canceled', undefined], interrupted: ['Interrupted', 'warning'],
 };
 
 export function RunStatus({ run }) {
-  const [label, tone] = RUN[run.status] || [run.status, 'gray'];
+  const [label, tone] = RUN[run.status] || [run.status, undefined];
   const title = run.status === 'failed' && !run.error ? `Exit code ${run.exit_code}` : run.error;
-  return html`<${Status} state=${run.status} label=${label} tone=${tone} title=${title} />`;
+  return html`<${Status} state=${run.status} label=${label} variant=${tone} title=${title} />`;
 }
 
 export const TRIGGERS = { schedule: 'Schedule', manual: 'Manual' };

@@ -1,6 +1,6 @@
 import { html, useState } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Field, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Field, toast } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { FormSection, returnPath, useUnsavedChanges } from '@lsongdev/panel/forms.js';
 
@@ -10,10 +10,9 @@ export default function RepositoryEditor({ params }) {
   const repo = useResource(signal => isNew ? Promise.resolve(null) : api.get(`/repos/${params.id}`, { signal }), [params.id]);
   const back = returnPath(query, isNew ? '/' : `/repos/${params.id}`);
   const title = isNew ? 'Add repository' : repo.data ? `Edit ${repo.data.name}` : 'Edit repository';
-  return html`<${Page} title=${title} back=${{ href: href(back), label: back.startsWith('/repos/') ? 'Repository' : 'Repositories' }}>
-    ${!isNew && !repo.data ? (repo.error ? html`<${Notice} error=${repo.error} />` : html`<${Loading} />`)
-      : html`<${RepoForm} repo=${repo.data} back=${back} />`}
-  <//>`;
+  return html`<${PageHeader} title=${title} back=${{ href: href(back), label: back.startsWith('/repos/') ? 'Repository' : 'Repositories' }} />
+    ${!isNew && !repo.data ? (repo.error ? html`<${Alert} error=${repo.error} />` : html`<${Loading} />`)
+      : html`<${RepoForm} repo=${repo.data} back=${back} />`}`;
 }
 
 // RepoForm adds or edits a repository. Secrets are edited as rows; a
@@ -44,7 +43,7 @@ function RepoForm({ repo, back }) {
   };
   return html`<form class="form settings-form" onSubmit=${submit}>
       <fieldset class="form-fields" disabled=${busy}>
-      <${Notice} error=${error} />
+      <${Alert} error=${error} />
       <${FormSection} title="Repository">
       <div class="form-grid">
         <${Field} label="Name" required>

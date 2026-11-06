@@ -2,7 +2,8 @@
 // its latest scrub, and its devices as small cards, since a nested table gets
 // long and says more than a glance needs.
 import { html } from '@lsongdev/panel/html.js';
-import { Status, Badge } from '@lsongdev/panel/ui.js';
+import { Badge } from '@lsongdev/scripts/react/components/index.js';
+import { Status } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { bytes, ago, datetime } from '@lsongdev/panel/format.js';
 
@@ -17,8 +18,8 @@ const leaves = v => (v.children?.length ? v.children.flatMap(leaves) : [v]);
 export const scanning = p => p.scan?.state === 'SCANNING';
 
 export function State({ state }) {
-  const tone = { ONLINE: 'green', AVAIL: 'green', INUSE: 'blue', OFFLINE: 'amber', DEGRADED: 'amber' }[state] || 'red';
-  return html`<${Status} tone=${tone} state=${state} label=${state ? state[0] + state.slice(1).toLowerCase() : 'Unknown'} />`;
+  const tone = { ONLINE: 'success', AVAIL: 'success', INUSE: 'info', OFFLINE: 'warning', DEGRADED: 'warning' }[state] || 'danger';
+  return html`<${Status} variant=${tone} state=${state} label=${state ? state[0] + state.slice(1).toLowerCase() : 'Unknown'} />`;
 }
 
 export function Capacity({ pool: p }) {
@@ -44,14 +45,14 @@ export function layout(pool) {
 export function ScanFlags({ pool: p }) {
   const s = p.scan;
   if (!p.vdevs) return null;
-  if (!s) return html`<${Badge} tone="amber">Never scrubbed<//>`;
-  if (s.state === 'CANCELED') return html`<${Badge} tone="amber">Last ${scanName(s.function)} canceled<//>`;
+  if (!s) return html`<${Badge} variant="warning">Never scrubbed<//>`;
+  if (s.state === 'CANCELED') return html`<${Badge} variant="warning">Last ${scanName(s.function)} canceled<//>`;
   if (s.state !== 'FINISHED') return null;
   const scrub = s.function === 'SCRUB';
   return html`
-    ${s.errors ? html`<${Badge} tone="red">${s.errors} unrepaired<//>` : null}
-    ${scrub && (Date.now() / 1000 - s.end) / 86400 > STALE_DAYS ? html`<${Badge} tone="amber">Scrub overdue<//>` : null}
-    ${scrub && s.issued * 2 < p.alloc ? html`<${Badge} tone="amber">Most data not yet scrubbed<//>` : null}`;
+    ${s.errors ? html`<${Badge} variant="danger">${s.errors} unrepaired<//>` : null}
+    ${scrub && (Date.now() / 1000 - s.end) / 86400 > STALE_DAYS ? html`<${Badge} variant="warning">Scrub overdue<//>` : null}
+    ${scrub && s.issued * 2 < p.alloc ? html`<${Badge} variant="warning">Most data not yet scrubbed<//>` : null}`;
 }
 
 export function ScanLine({ pool: p }) {

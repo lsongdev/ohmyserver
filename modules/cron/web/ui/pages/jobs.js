@@ -1,6 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, confirmDanger, Table } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Table } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { routeURL } from '@lsongdev/panel/forms.js';
 import { useApi, RunStatus, datetime, relative } from '../cron.js';
@@ -18,13 +18,13 @@ export default function Jobs() {
   });
   const toggle = j => action.run(async () => { await api.post(`/jobs/${j.id}/${j.enabled ? 'disable' : 'enable'}`); jobs.reload(); });
   const remove = j => {
-    if (!confirmDanger(`Delete the job ${j.name} and its runs?`)) return;
+    if (!window.confirm(`Delete the job ${j.name} and its runs?`)) return;
     action.run(async () => { await api.del(`/jobs/${j.id}`); jobs.reload(); });
   };
 
-  return html`<${Page} title="Jobs" subtitle="Run commands on a schedule, here or on a saved host."
-    actions=${html`<a class="button button-primary" href=${href('/jobs/new', { return: routeURL('/', query) })}>Add job</a>`}>
-    <${Notice} error=${jobs.error || action.error} />
+  return html`<${PageHeader} title="Jobs" subtitle="Run commands on a schedule, here or on a saved host."
+    actions=${html`<a class="button button-primary" href=${href('/jobs/new', { return: routeURL('/', query) })}>Add job</a>`} />
+    <${Alert} error=${jobs.error || action.error} />
     ${jobs.data === undefined ? (jobs.error ? null : html`<${Loading} />`) : !jobs.data.length ? html`<${Empty}>No jobs yet.<//>` : html`
       <${Table}>
         <thead><tr><th>Job</th><th>Schedule</th><th>Runs on</th><th>Last run</th><th class="actions"></th></tr></thead>
@@ -42,6 +42,5 @@ export default function Jobs() {
             <button class="button button-small button-danger" disabled=${action.busy} onClick=${() => remove(j)}>Delete</button>
           </span></td>
         </tr>`)}</tbody>
-      <//>`}
-  <//>`;
+      <//>`}`;
 }

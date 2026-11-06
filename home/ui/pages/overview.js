@@ -3,7 +3,8 @@
 import { html, useMemo } from '@lsongdev/panel/html.js';
 import { useResource } from '@lsongdev/panel/hooks.js';
 import { createClient } from '@lsongdev/panel/client.js';
-import { Page, Notice, Loading, Status, Badge, Table } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Badge, Table } from '@lsongdev/scripts/react/components/index.js';
+import { Status } from '@lsongdev/panel/ui.js';
 import { bytes } from '@lsongdev/panel/format.js';
 
 function Card({ title, to, value, sub, error }) {
@@ -17,7 +18,7 @@ function Card({ title, to, value, sub, error }) {
 // Issues lists what is wrong right now, and takes no room when nothing is.
 function Issues({ summary: n, link }) {
   if (!n?.open) return null;
-  const tones = { critical: 'red', warning: 'amber', info: 'blue' };
+  const tones = { critical: 'danger', warning: 'warning', info: 'info' };
   const target = i => {
     if (!i.link) return link('notify', '/');
     const [route, search = ''] = i.link.split('?');
@@ -29,7 +30,7 @@ function Issues({ summary: n, link }) {
       ${link('notify', '/') ? html`<a href=${link('notify', '/')}>All notifications</a>` : null}
     </div>
     <div style="display:grid;gap:6px">${n.issues.map(i => html`<div key=${i.id} style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <${Badge} tone=${tones[i.level]}>${i.level[0].toUpperCase() + i.level.slice(1)}<//>
+      <${Badge} variant=${tones[i.level]}>${i.level[0].toUpperCase() + i.level.slice(1)}<//>
       ${target(i) ? html`<a href=${target(i)}>${i.title}</a>` : i.title}
     </div>`)}</div>
   </div>`;
@@ -42,8 +43,8 @@ export default function Overview({ ctx }) {
   const link = ctx.link;
   const local = s?.monitor?.local?.latest;
   const pct = (used, total) => (total ? Math.round((used / total) * 100) : 0);
-  return html`<${Page} title="Dashboard">
-    <${Notice} error=${summary.error} />
+  return html`<${PageHeader} title="Dashboard" />
+    <${Alert} error=${summary.error} />
     ${!s ? (summary.error ? null : html`<${Loading} />`) : html`
       <${Issues} summary=${s.notifications} link=${link} />
       ${local ? html`<div class="grid" style="margin-bottom:16px">
@@ -93,7 +94,7 @@ export default function Overview({ ctx }) {
         <${Table}>
           <thead><tr><th>Name</th><th>Address</th><th>TLS</th><th>Status</th></tr></thead>
           <tbody>${s.gateway.listeners.map(l => html`<tr key=${l.name}>
-            <td>${l.name}</td><td class="mono">${l.address}</td><td>${l.tls ? html`<${Badge} tone="blue">TLS<//>` : '—'}</td>
+            <td>${l.name}</td><td class="mono">${l.address}</td><td>${l.tls ? html`<${Badge} variant="info">TLS<//>` : '—'}</td>
             <td>${l.running ? html`<${Status} state="running" />` : html`<${Status} state="failed" label=${l.error || 'Not running'} />`}</td>
           </tr>`)}</tbody>
         <//>
@@ -102,10 +103,9 @@ export default function Overview({ ctx }) {
         <${Table}>
           <thead><tr><th>Protocol</th><th>Address</th><th>TLS</th><th>Status</th></tr></thead>
           <tbody>${s.dns.listeners.map(l => html`<tr key=${l.type + l.addr}>
-            <td>${l.type.toUpperCase()}</td><td class="mono">${l.addr}</td><td>${l.tls ? html`<${Badge} tone="blue">TLS<//>` : '—'}</td>
+            <td>${l.type.toUpperCase()}</td><td class="mono">${l.addr}</td><td>${l.tls ? html`<${Badge} variant="info">TLS<//>` : '—'}</td>
             <td>${l.error ? html`<${Status} state="failed" label=${l.error} />` : html`<${Status} state="running" />`}</td>
           </tr>`)}</tbody>
         <//>
-      </div>` : null}`}
-  <//>`;
+      </div>` : null}`}`;
 }

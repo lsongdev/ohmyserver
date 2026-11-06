@@ -1,15 +1,15 @@
 import { html, useState } from '@lsongdev/panel/html.js';
-import { Page, Notice, Loading, Status, Field } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Field } from '@lsongdev/scripts/react/components/index.js';
+import { Status } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, useSystem, useStartJob, RunningJob, Unsupported } from '../packages.js';
 
 export default function Recommended() {
   const system = useSystem();
   const s = system.data;
-  if (!s) return html`<${Page} title="Recommended">${system.error ? html`<${Notice} error=${system.error} />` : html`<${Loading} />`}<//>`;
-  return html`<${Page} title="Recommended" subtitle="Software that other parts of the panel build on, installed the recommended way.">
-    ${s.manager ? html`<${RunningJob} job=${s.running} /><${Docker} system=${s} />` : html`<${Unsupported} system=${s} />`}
-  <//>`;
+  if (!s) return html`<${PageHeader} title="Recommended" />${system.error ? html`<${Alert} error=${system.error} />` : html`<${Loading} />`}`;
+  return html`<${PageHeader} title="Recommended" subtitle="Software that other parts of the panel build on, installed the recommended way." />
+    ${s.manager ? html`<${RunningJob} job=${s.running} /><${Docker} system=${s} />` : html`<${Unsupported} system=${s} />`}`;
 }
 
 function Docker({ system }) {
@@ -33,13 +33,13 @@ function Docker({ system }) {
     <p class="muted">Docker Engine with the Buildx and Compose plugins, from Docker's own package repository, as${' '}
       <a href="https://docs.docker.com/engine/install/" target="_blank" rel="noopener">its documentation</a> recommends.
       Containers, apps and CI builds need it.</p>
-    <${Notice} error=${status.error} />
+    <${Alert} error=${status.error} />
     ${!d ? (status.error ? null : html`<${Loading} />`) : d.installed ? html`
       <div class="button-actions">
         ${open ? html`<a class="button" href=${open}>Open Docker</a>` : null}
         ${!d.running ? html`<span class="muted small">${system.manager === 'brew'
           ? 'Start Docker Desktop or OrbStack.' : html`Start it with <code>systemctl start docker</code>.`}</span>` : null}
-      </div>` : d.unsupported ? html`<${Notice} tone="warn">${d.unsupported}.<//>` : html`
+      </div>` : d.unsupported ? html`<${Alert} variant="warning">${d.unsupported}.<//>` : html`
       ${system.manager === 'pacman' ? html`<p class="muted small">Arch Linux packages Docker in its own repositories.</p>` : html`<${Field} label="Download from">
         <select class="input" value=${source} onChange=${e => setSource(e.currentTarget.value)}>
           ${d.sources.map(s => html`<option key=${s.id} value=${s.id}>${s.title}</option>`)}

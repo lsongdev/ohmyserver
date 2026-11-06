@@ -1,6 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, KV, Badge, Table } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, KeyValue, Badge, Table } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, HostStatus, Meter, Chart, KINDS, bytes, rate, pct, fixed, uptime } from '../monitor.js';
 
@@ -17,7 +17,7 @@ export default function Host({ params, query, setQuery }) {
   const series = useApi(`/hosts/${id}/series?range=${range}`, range === '1h' ? 15000 : 300000);
   const action = useAction();
 
-  if (!host.data) return html`<${Page} title="Host">${host.error ? html`<${Notice} error=${host.error} />` : html`<${Loading} />`}<//>`;
+  if (!host.data) return html`<${PageHeader} title="Host" />${host.error ? html`<${Alert} error=${host.error} />` : html`<${Loading} />`}`;
   const h = host.data;
   const s = h.latest;
   const points = series.data?.points || [];
@@ -27,14 +27,14 @@ export default function Host({ params, query, setQuery }) {
   const toggle = () => action.run(async () => { await api.post(`/hosts/${id}/${h.enabled ? 'disable' : 'enable'}`); host.reload(); });
   const chart = props => html`<${Chart} points=${points} step=${step} from=${from} to=${to} ...${props} />`;
 
-  return html`<${Page} title=${h.name}
+  return html`<${PageHeader} title=${h.name}
     subtitle=${html`<${HostStatus} host=${h} />${h.error ? html` <span class="muted">${h.error}</span>` : null}`}
-    actions=${h.status === 'gone' ? null : html`<button class="button" disabled=${action.busy} onClick=${toggle}>${h.enabled ? 'Stop monitoring' : 'Start monitoring'}</button>`}>
-    <${Notice} error=${action.error || series.error} />
+    actions=${h.status === 'gone' ? null : html`<button class="button" disabled=${action.busy} onClick=${toggle}>${h.enabled ? 'Stop monitoring' : 'Start monitoring'}</button>`} />
+    <${Alert} error=${action.error || series.error} />
     <div class="grid-2">
       <div class="card">
         <h2>System</h2>
-        <${KV} items=${[
+        <${KeyValue} items=${[
           ['Kind', html`<${Badge}>${KINDS[h.kind] || h.kind}<//>`],
           ['Hostname', h.info.hostname],
           ['OS', h.info.os],
@@ -47,7 +47,7 @@ export default function Host({ params, query, setQuery }) {
       </div>
       <div class="card">
         <h2>Now</h2>
-        ${!s ? html`<p class="muted">${h.status === 'disabled' ? 'Not monitored' : 'Waiting for data…'}</p>` : html`<${KV} items=${[
+        ${!s ? html`<p class="muted">${h.status === 'disabled' ? 'Not monitored' : 'Waiting for data…'}</p>` : html`<${KeyValue} items=${[
           ['CPU', `${s.cpu.toFixed(1)}%`],
           ['Load', `${s.load1.toFixed(2)} · ${s.load5.toFixed(2)} · ${s.load15.toFixed(2)}`],
           ['Memory', `${bytes(s.mem_used)} / ${bytes(s.mem_total)} (${fixed(pct(s.mem_used, s.mem_total))}%)`],
@@ -91,6 +91,5 @@ export default function Host({ params, query, setQuery }) {
           { label: 'Write', value: p => p.disk_write, color: 'var(--series-3)' }] })}
         ${chart({ title: 'Disk usage', format: percent, max: 100, series: [{ label: 'Used', value: p => pct(p.disk_used, p.disk_total), color: 'var(--series-2)' }] })}
       </div>`}
-    </section>
-  <//>`;
+    </section>`;
 }

@@ -2,7 +2,8 @@
 import { html, useState } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
-import { Badge, Modal, Notice, toast } from '@lsongdev/panel/ui.js';
+import { Badge, Alert, toast } from '@lsongdev/scripts/react/components/index.js';
+import { Modal } from '@lsongdev/panel/ui.js';
 import { datetime } from '@lsongdev/panel/format.js';
 
 // useApi loads a GET endpoint with an optional query, polling every interval
@@ -16,9 +17,9 @@ export function useApi(path, query, interval) {
 // Automatic snapshots are removed by retention; badges say so at a glance.
 export function SnapshotTags({ snapshot: s }) {
   return html`<span class="tags">
-    ${s.class ? html`<${Badge} tone="blue" title="Taken by a schedule; removed by its retention">Auto · ${s.class}<//>` : html`<${Badge}>Manual<//>`}
-    ${s.holds > 0 ? html`<${Badge} tone="amber" title="zfs hold: cannot be deleted until released">Held<//>` : null}
-    ${s.clones ? html`<${Badge} tone="amber" title=${`Cloned to ${s.clones}: cannot be deleted while the clone exists`}>Cloned<//>` : null}
+    ${s.class ? html`<${Badge} variant="info" title="Taken by a schedule; removed by its retention">Auto · ${s.class}<//>` : html`<${Badge}>Manual<//>`}
+    ${s.holds > 0 ? html`<${Badge} variant="warning" title="zfs hold: cannot be deleted until released">Held<//>` : null}
+    ${s.clones ? html`<${Badge} variant="warning" title=${`Cloned to ${s.clones}: cannot be deleted while the clone exists`}>Cloned<//>` : null}
   </span>`;
 }
 
@@ -60,8 +61,8 @@ export function DeleteDialog({ names, onClose, onDeleted }) {
     <button class="button" type="button" autofocus disabled=${busy} onClick=${close}>Cancel</button>
     <button class="button button-danger" type="button" disabled=${busy} onClick=${submit}>${busy ? 'Deleting…' : failed.length ? 'Try again' : 'Delete'}</button>`}>
     <div class="zfs-dialog-body">
-      <${Notice} error=${error} />
-      ${failed.length ? html`<${Notice}>${failed.length === 1 ? 'This one' : 'These'} could not be deleted:${'\n'}${failed.map(f => `${f.name}: ${f.error}\n`)}<//>` : null}
+      <${Alert} error=${error} />
+      ${failed.length ? html`<${Alert} variant="danger">${failed.length === 1 ? 'This one' : 'These'} could not be deleted:${'\n'}${failed.map(f => `${f.name}: ${f.error}\n`)}<//>` : null}
       <p>Files that exist only in ${one ? 'this snapshot' : 'these snapshots'} are lost for good. The live data is not affected.</p>
       <ul class="zfs-names">${remaining.map(n => html`<li key=${n}>${n}</li>`)}</ul>
     </div>
@@ -77,13 +78,13 @@ export function ScheduleStatus({ schedule: s, scheduled }) {
   const job = s.job_id ? link('cron', `/jobs/${s.job_id}`) : null;
   const name = job ? html`<a href=${job}>ZFS snapshots</a>` : 'ZFS snapshots';
   if (!s.job_id) {
-    return scheduled ? html`<${Notice} tone="warn">The job ZFS snapshots was deleted, so no snapshots are taken or removed. Save a schedule or restart the panel to bring it back.<//>` : null;
+    return scheduled ? html`<${Alert} variant="warning">The job ZFS snapshots was deleted, so no snapshots are taken or removed. Save a schedule or restart the panel to bring it back.<//>` : null;
   }
   if (!s.enabled) {
-    return scheduled ? html`<${Notice} tone="warn">The job ${name} is turned off, so no snapshots are taken or removed.<//>` : null;
+    return scheduled ? html`<${Alert} variant="warning">The job ${name} is turned off, so no snapshots are taken or removed.<//>` : null;
   }
   if (s.run_status && !['succeeded', 'running'].includes(s.run_status)) {
-    return html`<${Notice}>The last run of the job ${name} ended as ${s.run_status}. Its output says why.<//>`;
+    return html`<${Alert} variant="danger">The last run of the job ${name} ended as ${s.run_status}. Its output says why.<//>`;
   }
   return html`<p class="muted small zfs-schedule">Applied by the job ${name}${s.next_run ? html`, next at ${datetime(s.next_run)}` : null}${s.last_run ? html`; last ran ${datetime(s.last_run)}` : null}.</p>`;
 }

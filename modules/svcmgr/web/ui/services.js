@@ -2,7 +2,8 @@
 import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
 import { useResource } from '@lsongdev/panel/hooks.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
-import { Notice, Status } from '@lsongdev/panel/ui.js';
+import { Alert } from '@lsongdev/scripts/react/components/index.js';
+import { Status } from '@lsongdev/panel/ui.js';
 
 // useApi loads a GET endpoint, polling every interval(data) milliseconds
 // while that returns a positive number. A null path loads nothing yet.
@@ -27,7 +28,7 @@ export function ServiceStatus({ unit }) {
 export const isActive = unit => ['active', 'activating', 'reloading'].includes(unit.active);
 
 export function Unsupported() {
-  return html`<${Notice} tone="info">systemd is not running on this system, so there are no services to manage.<//>`;
+  return html`<${Alert} variant="info">systemd is not running on this system, so there are no services to manage.<//>`;
 }
 
 const PRIORITY = ['emerg', 'alert', 'crit', 'error', 'warning', 'notice', 'info', 'debug'];
@@ -96,7 +97,7 @@ export function Journal({ query, live, showUnit = true }) {
     atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
   };
   return html`<div>
-    <${Notice} error=${error} />
+    <${Alert} error=${error} />
     <div class="log journal" ref=${box} onScroll=${onScroll}>
       ${entries === null ? html`<div class="journal-empty">Loading…</div>`
         : entries.length === 0 ? html`<div class="journal-empty">No entries${live ? ' yet. New ones appear here.' : '.'}</div>`

@@ -1,6 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Notice, Loading, Empty, Table, Badge, KV, toast } from '@lsongdev/panel/ui.js';
+import { Alert, Loading, Empty, Table, Badge, KeyValue, toast } from '@lsongdev/scripts/react/components/index.js';
 import { bytes } from '@lsongdev/panel/format.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { Page, useApi, useChanged, useRates, LinkStatus, rate, speed, cidr } from '../network.js';
@@ -37,14 +37,14 @@ export default function InterfaceDetail({ params }) {
 
   return html`<${Page} title=${name} subtitle=${l ? [l.kind, speed(l.speed_mbps)].filter(Boolean).join(' · ') : null}
       actions=${actions}>
-    <${Notice} error=${link.error || toggle.error} />
+    <${Alert} error=${link.error || toggle.error} />
     ${!l ? (link.error ? null : html`<${Loading} />`) : html`
-      ${l.reason ? html`<${Notice} tone="info">${l.reason}<//>` : null}
+      ${l.reason ? html`<${Alert} variant="info">${l.reason}<//>` : null}
       <div class="grid-2">
         <div class="card">
           <h2>Status</h2>
-          <${KV} items=${[
-            ['State', html`<span class="tags"><${LinkStatus} link=${l} />${l.uplink ? html`<${Badge} tone="blue">Uplink<//>` : null}</span>`],
+          <${KeyValue} items=${[
+            ['State', html`<span class="tags"><${LinkStatus} link=${l} />${l.uplink ? html`<${Badge} variant="info">Uplink<//>` : null}</span>`],
             ['MAC address', l.mac ? html`<span class="mono">${l.mac}</span>` : '—'],
             ['MTU', l.mtu],
             ...(l.master ? [['Part of', l.master]] : []),
@@ -52,7 +52,7 @@ export default function InterfaceDetail({ params }) {
         </div>
         <div class="card">
           <h2>Traffic</h2>
-          <${KV} items=${[
+          <${KeyValue} items=${[
             ['Receiving', html`<span class="rate">${rate(r?.rx)}</span>`],
             ['Sending', html`<span class="rate">${rate(r?.tx)}</span>`],
             ['Received', `${bytes(l.rx_bytes)} · ${l.rx_packets.toLocaleString()} packets`],

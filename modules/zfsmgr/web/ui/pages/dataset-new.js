@@ -1,6 +1,6 @@
 import { html, useState } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Field, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Field, toast } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useUnsavedChanges, routeURL } from '@lsongdev/panel/forms.js';
 import { useApi, policyText } from '../zfs.js';
@@ -12,13 +12,12 @@ export default function DatasetNew() {
   const datasets = useApi('/datasets');
   const parent = datasets.data?.find(d => d.name === name);
   const back = name.includes('/') ? href('/dataset', { name }) : href('/pool', { name });
-  return html`<${Page} title="New dataset" subtitle=${name ? `Under ${name}` : null} back=${{ href: back, label: name || 'Back' }}>
-    <${Notice} error=${datasets.error} />
+  return html`<${PageHeader} title="New dataset" subtitle=${name ? `Under ${name}` : null} back=${{ href: back, label: name || 'Back' }} />
+    <${Alert} error=${datasets.error} />
     ${!datasets.data ? (datasets.error ? null : html`<${Loading} />`)
       : !parent ? html`<${Empty}>No dataset named ${name}.<//>`
-      : parent.type !== 'filesystem' ? html`<${Notice}>${name} is a volume, which cannot hold datasets.<//>`
-      : html`<${Form} parent=${parent} />`}
-  <//>`;
+      : parent.type !== 'filesystem' ? html`<${Alert} variant="danger">${name} is a volume, which cannot hold datasets.<//>`
+      : html`<${Form} parent=${parent} />`}`;
 }
 
 function Form({ parent }) {
@@ -44,8 +43,8 @@ function Form({ parent }) {
     });
   };
   return html`<form class="form settings-form" onSubmit=${submit}>
-    <${Notice} error=${error} />
-    ${schedule ? html`<${Notice} tone="info">It will follow the schedule of ${parent.policy_source && parent.policy_source !== 'local' ? parent.policy_source : parent.name} (${schedule}) and take snapshots of its own. To leave it out, set its schedule to zero afterwards.<//>` : null}
+    <${Alert} error=${error} />
+    ${schedule ? html`<${Alert} variant="info">It will follow the schedule of ${parent.policy_source && parent.policy_source !== 'local' ? parent.policy_source : parent.name} (${schedule}) and take snapshots of its own. To leave it out, set its schedule to zero afterwards.<//>` : null}
     <div class="card">
       <div class="form-fields">
         <${Field} label="Name" required hint=${`Its full name will be ${parent.name}/${form.name.trim() || '…'}`}>

@@ -1,6 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, KV, Tabs, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, KeyValue, Tabs, toast } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { bytes, datetime, ago } from '@lsongdev/panel/format.js';
 import { useApi, ServiceStatus, Journal, Unsupported, isActive, unitLabel } from '../services.js';
@@ -15,9 +15,8 @@ export default function Service({ params }) {
   const title = unitLabel(name);
 
   if (!service.data) {
-    return html`<${Page} title=${title}>
-      ${service.error?.code === 'unsupported' ? html`<${Unsupported} />` : service.error ? html`<${Notice} error=${service.error} />` : html`<${Loading} />`}
-    <//>`;
+    return html`<${PageHeader} title=${title} />
+      ${service.error?.code === 'unsupported' ? html`<${Unsupported} />` : service.error ? html`<${Alert} error=${service.error} />` : html`<${Loading} />`}`;
   }
   const s = service.data;
   const run = (verb, confirm) => {
@@ -48,13 +47,13 @@ export default function Service({ params }) {
   }
   const exit = s.result && s.result !== 'success' ? `${s.result}${s.exit_status ? ` (exit status ${s.exit_status})` : ''}` : null;
 
-  return html`<${Page} title=${title} subtitle=${s.description}
-    actions=${html`<span class="page-actions">${buttons}</span>`}>
-    ${s.guarded ? html`<${Notice} tone="info">Starting this service shuts down, reboots or switches the system to rescue mode, so the panel leaves it to a shell.<//>` : null}
-    ${s.self ? html`<${Notice} tone="info">This service runs the panel. It can be restarted from here; stop or disable it from a shell.<//>` : null}
-    <${Notice} error=${action.error} />
+  return html`<${PageHeader} title=${title} subtitle=${s.description}
+    actions=${html`<span class="page-actions">${buttons}</span>`} />
+    ${s.guarded ? html`<${Alert} variant="info">Starting this service shuts down, reboots or switches the system to rescue mode, so the panel leaves it to a shell.<//>` : null}
+    ${s.self ? html`<${Alert} variant="info">This service runs the panel. It can be restarted from here; stop or disable it from a shell.<//>` : null}
+    <${Alert} error=${action.error} />
     <div class="card">
-      <${KV} items=${[
+      <${KeyValue} items=${[
         ['Status', html`<${ServiceStatus} unit=${s} />`],
         [active ? 'Running since' : 'Stopped since', s.since ? html`${datetime(s.since)} <span class="muted">(${ago(s.since)})</span>` : null],
         ['Start at boot', s.enabled ? `${s.enabled}${s.preset ? ` (preset: ${s.preset})` : ''}` : null],
@@ -70,12 +69,11 @@ export default function Service({ params }) {
     <section class="section">
       <${Tabs} active=${tab} onChange=${id => setQuery({ tab: id === 'logs' ? '' : id })} tabs=${[['logs', 'Logs'], ['file', 'Unit file']]} />
       ${tab === 'file' ? html`<${UnitFile} path=${path} />` : html`<${Journal} query=${{ unit: name, lines: 300 }} live showUnit=${false} />`}
-    </section>
-  <//>`;
+    </section>`;
 }
 
 function UnitFile({ path }) {
   const file = useApi(`${path}/file`);
-  if (!file.data) return file.error ? html`<${Notice} error=${file.error} />` : html`<${Loading} />`;
+  if (!file.data) return file.error ? html`<${Alert} error=${file.error} />` : html`<${Loading} />`;
   return html`<pre class="card unit-file">${file.data.text || 'No unit file'}</pre>`;
 }

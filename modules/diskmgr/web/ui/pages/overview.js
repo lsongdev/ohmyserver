@@ -1,5 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
-import { Page, Notice, Loading, Empty, Badge, Status, Table } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Badge, Table } from '@lsongdev/scripts/react/components/index.js';
+import { Status } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { bytes } from '@lsongdev/panel/format.js';
 import { useApi, kind, uptime, usage, zfsPools, HealthStatus } from '../disks.js';
@@ -9,15 +10,15 @@ export default function Overview() {
   const system = useApi('/system');
   const overview = useApi(system.data?.supported ? '/overview' : null, 30000);
   if (system.data && !system.data.supported) {
-    return html`<${Page} title="Overview"><${Notice} tone="info">Disk information needs Linux (lsblk) or macOS (diskutil); neither was found.<//><//>`;
+    return html`<${PageHeader} title="Overview" /><${Alert} variant="info">Disk information needs Linux (lsblk) or macOS (diskutil); neither was found.<//>`;
   }
   const o = overview.data;
   const install = link?.('packages', '/', { tab: 'search', s: 'smartmontools' });
-  return html`<${Page} title="Overview">
-    ${system.data && !system.data.smartctl ? html`<${Notice} tone="info">
+  return html`<${PageHeader} title="Overview" />
+    ${system.data && !system.data.smartctl ? html`<${Alert} variant="info">
       Disk health needs smartmontools.${install ? html` <a href=${install}>Install it from Packages</a>.` : ' Install the smartmontools package.'}
     <//>` : null}
-    <${Notice} error=${overview.error} />
+    <${Alert} error=${overview.error} />
     ${!o ? (overview.error ? null : html`<${Loading}>Reading disks…<//>`) : html`
       <section class="section">
         <h2>File systems</h2>
@@ -44,8 +45,7 @@ export default function Overview() {
               <td class="muted"><${UsedBy} disk=${d} /></td>
             </tr>`)}</tbody>
           <//>`}
-      </section>`}
-  <//>`;
+      </section>`}`;
 }
 
 // UsedBy lists what a disk serves; the ZFS pool it belongs to opens there.
@@ -85,7 +85,7 @@ function ArrayCard({ array: a }) {
     <div class="array-head"><h3>${a.name}</h3>${state}<span class="muted small">${a.level} · ${bytes(a.size)}${a.read_only ? ' · read-only' : ''}</span></div>
     ${a.sync?.progress ? html`<div class="meter"><span style=${`width:${a.sync.progress}%`}></span></div>
       <div class="muted small" style="margin-top:6px">${a.sync.finish ? `About ${a.sync.finish.replace('min', ' min')} left` : ''}${a.sync.speed ? ` at ${a.sync.speed}` : ''}</div>` : null}
-    <div class="members">${a.members.map(m => html`<${Badge} key=${m.name} tone=${m.faulty ? 'red' : m.spare ? undefined : 'green'}
+    <div class="members">${a.members.map(m => html`<${Badge} key=${m.name} variant=${m.faulty ? 'danger' : m.spare ? undefined : 'success'}
       title=${m.faulty ? 'Faulty' : m.spare ? 'Spare' : `Slot ${m.role}`}>${m.name}${m.faulty ? ' · faulty' : m.spare ? ' · spare' : ''}<//>`)}</div>
   </div>`;
 }

@@ -2,7 +2,8 @@
 // page and a dataset's page.
 import { html, useMemo, useState } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Notice, Table, Field, Check, Modal, toast } from '@lsongdev/panel/ui.js';
+import { Alert, Table, Field, Check, toast } from '@lsongdev/scripts/react/components/index.js';
+import { Modal } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { bytes, datetime, ago } from '@lsongdev/panel/format.js';
@@ -98,7 +99,7 @@ export function TakeSnapshotDialog({ datasets, dataset, fixed = false, onClose, 
     <button class="button" type="button" disabled=${busy} onClick=${close}>Cancel</button>
     <button class="button button-primary" type="submit" form="snapshot-form" disabled=${busy || !name.trim()}>${busy ? 'Taking…' : 'Take snapshot'}</button>`}>
     <form id="snapshot-form" class="form" onSubmit=${submit}>
-      <${Notice} error=${error} />
+      <${Alert} error=${error} />
       ${fixed ? null : html`<${Field} label="Dataset">
         <select class="input" value=${target} disabled=${busy} onChange=${e => setTarget(e.currentTarget.value)}>
           ${datasets.map(d => html`<option value=${d.name}>${d.name}</option>`)}

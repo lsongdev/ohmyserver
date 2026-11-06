@@ -1,6 +1,7 @@
 import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Status, confirmDanger } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading } from '@lsongdev/scripts/react/components/index.js';
+import { Status } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { target } from './hosts.js';
 
@@ -65,25 +66,24 @@ export default function Terminal({ params }) {
   }, [params.id, session, ready]);
 
   const forgetKey = () => {
-    if (!confirmDanger('Continue only if you know the server was reinstalled or its key replaced: forget the recorded host key and accept the one the server offers now?')) return;
+    if (!window.confirm('Continue only if you know the server was reinstalled or its key replaced: forget the recorded host key and accept the one the server offers now?')) return;
     forget.run(async () => {
       await api.del(`/hosts/${params.id}/host-key`);
       setSession(s => s + 1);
     });
   };
 
-  if (!ready) return html`<${Page} title="Terminal">${host.error ? html`<${Notice} error=${host.error} />` : html`<${Loading} />`}<//>`;
+  if (!ready) return html`<${PageHeader} title="Terminal" />${host.error ? html`<${Alert} error=${host.error} />` : html`<${Loading} />`}`;
   const h = host.data;
-  return html`<${Page} title=${h.name} back=${{ href: href('/'), label: 'Hosts' }} subtitle=${html`<span class="mono">${target(h)}</span>`}
+  return html`<${PageHeader} title=${h.name} back=${{ href: href('/'), label: 'Hosts' }} subtitle=${html`<span class="mono">${target(h)}</span>`}
     actions=${html`
       <${Status} state=${status === 'open' ? 'running' : status === 'connecting' ? 'starting' : 'stopped'} label=${LABELS[status]} />
-      ${status === 'closed' ? html`<button class="button button-small" onClick=${() => setSession(s => s + 1)}>Reconnect</button>` : null}`}>
-    ${closed?.code === HOST_KEY_CHANGED ? html`<${Notice} tone="warn">
+      ${status === 'closed' ? html`<button class="button button-small" onClick=${() => setSession(s => s + 1)}>Reconnect</button>` : null}`} />
+    ${closed?.code === HOST_KEY_CHANGED ? html`<${Alert} variant="warning">
       The host key the server offers (<span class="mono">${closed.reason}</span>) differs from the one recorded on the first connection. The server may have been reinstalled, or someone may be intercepting the connection.
       <div style="margin-top:8px"><button class="button button-small button-danger" disabled=${forget.busy} onClick=${forgetKey}>Forget the key and reconnect</button></div>
     <//>` : null}
-    ${closed?.code === CONNECT_FAILED ? html`<${Notice}>Connection failed: ${closed.reason}<//>` : null}
-    <${Notice} error=${forget.error} />
-    <div class="terminal" ref=${ref}></div>
-  <//>`;
+    ${closed?.code === CONNECT_FAILED ? html`<${Alert} variant="danger">Connection failed: ${closed.reason}<//>` : null}
+    <${Alert} error=${forget.error} />
+    <div class="terminal" ref=${ref}></div>`;
 }

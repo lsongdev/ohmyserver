@@ -2,7 +2,8 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useResource } from '@lsongdev/panel/hooks.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
-import { Notice, Loading, Status, toastError } from '@lsongdev/panel/ui.js';
+import { Alert, Loading } from '@lsongdev/scripts/react/components/index.js';
+import { Status, toastError } from '@lsongdev/panel/ui.js';
 
 // useApi loads a GET endpoint, polling every interval(data) milliseconds
 // while that returns a positive number. A null path loads nothing yet.
@@ -28,25 +29,25 @@ export function useStartJob() {
   };
 }
 
-const JOB = { running: ['Running', 'blue'], succeeded: ['Succeeded', 'green'], failed: ['Failed', 'red'] };
+const JOB = { running: ['Running', 'info'], succeeded: ['Succeeded', 'success'], failed: ['Failed', 'danger'] };
 
 export function JobStatus({ job }) {
-  const [label, tone] = JOB[job.status] || [job.status, 'gray'];
-  return html`<${Status} state=${job.status} label=${label} tone=${tone} title=${job.error} />`;
+  const [label, tone] = JOB[job.status] || [job.status, undefined];
+  return html`<${Status} state=${job.status} label=${label} variant=${tone} title=${job.error} />`;
 }
 
 // RunningJob says which job is running; changes wait until it finishes.
 export function RunningJob({ job }) {
   const { href } = usePanel();
   if (!job) return null;
-  return html`<${Notice} tone="info">
+  return html`<${Alert} variant="info">
     <strong>${job.title}</strong> is running. Other changes wait until it finishes. <a href=${href(`/jobs/${job.id}`)}>View output</a>
   <//>`;
 }
 
 // Unsupported explains a system without dnf, apt, pacman or brew.
 export function Unsupported({ system }) {
-  return html`<${Notice} tone="info">
+  return html`<${Alert} variant="info">
     No supported package manager on ${system.os?.name || 'this system'}. Packages work with dnf
     (Fedora, RHEL, Rocky, AlmaLinux, Alibaba Cloud Linux, …), apt (Debian, Ubuntu), pacman (Arch Linux) and Homebrew (macOS).
   <//>`;
@@ -58,7 +59,7 @@ export function PackageInfo({ name, onClose }) {
   return html`<section class="card package-info" aria-label=${`Package information: ${name}`}>
     <div class="recipe-head"><h2>${name}</h2><button class="button button-small" type="button" onClick=${onClose}>Close details</button></div>
     ${info.data ? html`<pre class="info-text">${info.data.text || 'No information'}</pre>`
-      : info.error ? html`<${Notice} error=${info.error} />` : html`<${Loading} />`}
+      : info.error ? html`<${Alert} error=${info.error} />` : html`<${Loading} />`}
   </section>`;
 }
 

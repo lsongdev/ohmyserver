@@ -1,6 +1,6 @@
 import { html, useEffect, useState } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Field, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Field, toast } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi } from '../domains.js';
 
@@ -13,10 +13,10 @@ export default function Account({ params }) {
   const title = isNew ? 'Add account' : account.data ? account.data.name : 'Account';
   const back = { href: href('/accounts'), label: 'Accounts' };
   if (!kinds.data || (!isNew && !account.data)) {
-    return html`<${Page} title=${title} back=${back}>${kinds.error || account.error
-      ? html`<${Notice} error=${kinds.error || account.error} />` : html`<${Loading} />`}<//>`;
+    return html`<${PageHeader} title=${title} back=${back} />${kinds.error || account.error
+      ? html`<${Alert} error=${kinds.error || account.error} />` : html`<${Loading} />`}`;
   }
-  return html`<${Page} title=${title} back=${back}><${AccountForm} kinds=${kinds.data} account=${account.data} /><//>`;
+  return html`<${PageHeader} title=${title} back=${back} /><${AccountForm} kinds=${kinds.data} account=${account.data} />`;
 }
 
 function AccountForm({ kinds, account }) {
@@ -46,7 +46,7 @@ function AccountForm({ kinds, account }) {
       <div class="choice-grid">${kinds.map(x => html`<label key=${x.id} class=${`choice-card ${kind === x.id ? 'selected' : ''}`}>
         <input type="radio" name="kind" checked=${kind === x.id} onChange=${() => setKind(x.id)} /><b>${x.title}</b></label>`)}</div>
     <//>` : null}
-    ${k?.help ? html`<${Notice} tone="info">${k.help}<//>` : null}
+    ${k?.help ? html`<${Alert} variant="info">${k.help}<//>` : null}
     <${Field} label="Name" hint="To tell accounts apart">
       <input class="input" value=${name} placeholder=${k?.title} onInput=${e => setName(e.currentTarget.value)} />
     <//>
@@ -55,8 +55,8 @@ function AccountForm({ kinds, account }) {
       <input class="input mono" type=${f.secret ? 'password' : 'text'} autocomplete="off" required=${isNew || !account.set?.[f.name]}
         value=${creds[f.name] || ''} onInput=${e => { setCreds({ ...creds, [f.name]: e.currentTarget.value }); setZones(null); }} />
     <//>`)}
-    <${Notice} error=${save.error || test.error} />
-    ${zones ? html`<${Notice} tone="success">Connected. ${zones.length
+    <${Alert} error=${save.error || test.error} />
+    ${zones ? html`<${Alert} variant="success">Connected. ${zones.length
       ? html`It reaches ${zones.length} ${zones.length === 1 ? 'domain' : 'domains'}: ${zones.map(z => z.name).join(', ')}.`
       : 'It reaches no domains yet: check the token\'s zone permissions.'}<//>` : null}
     <div class="button-actions">

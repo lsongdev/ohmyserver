@@ -1,5 +1,5 @@
 import { html } from '@lsongdev/panel/html.js';
-import { Notice, Loading, Empty, Table, Badge } from '@lsongdev/panel/ui.js';
+import { Alert, Loading, Empty, Table, Badge } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { Page, useApi, useChanged, useRates, LinkStatus, rate, speed, globalAddresses, cidr } from '../network.js';
 
@@ -12,8 +12,8 @@ export default function Interfaces() {
   useChanged(links.reload);
   const backend = info.data?.backend;
   return html`<${Page} title="Interfaces" subtitle=${backend ? `Settings managed by ${backend}` : 'Traffic refreshes every few seconds'}>
-    ${info.data && !backend ? html`<${Notice} tone="info">Neither NetworkManager nor systemd-networkd runs on this machine, so this page can show interfaces but not change them.<//>` : null}
-    <${Notice} error=${links.error} />
+    ${info.data && !backend ? html`<${Alert} variant="info">Neither NetworkManager nor systemd-networkd runs on this machine, so this page can show interfaces but not change them.<//>` : null}
+    <${Alert} error=${links.error} />
     ${!links.data ? (links.error ? null : html`<${Loading} />`) : links.data.length === 0 ? html`<${Empty}>No interfaces.<//>` : html`<${Table}>
       <thead><tr><th>Interface</th><th>Status</th><th>Addresses</th><th>Received</th><th>Sent</th></tr></thead>
       <tbody>${links.data.map(l => {
@@ -24,7 +24,7 @@ export default function Interfaces() {
             <a class="cell-main mono" href=${href(`/interfaces/${encodeURIComponent(l.name)}`)}>${l.name}</a>
             <div class="cell-sub">${[l.kind, speed(l.speed_mbps)].filter(Boolean).join(' · ')}</div>
           </td>
-          <td><span class="tags"><${LinkStatus} link=${l} />${l.uplink ? html`<${Badge} tone="blue" title="This machine's default route leaves through it">Uplink<//>` : null}</span></td>
+          <td><span class="tags"><${LinkStatus} link=${l} />${l.uplink ? html`<${Badge} variant="info" title="This machine's default route leaves through it">Uplink<//>` : null}</span></td>
           <td class="mono small"><div class="addresses">
             ${addresses.length ? addresses.map(a => html`<span key=${cidr(a)}>${cidr(a)}</span>`) : html`<span class="muted">None</span>`}
           </div></td>

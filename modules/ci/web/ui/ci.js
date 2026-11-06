@@ -13,13 +13,13 @@ export function useApi(path, interval) {
 }
 
 const STATUS = {
-  pending: ['Queued', 'blue'], running: ['Running', 'blue'], success: ['Passed', 'green'], failure: ['Failed', 'red'],
-  error: ['Error', 'red'], canceled: ['Canceled', 'gray'], skipped: ['Skipped', 'gray'],
+  pending: ['Queued', 'info'], running: ['Running', 'info'], success: ['Passed', 'success'], failure: ['Failed', 'danger'],
+  error: ['Error', 'danger'], canceled: ['Canceled', undefined], skipped: ['Skipped', undefined],
 };
 
 export function BuildStatus({ status, title }) {
-  const [label, tone] = STATUS[status] || [status, 'gray'];
-  return html`<${Status} state=${status} label=${label} tone=${tone} title=${title} />`;
+  const [label, tone] = STATUS[status] || [status, undefined];
+  return html`<${Status} state=${status} label=${label} variant=${tone} title=${title} />`;
 }
 
 export const active = status => status === 'pending' || status === 'running';

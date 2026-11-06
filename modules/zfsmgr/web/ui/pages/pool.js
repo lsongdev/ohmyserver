@@ -1,6 +1,7 @@
 import { html, useState } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Badge, Modal, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Table, Badge, toast } from '@lsongdev/scripts/react/components/index.js';
+import { Modal } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { bytes } from '@lsongdev/panel/format.js';
 import { useApi, policyText, ScheduleStatus } from '../zfs.js';
@@ -23,10 +24,10 @@ export default function Pool() {
   const scrubbing = p && scanning(p) && p.scan.function === 'SCRUB';
   const resilvering = p && scanning(p) && p.scan.function === 'RESILVER';
 
-  return html`<${Page} title=${name || 'Pool'} subtitle=${p ? layout(p) : null}
-    actions=${p?.vdevs && !resilvering ? html`<button class="button" onClick=${() => setDialog(scrubbing ? 'stop' : 'start')}>${scrubbing ? 'Cancel scrub' : 'Start scrub'}</button>` : null}>
-    <${Notice} error=${list.error || datasets.error || schedule.error} />
-    ${list.data?.details_error ? html`<${Notice} tone="warn">${list.data.details_error}<//>` : null}
+  return html`<${PageHeader} title=${name || 'Pool'} subtitle=${p ? layout(p) : null}
+    actions=${p?.vdevs && !resilvering ? html`<button class="button" onClick=${() => setDialog(scrubbing ? 'stop' : 'start')}>${scrubbing ? 'Cancel scrub' : 'Start scrub'}</button>` : null} />
+    <${Alert} error=${list.error || datasets.error || schedule.error} />
+    ${list.data?.details_error ? html`<${Alert} variant="warning">${list.data.details_error}<//>` : null}
     ${!list.data ? (list.error ? null : html`<${Loading} />`) : !p ? html`<${Empty}>No pool named ${name}.<//>` : html`
       <div class="card pool-card">
         <div class="pool-head">
@@ -35,8 +36,8 @@ export default function Pool() {
         </div>
         <${Capacity} pool=${p} />
         ${p.capacity >= 80 ? html`<div class="pool-line muted">Above about 80% a pool slows down, and snapshots keep deleted files' space in use until they go too.</div>` : null}
-        ${p.status ? html`<${Notice} tone=${p.health === 'ONLINE' ? 'info' : 'warn'}>${p.status}${p.action ? html` ${p.action}` : null}<//>` : null}
-        ${p.errors ? html`<${Notice}>${p.errors} known data error${p.errors === 1 ? '' : 's'}. Run <code>zpool status -v ${p.name}</code> on the server for the affected files.<//>` : null}
+        ${p.status ? html`<${Alert} variant=${p.health === 'ONLINE' ? 'info' : 'warning'}>${p.status}${p.action ? html` ${p.action}` : null}<//>` : null}
+        ${p.errors ? html`<${Alert} variant="danger">${p.errors} known data error${p.errors === 1 ? '' : 's'}. Run <code>zpool status -v ${p.name}</code> on the server for the affected files.<//>` : null}
         ${p.vdevs ? html`<${ScanLine} pool=${p} />` : null}
       </div>
       ${p.vdevs ? html`<section class="section">
@@ -62,16 +63,15 @@ export default function Pool() {
               <td class="nowrap">${bytes(d.snapshot_used)}</td>
               <td>${d.snapshots}</td>
               <td>
-                ${d.policy_invalid ? html`<${Badge} tone="red" title=${d.policy_invalid}>Unreadable<//>` : policyText(d.policy) || html`<span class="muted">Off</span>`}
+                ${d.policy_invalid ? html`<${Badge} variant="danger" title=${d.policy_invalid}>Unreadable<//>` : policyText(d.policy) || html`<span class="muted">Off</span>`}
                 ${d.policy_source && d.policy_source !== 'local' ? html`<div class="cell-sub">From ${d.policy_source}</div>` : null}
-                ${d.schedule_error ? html`<div class="cell-sub"><${Badge} tone="red" title=${d.schedule_error}>Last run failed<//></div>` : null}
+                ${d.schedule_error ? html`<div class="cell-sub"><${Badge} variant="danger" title=${d.schedule_error}>Last run failed<//></div>` : null}
               </td>
             </tr>`;
           })}</tbody>
         <//>`}
       </section>`}
-    ${dialog ? html`<${ScrubDialog} pool=${p} start=${dialog === 'start'} onClose=${() => setDialog(null)} onDone=${list.reload} />` : null}
-  <//>`;
+    ${dialog ? html`<${ScrubDialog} pool=${p} start=${dialog === 'start'} onClose=${() => setDialog(null)} onDone=${list.reload} />` : null}`;
 }
 
 // ScrubDialog confirms what a scrub costs, or that canceling loses its progress.
@@ -92,7 +92,7 @@ function ScrubDialog({ pool: p, start, onClose, onDone }) {
     <button class="button" type="button" autofocus disabled=${busy} onClick=${close}>${start ? 'Cancel' : 'Keep scrubbing'}</button>
     <button class=${`button ${start ? 'button-primary' : 'button-danger'}`} type="button" disabled=${busy} onClick=${submit}>${busy ? 'Working…' : start ? 'Start scrub' : 'Cancel scrub'}</button>`}>
     <div class="zfs-dialog-body">
-      <${Notice} error=${error} />
+      <${Alert} error=${error} />
       ${start
         ? html`<p>This reads all ${bytes(p.alloc)} on the pool and checks it against its checksums, repairing what redundancy allows. The pool stays usable, but disks stay busy and file access may slow down until it ends, which can take hours. It can be canceled at any time.</p>`
         : html`<p>What it has checked so far is not kept: a later scrub starts over.</p>`}

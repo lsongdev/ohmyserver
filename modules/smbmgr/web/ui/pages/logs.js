@@ -1,6 +1,6 @@
 import { html, useEffect, useState } from '@lsongdev/panel/html.js';
 import { useResource } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Field, Check, LogView } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Field, Check, LogView } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 
 export default function Logs() {
@@ -10,7 +10,7 @@ export default function Logs() {
   useEffect(() => setSearch(query.q || ''), [query.q]);
   const live = query.live !== '0';
   const limit = query.limit || '500';
-  return html`<${Page} title="Logs" subtitle="smbd.log" actions=${html`<button type="button" class="button" onClick=${() => setRefresh(n => n + 1)}>Refresh</button>`}>
+  return html`<${PageHeader} title="Logs" subtitle="smbd.log" actions=${html`<button type="button" class="button" onClick=${() => setRefresh(n => n + 1)}>Refresh</button>`} />
     <form class="samba-log-filters" onSubmit=${e => { e.preventDefault(); setQuery({ q: search.trim() }); }}>
         <${Field} label="Search recent entries">
           <input class="input" type="search" value=${search} maxlength="256" placeholder="IP, username, denied, NT_STATUS…"
@@ -24,8 +24,7 @@ export default function Logs() {
         <button class="button" type="submit">Search</button>
         <${Check} label="Auto-refresh (5s)" checked=${live} onChange=${e => setQuery({ live: e.currentTarget.checked ? '' : '0' })} />
       </form>
-      <${LogOutput} key=${JSON.stringify([query.q, limit])} search=${query.q || ''} limit=${limit} live=${live} refresh=${refresh} />
-  <//>`;
+      <${LogOutput} key=${JSON.stringify([query.q, limit])} search=${query.q || ''} limit=${limit} live=${live} refresh=${refresh} />`;
 }
 
 function LogOutput({ search, limit, live, refresh }) {
@@ -35,7 +34,7 @@ function LogOutput({ search, limit, live, refresh }) {
   // A failed poll leaves the last readable output visible.
   const lines = (data?.entries || []).map(text => /denied|NT_STATUS_|authentication.*fail|permission|error|failed/i.test(text) ? { text, stream: 'stderr' } : text);
   return html`<section class="samba-logs" aria-label="Samba log output">
-    <${Notice} error=${logs.error} />
+    <${Alert} error=${logs.error} />
     ${!data ? (logs.error ? null : html`<${Loading} />`) : html`
       <${LogView} lines=${lines} follow=${live} className="samba-log-output" empty=${search ? 'No matching entries in the recent log window. Try a broader search.' : 'No entries in this log yet. Retry the connection with auto-refresh enabled.'} />
       <p class="muted small samba-log-status" role="status">

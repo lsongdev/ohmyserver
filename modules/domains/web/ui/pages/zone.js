@@ -1,6 +1,7 @@
 import { html, useState } from '@lsongdev/panel/html.js';
 import { useAction, useBusy } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Field, Check, Badge, confirmDanger, toast, toastError } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Table, Field, Check, Badge, toast } from '@lsongdev/scripts/react/components/index.js';
+import { toastError } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, ttl } from '../domains.js';
 
@@ -19,18 +20,18 @@ export default function Zone({ params }) {
   const [busy, run] = useBusy(toastError);
   const z = zone.data;
   if (!z) {
-    return html`<${Page} title="Domain" back=${{ href: href('/'), label: 'Domains' }}>
-      ${zone.error ? html`<${Notice} error=${zone.error} />` : html`<${Loading} />`}<//>`;
+    return html`<${PageHeader} title="Domain" back=${{ href: href('/'), label: 'Domains' }} />
+      ${zone.error ? html`<${Alert} error=${zone.error} />` : html`<${Loading} />`}`;
   }
   const type = query.type || '';
   const text = (query.q || '').trim().toLowerCase();
   const records = z.records.filter(r => (!type || r.type === type) && (!text || r.name.includes(text) || r.content.toLowerCase().includes(text)));
   const remove = r => {
-    if (!confirmDanger(`Delete the ${r.type} record ${short(r.name, z.name)} → ${r.content}?`)) return;
+    if (!window.confirm(`Delete the ${r.type} record ${short(r.name, z.name)} → ${r.content}?`)) return;
     run(r.id, async () => { await api.del(`${base}/records/${encodeURIComponent(r.id)}`); toast('Record deleted', 'success'); zone.reload(); });
   };
-  return html`<${Page} title=${z.name} back=${{ href: href('/'), label: 'Domains' }} subtitle=${z.account_name}
-    actions=${editing ? null : html`<button class="button button-primary" onClick=${() => setEditing({})}>Add record</button>`}>
+  return html`<${PageHeader} title=${z.name} back=${{ href: href('/'), label: 'Domains' }} subtitle=${z.account_name}
+    actions=${editing ? null : html`<button class="button button-primary" onClick=${() => setEditing({})}>Add record</button>`} />
     ${editing ? html`<${RecordForm} key=${editing.id || 'new'} base=${base} zone=${z} record=${editing}
       onDone=${saved => { setEditing(null); if (saved) zone.reload(); }} />` : null}
     <div class="toolbar">
@@ -55,8 +56,7 @@ export default function Zone({ params }) {
             <button class="button button-small button-danger" disabled=${busy[r.id]} onClick=${() => remove(r)}>Delete</button>
           </span></td>
         </tr>`)}</tbody>
-      <//>`}
-  <//>`;
+      <//>`}`;
 }
 
 // RecordForm adds or edits a record, inline above the list: a handful of
@@ -86,7 +86,7 @@ function RecordForm({ base, zone, record, onDone }) {
     NS: 'ns1.example.com', SRV: '10 5060 sip.example.com', CAA: '0 issue "letsencrypt.org"' }[r.type];
   return html`<form class="card record-form" onSubmit=${submit}>
     <h2>${isNew ? 'Add record' : `Edit ${record.type} ${short(record.name, zone.name)}`}</h2>
-    <${Notice} error=${save.error} />
+    <${Alert} error=${save.error} />
     <div class="record-grid">
       <${Field} label="Type">
         <select class="input" value=${r.type} disabled=${!isNew} onChange=${e => set({ type: e.currentTarget.value })}>

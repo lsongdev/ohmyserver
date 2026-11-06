@@ -2,7 +2,8 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useResource } from '@lsongdev/panel/hooks.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
-import { Notice, Status, toast } from '@lsongdev/panel/ui.js';
+import { Alert, toast } from '@lsongdev/scripts/react/components/index.js';
+import { Status } from '@lsongdev/panel/ui.js';
 
 // useApi loads a GET endpoint, polling every interval milliseconds when
 // that is positive. A null path loads nothing yet.
@@ -12,7 +13,7 @@ export function useApi(path, interval) {
 }
 
 export function Unsupported() {
-  return html`<${Notice} tone="info">Samba is not installed on this server. Install the <code>samba</code> package, then restart the panel.<//>`;
+  return html`<${Alert} variant="info">Samba is not installed on this server. Install the <code>samba</code> package, then restart the panel.<//>`;
 }
 
 // ServiceStatus shows smbd's systemd state.
@@ -25,7 +26,7 @@ export function ServiceStatus({ service }) {
 
 // saved tells how a change to smb.conf went: written, and reloaded or not.
 export function savedToast(message, saved) {
-  if (saved?.reload_error) toast(`${message}, but smbd did not reload: ${saved.reload_error}`, 'error');
+  if (saved?.reload_error) toast(`${message}, but smbd did not reload: ${saved.reload_error}`, 'danger');
   else toast(message, 'success');
   for (const w of saved?.warnings || []) toast(`testparm: ${w}`, 'info');
 }

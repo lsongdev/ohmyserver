@@ -1,6 +1,7 @@
 import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Modal, Field, toast, toastError } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Table, Field, toast } from '@lsongdev/scripts/react/components/index.js';
+import { Modal, toastError } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { routeURL, useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { bytes, datetime } from '@lsongdev/panel/format.js';
@@ -56,13 +57,13 @@ export default function Browser() {
     if (e.dataTransfer?.files?.length) send([...e.dataTransfer.files]);
   };
 
-  return html`<${Page} title="Files" actions=${html`<span class="page-actions">
+  return html`<${PageHeader} title="Files" actions=${html`<span class="page-actions">
       <button class="button" onClick=${() => setDialog({ kind: 'mkdir' })}>New folder</button>
       <button class="button" onClick=${() => setDialog({ kind: 'newfile' })}>New file</button>
       <button class="button button-primary" onClick=${() => picker.current?.click()}>Upload</button>
       <input type="file" multiple hidden ref=${picker} onChange=${e => { send([...e.currentTarget.files]); e.currentTarget.value = ''; }} />
-    </span>`}>
-    <${Notice} error=${action.error} />
+    </span>`} />
+    <${Alert} error=${action.error} />
     ${progress != null ? html`<div class="upload-progress"><div class="muted small">Uploading… ${Math.round(progress * 100)}%</div>
       <div class="meter"><span style=${`width:${progress * 100}%`}></span></div></div>` : null}
     <form class="file-path" aria-label="Folder navigation" onSubmit=${e => { e.preventDefault(); open(path.replace(/\/+$/, '') || '/'); }}>
@@ -88,7 +89,7 @@ export default function Browser() {
     </div>` : null}
     <div class=${`drop ${dragging ? 'dragging' : ''}`} onDragOver=${e => { e.preventDefault(); setDragging(true); }}
       onDragLeave=${e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false); }} onDrop=${drop}>
-      <${Notice} error=${listing.error} />
+      <${Alert} error=${listing.error} />
       ${!listing.data ? (listing.error ? null : html`<${Loading} />`) : shown.length === 0 ? html`<${Empty}>${text ? 'Nothing here matches the filter.' : 'This folder is empty. Drop files here to upload them.'}<//>` : html`
         <${Table}>
           <thead><tr>
@@ -126,8 +127,7 @@ export default function Browser() {
     ${dialog?.kind === 'copy' || dialog?.kind === 'move' ? html`<${Prompt} title=${`${dialog.kind === 'copy' ? 'Copy' : 'Move'} ${chosen.length === 1 ? chosen[0].name : `${chosen.length} items`} to`}
       label="Destination folder" action=${dialog.kind === 'copy' ? 'Copy' : 'Move'} value=${dir} mono
       hint="An existing folder; items keep their names." onClose=${() => setDialog(null)}
-      onSubmit=${to => api.post(dialog.kind, { paths: chosen.map(e => e.path), to }).then(() => done(`${dialog.kind === 'copy' ? 'Copied' : 'Moved'} to ${to}`))} />` : null}
-  <//>`;
+      onSubmit=${to => api.post(dialog.kind, { paths: chosen.map(e => e.path), to }).then(() => done(`${dialog.kind === 'copy' ? 'Copied' : 'Moved'} to ${to}`))} />` : null}`;
 }
 
 // Prompt asks for one value; a failed submit keeps it open with the error.
@@ -146,7 +146,7 @@ function Prompt({ title, label, action, value = '', hint, mono, onSubmit, onClos
     <button class="button" type="button" disabled=${run.busy} onClick=${close}>Cancel</button>
     <button class="button button-primary" type="submit" form="prompt-form" disabled=${run.busy || !text.trim()}>${action}</button>`}>
     <form id="prompt-form" class="form" onSubmit=${submit}>
-      <${Notice} error=${run.error} />
+      <${Alert} error=${run.error} />
       <${Field} label=${label} hint=${hint}>
         <input class=${`input ${mono ? 'mono' : ''}`} required autofocus disabled=${run.busy} value=${text} onInput=${e => setText(e.currentTarget.value)} />
       <//>

@@ -1,6 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, KV, Table } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, KeyValue, Table } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, RunStatus, TRIGGERS, datetime, duration, relative } from '../cron.js';
 
@@ -11,20 +11,20 @@ export default function Job({ params }) {
   const targets = useApi('/targets');
   const action = useAction();
 
-  if (!job.data) return html`<${Page} title="Job">${job.error ? html`<${Notice} error=${job.error} />` : html`<${Loading} />`}<//>`;
+  if (!job.data) return html`<${PageHeader} title="Job" />${job.error ? html`<${Alert} error=${job.error} />` : html`<${Loading} />`}`;
   const j = job.data;
   const target = targets.data?.find(t => t.id === j.target);
   const runNow = () => action.run(async () => {
     const r = await api.post(`/jobs/${j.id}/run`);
     navigate(`/runs/${r.id}`);
   });
-  return html`<${Page} title=${j.name}
+  return html`<${PageHeader} title=${j.name}
     actions=${html`
       <button class="button button-primary" disabled=${action.busy || j.running} onClick=${runNow}>Run now</button>
-      <a class="button" href=${href(`/jobs/${j.id}/edit`)}>Edit</a>`}>
-    <${Notice} error=${action.error} />
+      <a class="button" href=${href(`/jobs/${j.id}/edit`)}>Edit</a>`} />
+    <${Alert} error=${action.error} />
     <div class="card">
-      <${KV} items=${[
+      <${KeyValue} items=${[
         ['Schedule', html`<span class="mono">${j.schedule}</span>${j.timezone ? html`<span class="muted" style="margin-left:8px">${j.timezone}</span>` : null}`],
         ['Next run', j.enabled ? (j.next_run ? `${datetime(j.next_run)} (${relative(j.next_run)})` : 'Never') : 'Disabled'],
         ['Runs on', target ? target.name : j.target],
@@ -46,6 +46,5 @@ export default function Job({ params }) {
             <td class="num">${duration(r)}</td>
           </tr>`)}</tbody>
         <//>`}
-    </section>
-  <//>`;
+    </section>`;
 }

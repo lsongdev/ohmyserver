@@ -1,6 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Table } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Table } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { routeURL } from '@lsongdev/panel/forms.js';
 import { useApi, BuildStatus, active, datetime, short, duration } from '../ci.js';
@@ -13,9 +13,9 @@ export default function Repos() {
     const b = await api.post(`/repos/${r.id}/builds`);
     navigate(`/builds/${b.id}`);
   });
-  return html`<${Page} title="Repositories" subtitle="Build and test in containers, as each repository's .ci.yml says, on push or on demand."
-    actions=${html`<a class="button button-primary" href=${href('/repos/new', { return: routeURL('/', query) })}>Add repository</a>`}>
-    <${Notice} error=${repos.error || action.error} />
+  return html`<${PageHeader} title="Repositories" subtitle="Build and test in containers, as each repository's .ci.yml says, on push or on demand."
+    actions=${html`<a class="button button-primary" href=${href('/repos/new', { return: routeURL('/', query) })}>Add repository</a>`} />
+    <${Alert} error=${repos.error || action.error} />
     ${repos.data === undefined ? (repos.error ? null : html`<${Loading} />`) : !repos.data.length ? html`<${Empty}>No repositories yet.<//>` : html`
       <${Table}>
         <thead><tr><th>Repository</th><th>Last build</th><th>Commit</th><th class="num">Duration</th><th class="actions"></th></tr></thead>
@@ -33,6 +33,5 @@ export default function Repos() {
             </span></td>
           </tr>`;
         })}</tbody>
-      <//>`}
-  <//>`;
+      <//>`}`;
 }

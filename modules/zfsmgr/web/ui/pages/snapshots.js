@@ -1,5 +1,5 @@
 import { html, useMemo, useState } from '@lsongdev/panel/html.js';
-import { Page, Notice, Loading, Empty } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { routeURL } from '@lsongdev/panel/forms.js';
 import { useApi } from '../zfs.js';
@@ -24,9 +24,9 @@ export default function Snapshots() {
   }, [snapshots.data, search, kind]);
   const changed = () => { snapshots.reload(); datasets.reload(); };
 
-  return html`<${Page} title="Snapshots" subtitle="Read-only points in time of each dataset; they share space until the data diverges"
-    actions=${html`<button class="button button-primary" disabled=${!datasets.data?.length} onClick=${() => setTaking(true)}>Take snapshot</button>`}>
-    <${Notice} error=${snapshots.error || datasets.error} />
+  return html`<${PageHeader} title="Snapshots" subtitle="Read-only points in time of each dataset; they share space until the data diverges"
+    actions=${html`<button class="button button-primary" disabled=${!datasets.data?.length} onClick=${() => setTaking(true)}>Take snapshot</button>`} />
+    <${Alert} error=${snapshots.error || datasets.error} />
     <div class="zfs-filters">
       <select class="input" aria-label="Dataset" value=${dataset} onChange=${e => setQuery({ dataset: e.currentTarget.value })}>
         <option value="">All datasets</option>
@@ -43,6 +43,5 @@ export default function Snapshots() {
     ${!snapshots.data ? (snapshots.error ? null : html`<${Loading} />`) : visible.length === 0 ? html`<${Empty}>${
       snapshots.data.length ? 'No snapshot matches the filter.' : 'No snapshots yet. Take one now, or set a schedule on a dataset.'
     }<//>` : html`<${SnapshotTable} snapshots=${visible} returnTo=${routeURL('/snapshots', query)} onChanged=${changed} />`}
-    ${taking ? html`<${TakeSnapshotDialog} datasets=${datasets.data} dataset=${dataset} onClose=${() => setTaking(false)} onCreated=${changed} />` : null}
-  <//>`;
+    ${taking ? html`<${TakeSnapshotDialog} datasets=${datasets.data} dataset=${dataset} onClose=${() => setTaking(false)} onCreated=${changed} />` : null}`;
 }

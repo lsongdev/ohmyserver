@@ -1,6 +1,7 @@
 import { html, useState } from '@lsongdev/panel/html.js';
 import { useResource } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Status, toast, toastError } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Table, toast } from '@lsongdev/scripts/react/components/index.js';
+import { Status, toastError } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { ago, datetime } from '@lsongdev/panel/format.js';
 
@@ -29,8 +30,8 @@ export default function Deliveries() {
       setBusy(null);
     }
   };
-  return html`<${Page} title="Delivery log" subtitle="What was sent where, and why not" back=${{ href: href('/channels'), label: 'Channels' }}>
-    <${Notice} error=${list.error} />
+  return html`<${PageHeader} title="Delivery log" subtitle="What was sent where, and why not" back=${{ href: href('/channels'), label: 'Channels' }} />
+    <${Alert} error=${list.error} />
     <div class="notify-filters">
       <select class="input" aria-label="State" value=${state} onChange=${e => setQuery({ state: e.currentTarget.value })}>
         <option value="">All states</option>
@@ -55,6 +56,5 @@ export default function Deliveries() {
             <td class="actions">${d.state === 'failed' ? html`<button class="button button-small" disabled=${busy === d.id} onClick=${() => retry(d)}>Send again</button>` : null}</td>
           </tr>`;
         })}</tbody>
-      <//>`}
-  <//>`;
+      <//>`}`;
 }

@@ -2,7 +2,8 @@
 import { html, useEffect, useState } from '@lsongdev/panel/html.js';
 import { useResource, useAction } from '@lsongdev/panel/hooks.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
-import { Modal, Notice, Loading, Field } from '@lsongdev/panel/ui.js';
+import { Alert, Loading, Field } from '@lsongdev/scripts/react/components/index.js';
+import { Modal } from '@lsongdev/panel/ui.js';
 import { bytes } from '@lsongdev/panel/format.js';
 
 // useApi loads a GET endpoint, polling every interval(data) milliseconds
@@ -87,7 +88,7 @@ export function ConfirmDelete({ entries, purge = false, onClose, onDone }) {
     <button class="button" type="button" autofocus=${!big && !purge} disabled=${run.busy} onClick=${close}>Cancel</button>
     <button class="button button-danger" type="submit" form="delete-form" disabled=${!ready || run.busy}>${purge ? 'Delete for good' : 'Move to trash'}</button>`}>
     <form id="delete-form" class="form" onSubmit=${submit}>
-      <${Notice} error=${preview.error || run.error} />
+      <${Alert} error=${preview.error || run.error} />
       ${!plan ? (preview.error ? null : html`<${Loading}>Counting…<//>`) : html`
         <p style="margin:0">${purge ? 'This removes' : 'This moves'} <strong>${count(plan.files, 'file')}</strong>${plan.dirs ? html` in <strong>${count(plan.dirs, 'folder')}</strong>` : null}${' '}(${bytes(plan.bytes)})${purge ? html`. <strong>It cannot be undone.</strong>` : ' to the trash, from where it can be restored.'}</p>
         <ul class="small muted" style="margin:0;padding-left:18px">${plan.items.slice(0, 8).map(i => html`<li key=${i.path} class="mono">${i.path}</li>`)}

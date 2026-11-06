@@ -1,6 +1,7 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useBusy } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Table, Status, confirmDanger, toastError } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Table } from '@lsongdev/scripts/react/components/index.js';
+import { Status, toastError } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { ago } from '@lsongdev/panel/format.js';
 import { useApi } from '../domains.js';
@@ -10,12 +11,12 @@ export default function Accounts() {
   const accounts = useApi('/accounts');
   const [busy, run] = useBusy(toastError);
   const remove = a => {
-    if (!confirmDanger(`Remove the account ${a.name}? Its domains stay at ${a.title}; they just stop appearing here, and certificates for them fall back to manual DNS-01.`)) return;
+    if (!window.confirm(`Remove the account ${a.name}? Its domains stay at ${a.title}; they just stop appearing here, and certificates for them fall back to manual DNS-01.`)) return;
     run(a.id, async () => { await api.del(`/accounts/${a.id}`); accounts.reload(); });
   };
-  return html`<${Page} title="Accounts" subtitle="DNS provider accounts. Their credentials stay on this server and are never shown again."
-    actions=${html`<a class="button button-primary" href=${href('/accounts/new')}>Add account</a>`}>
-    <${Notice} error=${accounts.error} />
+  return html`<${PageHeader} title="Accounts" subtitle="DNS provider accounts. Their credentials stay on this server and are never shown again."
+    actions=${html`<a class="button button-primary" href=${href('/accounts/new')}>Add account</a>`} />
+    <${Alert} error=${accounts.error} />
     ${accounts.data === undefined ? (accounts.error ? null : html`<${Loading} />`) : accounts.data.length === 0 ? html`<${Empty}>No accounts yet.<//>` : html`
       <${Table}>
         <thead><tr><th>Account</th><th>Provider</th><th>Status</th><th>Added</th><th class="actions"></th></tr></thead>
@@ -30,6 +31,5 @@ export default function Accounts() {
             <button class="button button-small button-danger" disabled=${busy[a.id]} onClick=${() => remove(a)}>Remove</button>
           </span></td>
         </tr>`)}</tbody>
-      <//>`}
-  <//>`;
+      <//>`}`;
 }

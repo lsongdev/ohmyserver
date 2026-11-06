@@ -1,6 +1,6 @@
 import { html, useEffect, useState } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Field, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Field, toast } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { FormSection, returnPath, useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { useApi } from '../cron.js';
@@ -12,12 +12,11 @@ export default function JobEditor({ params }) {
   const targets = useApi('/targets');
   const back = returnPath(query, isNew ? '/' : `/jobs/${params.id}`);
   const title = isNew ? 'Add job' : job.data ? `Edit ${job.data.name}` : 'Edit job';
-  return html`<${Page} title=${title} back=${{ href: href(back), label: back.startsWith('/jobs/') ? 'Job' : 'Jobs' }}>
-    ${targets.error ? html`<${Notice} error=${targets.error} />` : null}
-    ${!isNew && !job.data ? (job.error ? html`<${Notice} error=${job.error} />` : html`<${Loading} />`)
+  return html`<${PageHeader} title=${title} back=${{ href: href(back), label: back.startsWith('/jobs/') ? 'Job' : 'Jobs' }} />
+    ${targets.error ? html`<${Alert} error=${targets.error} />` : null}
+    ${!isNew && !job.data ? (job.error ? html`<${Alert} error=${job.error} />` : html`<${Loading} />`)
       : !targets.data && !targets.error ? html`<${Loading} />`
-      : html`<${JobForm} job=${job.data || {}} targets=${targets.data || []} back=${back} />`}
-  <//>`;
+      : html`<${JobForm} job=${job.data || {}} targets=${targets.data || []} back=${back} />`}`;
 }
 
 const EXAMPLES = [
@@ -66,7 +65,7 @@ function JobForm({ job, targets, back }) {
   const local = Intl.DateTimeFormat().resolvedOptions().timeZone;
   return html`<form class="form settings-form" onSubmit=${submit}>
       <fieldset class="form-fields" disabled=${busy}>
-      <${Notice} error=${error} />
+      <${Alert} error=${error} />
       <${FormSection} title="Execution">
       <div class="cron-job-fields">
         <${Field} label="Name" required>

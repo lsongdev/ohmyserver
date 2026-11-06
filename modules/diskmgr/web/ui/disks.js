@@ -2,7 +2,8 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useResource } from '@lsongdev/panel/hooks.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
-import { Status, Badge } from '@lsongdev/panel/ui.js';
+import { Badge } from '@lsongdev/scripts/react/components/index.js';
+import { Status } from '@lsongdev/panel/ui.js';
 
 // useApi loads a GET endpoint, polling every interval(data) milliseconds
 // while that returns a positive number. A null path loads nothing yet.
@@ -43,7 +44,7 @@ export function HealthStatus({ health }) {
   if (!health) return html`<span class="muted">—</span>`;
   if (health.error) return html`<${Badge} title=${health.error}>No data<//>`;
   if (health.passed === false) return html`<${Status} state="failed" label="Failing" />`;
-  if (health.warnings?.length) return html`<${Status} state="waiting" tone="amber" label=${`${health.warnings.length} warning${health.warnings.length > 1 ? 's' : ''}`} title=${health.warnings.join('\n')} />`;
+  if (health.warnings?.length) return html`<${Status} state="waiting" variant="warning" label=${`${health.warnings.length} warning${health.warnings.length > 1 ? 's' : ''}`} title=${health.warnings.join('\n')} />`;
   if (health.testing != null) return html`<${Status} state="processing" label=${`Testing, ${health.testing}% left`} />`;
   if (health.asleep && health.passed == null) return html`<${Badge}>Asleep<//>`;
   return html`<${Status} state="ok" label=${health.asleep ? 'Healthy (asleep)' : 'Healthy'} />`;

@@ -1,6 +1,6 @@
 import { html, useState } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Table, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Table, toast } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { bytes, datetime } from '@lsongdev/panel/format.js';
 import { useApi, ConfirmDelete, count } from '../files.js';
@@ -17,9 +17,9 @@ export default function Trash() {
     trash.reload();
   });
   const folder = p => p.slice(0, p.lastIndexOf('/')) || '/';
-  return html`<${Page} title="Trash" subtitle="Deleted files wait here, on the disk they came from, until the trash is emptied."
-    actions=${items.length ? html`<button class="button button-danger" onClick=${() => setPurging(items)}>Empty trash</button>` : null}>
-    <${Notice} error=${trash.error || action.error} />
+  return html`<${PageHeader} title="Trash" subtitle="Deleted files wait here, on the disk they came from, until the trash is emptied."
+    actions=${items.length ? html`<button class="button button-danger" onClick=${() => setPurging(items)}>Empty trash</button>` : null} />
+    <${Alert} error=${trash.error || action.error} />
     ${!trash.data ? (trash.error ? null : html`<${Loading} />`) : items.length === 0 ? html`<${Empty}>The trash is empty.<//>` : html`
       <${Table}>
         <thead><tr><th>Name</th><th>Deleted from</th><th class="num">Size</th><th>Deleted</th><th class="actions"></th></tr></thead>
@@ -35,6 +35,5 @@ export default function Trash() {
         </tr>`)}</tbody>
       <//>`}
     ${purging ? html`<${ConfirmDelete} purge entries=${purging} onClose=${() => setPurging(null)}
-      onDone=${label => { toast(`Deleted ${label} for good`, 'success'); setPurging(null); trash.reload(); }} />` : null}
-  <//>`;
+      onDone=${label => { toast(`Deleted ${label} for good`, 'success'); setPurging(null); trash.reload(); }} />` : null}`;
 }

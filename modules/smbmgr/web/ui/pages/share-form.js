@@ -1,6 +1,6 @@
 import { html, useState } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Field, Check } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Field, Check } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { FormSection, returnPath, useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { canon, bool, lookup, savedToast, useApi, ParamsEditor } from '../samba.js';
@@ -13,11 +13,10 @@ export default function ShareEditor({ params }) {
   const users = useApi('/users');
   const back = returnPath(query, '/');
   const title = isNew ? 'Add share' : `Share ${params.name}`;
-  return html`<${Page} title=${title} back=${{ href: href(back), label: 'Shares' }}>
-    ${!share.data ? (share.error ? html`<${Notice} error=${share.error} />` : html`<${Loading} />`)
+  return html`<${PageHeader} title=${title} back=${{ href: href(back), label: 'Shares' }} />
+    ${!share.data ? (share.error ? html`<${Alert} error=${share.error} />` : html`<${Loading} />`)
       : html`<${ShareForm} key=${share.data.version} share=${isNew ? { version: share.data.version, name: '', params: [] } : share.data}
-          users=${users.data || []} back=${back} />`}
-  <//>`;
+          users=${users.data || []} back=${back} />`}`;
 }
 
 // The parameters the form has fields for, by their canonical names with
@@ -111,7 +110,7 @@ function ShareForm({ share, users, back }) {
 
   return html`<form class="form settings-form" onSubmit=${submit}>
     <fieldset class="form-fields" disabled=${busy}>
-      <${Notice} error=${save.error || remove.error} />
+      <${Alert} error=${save.error || remove.error} />
       <${FormSection} title="Share">
         <div class="form-grid">
           <${Field} label="Name" required hint=${special ? 'A special section; renaming it makes it an ordinary share' : 'How clients see it: \\\\server\\name'}>

@@ -1,6 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Badge, confirmDanger, Table } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Badge, Table } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { routeURL } from '@lsongdev/panel/forms.js';
 import { ago } from '@lsongdev/panel/format.js';
@@ -15,13 +15,13 @@ export default function Hosts() {
   const action = useAction();
 
   const remove = h => {
-    if (!confirmDanger(`Delete the host ${h.name}?`)) return;
+    if (!window.confirm(`Delete the host ${h.name}?`)) return;
     action.run(async () => { await api.del(`/hosts/${h.id}`); list.reload(); });
   };
 
-  return html`<${Page} title="Hosts" subtitle="Save SSH hosts and open terminals to them in the browser."
-    actions=${html`<a class="button button-primary" href=${href('/hosts/new', { return: routeURL('/', query) })}>Add host</a>`}>
-    <${Notice} error=${list.error || action.error} />
+  return html`<${PageHeader} title="Hosts" subtitle="Save SSH hosts and open terminals to them in the browser."
+    actions=${html`<a class="button button-primary" href=${href('/hosts/new', { return: routeURL('/', query) })}>Add host</a>`} />
+    <${Alert} error=${list.error || action.error} />
     ${list.data === undefined ? (list.error ? null : html`<${Loading} />`) : !list.data.length ? html`<${Empty}>No hosts yet.<//>` : html`
       <${Table}>
         <thead><tr><th>Name</th><th>Address</th><th>Authentication</th><th>Host key</th><th>Last connected</th><th class="actions"></th></tr></thead>
@@ -39,6 +39,5 @@ export default function Hosts() {
             <button class="button button-small button-danger" disabled=${action.busy} onClick=${() => remove(h)}>Delete</button>
           </span></td>
         </tr>`)}</tbody>
-      <//>`}
-  <//>`;
+      <//>`}`;
 }

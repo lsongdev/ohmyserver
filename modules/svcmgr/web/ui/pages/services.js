@@ -1,6 +1,7 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useBusy } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Empty, Tabs, Table, toastError } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Tabs, Table } from '@lsongdev/scripts/react/components/index.js';
+import { toastError } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, ServiceStatus, Unsupported, isActive, unitLabel } from '../services.js';
 
@@ -17,7 +18,7 @@ export default function Services() {
   const list = useApi(system.data?.systemd ? '/services' : null, 10000);
   const [busy, run] = useBusy(toastError);
 
-  if (system.data && !system.data.systemd) return html`<${Page} title="Services"><${Unsupported} /><//>`;
+  if (system.data && !system.data.systemd) return html`<${PageHeader} title="Services" /><${Unsupported} />`;
   const units = list.data || [];
   const show = query.show || 'running';
   const text = (query.q || '').trim().toLowerCase();
@@ -31,8 +32,8 @@ export default function Services() {
     run(u.name, async () => { await api.post(`/services/${encodeURIComponent(u.name)}/${action}`); list.reload(); });
   };
 
-  return html`<${Page} title="Services" subtitle=${system.data?.version ? `systemd ${system.data.version}` : null}>
-    <${Notice} error=${list.error} />
+  return html`<${PageHeader} title="Services" subtitle=${system.data?.version ? `systemd ${system.data.version}` : null} />
+    <${Alert} error=${list.error} />
     <${Tabs} active=${show} onChange=${id => setQuery({ show: id })} tabs=${[
       ['all', `All (${units.length})`], ['running', `Running (${count('running')})`],
       ['failed', `Failed (${count('failed')})`], ['enabled', `Enabled (${count('enabled')})`]]} />
@@ -58,6 +59,5 @@ export default function Services() {
             : u.load === 'loaded' && (u.enabled === 'enabled' || u.enabled === 'disabled' || u.active === 'failed') ? html`<button class="button button-small" disabled=${busy[u.name]} onClick=${() => act(u, 'start')}>Start</button>` : null}
           </span></td>
         </tr>`)}</tbody>
-      <//>`}
-  <//>`;
+      <//>`}`;
 }

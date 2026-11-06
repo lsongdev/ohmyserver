@@ -1,6 +1,6 @@
 import { html, useEffect, useState } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Field, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Field, toast } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useUnsavedChanges, routeURL } from '@lsongdev/panel/forms.js';
 import { useApi, CLASSES, pinned, ScheduleStatus } from '../zfs.js';
@@ -65,16 +65,16 @@ export default function Schedule() {
     });
   };
 
-  return html`<${Page} title="Schedule" subtitle=${`Automatic snapshots of ${name} and how many of each to keep`}
-    back=${{ href: href('/dataset', { name, from: query.from }), label: name || 'Dataset' }}>
-    <${Notice} error=${dataset.error} />
+  return html`<${PageHeader} title="Schedule" subtitle=${`Automatic snapshots of ${name} and how many of each to keep`}
+    back=${{ href: href('/dataset', { name, from: query.from }), label: name || 'Dataset' }} />
+    <${Alert} error=${dataset.error} />
     ${!d || !form ? (dataset.error ? null : html`<${Loading} />`) : html`
       <form class="form settings-form" onSubmit=${save}>
-        <${Notice} error=${error} />
+        <${Alert} error=${error} />
         <${ScheduleStatus} schedule=${schedule.data} scheduled=${true} />
-        ${d.schedule_error ? html`<${Notice}>The last run failed: ${d.schedule_error}<//>` : null}
-        ${d.policy_invalid ? html`<${Notice} tone="warn">The stored policy <code>${d.policy_invalid}</code> cannot be read, so nothing is taken or removed. Saving replaces it.<//>` : null}
-        ${d.policy_source && d.policy_source !== 'local' ? html`<${Notice} tone="info">Follows the schedule of ${d.policy_source}. Saving gives ${name} its own.<//>` : null}
+        ${d.schedule_error ? html`<${Alert} variant="danger">The last run failed: ${d.schedule_error}<//>` : null}
+        ${d.policy_invalid ? html`<${Alert} variant="warning">The stored policy <code>${d.policy_invalid}</code> cannot be read, so nothing is taken or removed. Saving replaces it.<//>` : null}
+        ${d.policy_source && d.policy_source !== 'local' ? html`<${Alert} variant="info">Follows the schedule of ${d.policy_source}. Saving gives ${name} its own.<//>` : null}
         <div class="card">
           <div class="zfs-keep">
             ${CLASSES.map(c => html`<${Field} key=${c} label=${`Keep ${c}`} hint=${HINTS[c]} error=${valid(form[c]) ? null : 'From 0 to 1000'}>
@@ -84,12 +84,11 @@ export default function Schedule() {
           </div>
           <p class="muted small">Zero takes none of that class and leaves the ones it already has. Only snapshots named <code>auto-…</code> by a schedule are ever removed, oldest first; manual, held and cloned ones stay. Child datasets without a schedule of their own follow this one.</p>
         </div>
-        ${removed > 0 && dirty ? html`<${Notice} tone="warn">Saving removes the oldest ${removed} automatic snapshot${removed === 1 ? '' : 's'} within a minute.<//>` : null}
+        ${removed > 0 && dirty ? html`<${Alert} variant="warning">Saving removes the oldest ${removed} automatic snapshot${removed === 1 ? '' : 's'} within a minute.<//>` : null}
         <div class="zfs-actions">
           <button class="button button-primary" type="submit" disabled=${busy || invalid || !dirty}>${busy ? 'Saving…' : 'Save'}</button>
           <button class="button" type="button" disabled=${busy} onClick=${leave}>Cancel</button>
           ${d.policy_source === 'local' ? html`<button class="button" type="button" disabled=${busy} onClick=${inherit}>${name.includes('/') ? "Follow parent's schedule" : 'Remove schedule'}</button>` : null}
         </div>
-      </form>`}
-  <//>`;
+      </form>`}`;
 }

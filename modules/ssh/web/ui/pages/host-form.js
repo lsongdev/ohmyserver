@@ -1,6 +1,6 @@
 import { html, useState } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Field, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Field, toast } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { FormSection, returnPath, useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { AUTH } from './hosts.js';
@@ -11,10 +11,9 @@ export default function HostEditor({ params }) {
   const host = useResource(signal => isNew ? Promise.resolve(null) : api.get(`/hosts/${params.id}`, { signal }), [params.id]);
   const back = returnPath(query);
   const title = isNew ? 'Add host' : host.data ? `Edit ${host.data.name}` : 'Edit host';
-  return html`<${Page} title=${title} back=${{ href: href(back), label: 'Hosts' }}>
-    ${!isNew && !host.data ? (host.error ? html`<${Notice} error=${host.error} />` : html`<${Loading} />`)
-      : html`<${HostForm} host=${host.data || {}} back=${back} />`}
-  <//>`;
+  return html`<${PageHeader} title=${title} back=${{ href: href(back), label: 'Hosts' }} />
+    ${!isNew && !host.data ? (host.error ? html`<${Alert} error=${host.error} />` : html`<${Loading} />`)
+      : html`<${HostForm} host=${host.data || {}} back=${back} />`}`;
 }
 
 function HostForm({ host, back }) {
@@ -47,7 +46,7 @@ function HostForm({ host, back }) {
   const keep = !isNew && host.auth === h.auth;
   return html`<form class="form settings-form" onSubmit=${submit}>
       <fieldset class="form-fields" disabled=${save.busy || test.busy}>
-      <${Notice} error=${save.error || test.error} />
+      <${Alert} error=${save.error || test.error} />
       <${FormSection} title="Connection">
       <div class="ssh-host-fields">
         <${Field} label="Name" required>
@@ -83,11 +82,11 @@ function HostForm({ host, back }) {
         <${Field} label="Key passphrase" hint="For an encrypted key">
           <input class="input" type="password" autocomplete="new-password" value=${h.passphrase} onInput=${e => set({ passphrase: e.currentTarget.value })} />
         <//>` : null}
-      ${h.auth === 'panel' ? html`<${Notice} tone="info">Add the <a href=${href('/key')}>panel key</a> to <code>~/.ssh/authorized_keys</code> on the host.<//>` : null}
+      ${h.auth === 'panel' ? html`<${Alert} variant="info">Add the <a href=${href('/key')}>panel key</a> to <code>~/.ssh/authorized_keys</code> on the host.<//>` : null}
       <//>
       <${FormSection} title="Connection test" description="Check that these settings can connect before saving.">
         <div><button class="button" type="button" onClick=${runTest}>${test.busy ? 'Connecting…' : 'Test connection'}</button></div>
-      ${tested ? html`<${Notice} tone="info"><span class="test-result">Connected · ${tested.host_key_type}
+      ${tested ? html`<${Alert} variant="info"><span class="test-result">Connected · ${tested.host_key_type}
         <span class="mono">${tested.host_key_sha256}</span>${tested.pinned ? '' : ' (recorded on the first connection after saving)'}</span><//>` : null}
       <//>
       </fieldset>

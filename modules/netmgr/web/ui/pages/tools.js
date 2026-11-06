@@ -1,5 +1,5 @@
 import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
-import { Notice, Field } from '@lsongdev/panel/ui.js';
+import { Alert, Field } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { ApiError } from '@lsongdev/panel/client.js';
 import { Page } from '../network.js';
@@ -82,7 +82,7 @@ export default function Tools({ query, setQuery }) {
         ${running ? html`<button type="button" class="button" onClick=${() => controller.current?.abort()}>Stop</button>` : null}
       </div>
     </form>
-    <${Notice} error=${error} />
+    <${Alert} error=${error} />
     ${output || running ? html`<pre class="log tool-output" aria-live="polite">${output || 'Waiting for output…'}</pre>` : null}
   <//>`;
 }

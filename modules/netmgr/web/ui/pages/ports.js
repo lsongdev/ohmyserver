@@ -1,7 +1,7 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
-import { Notice, Loading, Empty, Table, Badge, Field } from '@lsongdev/panel/ui.js';
+import { Alert, Loading, Empty, Table, Badge, Field } from '@lsongdev/scripts/react/components/index.js';
 import { Page, useApi } from '../network.js';
 
 const loopback = a => a.startsWith('127.') || a === '::1' || a.endsWith('%lo');
@@ -14,7 +14,7 @@ export default function Ports({ query, setQuery }) {
   const q = (query.q || '').toLowerCase();
   const shown = (ports.data || []).filter(p => !q || `${p.protocol} ${p.address} ${p.port} ${p.process || ''}`.toLowerCase().includes(q));
   return html`<${Page} title="Ports" subtitle="What this machine listens on. Refreshes every few seconds.">
-    <${Notice} error=${ports.error || action.error} />
+    <${Alert} error=${ports.error || action.error} />
     <div class="filters">
       <${Field} label="Filter">
         <input class="input" type="search" value=${query.q || ''} placeholder="Port, address or process" onInput=${e => setQuery({ q: e.currentTarget.value })} />
@@ -26,7 +26,7 @@ export default function Ports({ query, setQuery }) {
         <td class="cell-main">${p.port}</td>
         <td>${p.protocol.toUpperCase()}</td>
         <td class="mono">${p.address}</td>
-        <td>${loopback(p.address) ? html`<${Badge}>This machine<//>` : everywhere(p.address) ? html`<${Badge} tone="amber">All networks<//>` : html`<${Badge} tone="blue">That address<//>`}</td>
+        <td>${loopback(p.address) ? html`<${Badge}>This machine<//>` : everywhere(p.address) ? html`<${Badge} variant="warning">All networks<//>` : html`<${Badge} variant="info">That address<//>`}</td>
         <td>${p.process ? html`${p.process} <span class="muted small">${p.pid}</span>` : html`<span class="muted">—</span>`}</td>
         <td class="actions">${p.pid > 1 ? html`<button class="button button-small button-danger" disabled=${action.busy}
           onClick=${() => {

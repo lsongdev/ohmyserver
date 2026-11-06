@@ -1,6 +1,6 @@
 import { html, useState } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, toast } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { returnPath, routeURL, useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { bytes } from '@lsongdev/panel/format.js';
@@ -17,17 +17,16 @@ function Workspace({ path }) {
   const file = useApi(path && !image ? `/text?path=${encodeURIComponent(path)}` : null);
   const back = returnPath(query, routeURL('/', { path: parent(path) }));
   const download = client.url('download', { path }).href;
-  return html`<${Page} title=${path.split('/').pop() || 'File'}
+  return html`<${PageHeader} title=${path.split('/').pop() || 'File'}
     back=${{ href: href(back), label: 'Files' }} subtitle=${html`<span class="mono">${path}</span>`}
-    actions=${path ? html`<a class="button" href=${download} download>Download</a>` : null}>
-    ${!path ? html`<${Notice}>Choose a file to open.<//>`
+    actions=${path ? html`<a class="button" href=${download} download>Download</a>` : null} />
+    ${!path ? html`<${Alert} variant="danger">Choose a file to open.<//>`
       : image ? html`<img class="preview-image" src=${client.url('download', { path, inline: 1 }).href} alt=${path} />`
-      : file.error ? html`<${Notice} error=${file.error} />`
+      : file.error ? html`<${Alert} error=${file.error} />`
       : !file.data ? html`<${Loading} />`
-      : file.data.binary || file.data.too_large ? html`<${Notice} tone="info">
+      : file.data.binary || file.data.too_large ? html`<${Alert} variant="info">
         ${file.data.too_large ? `This file is ${bytes(file.data.size)}, too large to open here.` : 'This file is not text.'} Download it instead.
-      <//>` : html`<${Editor} path=${path} content=${file.data.text || ''} />`}
-  <//>`;
+      <//>` : html`<${Editor} path=${path} content=${file.data.text || ''} />`}`;
 }
 
 function Editor({ path, content }) {
@@ -51,7 +50,7 @@ function Editor({ path, content }) {
       <button class="button button-primary" disabled=${!dirty || save.busy}>${save.busy ? 'Saving…' : 'Save'}</button>
       <span class="muted small" role="status">${dirty ? 'Unsaved changes' : 'Saved'}</span>
     </div>
-    <${Notice} error=${save.error} />
+    <${Alert} error=${save.error} />
     <textarea class="input editor" aria-label=${`Contents of ${path}`} spellcheck="false" autofocus
       disabled=${save.busy} value=${text} onInput=${event => setText(event.currentTarget.value)} />
   </form>`;

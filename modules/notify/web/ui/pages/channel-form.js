@@ -1,6 +1,7 @@
 import { html, useEffect, useState } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Field, Check, Modal, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Field, Check, toast } from '@lsongdev/scripts/react/components/index.js';
+import { Modal } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { KINDS, Unprotected } from '../notify.js';
@@ -19,11 +20,10 @@ export default function ChannelForm() {
   const id = params.id;
   const channel = useResource(signal => (id ? api.get(`/channels/${id}`, { signal }) : Promise.resolve(null)), [id]);
   const back = { href: href('/channels'), label: 'Channels' };
-  return html`<${Page} title=${id ? (channel.data?.name || 'Channel') : 'Add channel'} subtitle=${id ? null : 'Events are sent to it from now on, according to its rule'} back=${back}>
+  return html`<${PageHeader} title=${id ? (channel.data?.name || 'Channel') : 'Add channel'} subtitle=${id ? null : 'Events are sent to it from now on, according to its rule'} back=${back} />
     <${Unprotected} />
-    <${Notice} error=${channel.error} />
-    ${channel.data === undefined ? (channel.error ? null : html`<${Loading} />`) : html`<${Form} key=${id || 'new'} saved=${channel.data} onSaved=${channel.reload} />`}
-  <//>`;
+    <${Alert} error=${channel.error} />
+    ${channel.data === undefined ? (channel.error ? null : html`<${Loading} />`) : html`<${Form} key=${id || 'new'} saved=${channel.data} onSaved=${channel.reload} />`}`;
 }
 
 function Form({ saved, onSaved }) {
@@ -75,7 +75,7 @@ function Form({ saved, onSaved }) {
   });
 
   return html`<form class="form settings-form" onSubmit=${submit}>
-    <${Notice} error=${save.error} />
+    <${Alert} error=${save.error} />
     <div class="card">
       <div class="form-fields">
         <${Field} label="Send to">
@@ -104,8 +104,8 @@ function Form({ saved, onSaved }) {
         <${Check} label="Turned on" checked=${form.enabled} disabled=${save.busy} onChange=${e => set('enabled', e.currentTarget.checked)} />
       </div>
     </div>
-    <${Notice} error=${test.error} />
-    ${tested ? html`<${Notice} tone="success">${tested}<//>` : null}
+    <${Alert} error=${test.error} />
+    ${tested ? html`<${Alert} variant="success">${tested}<//>` : null}
     <div class="notify-actions">
       <button class="button button-primary" type="submit" disabled=${save.busy || (saved && !dirty)}>${save.busy ? 'Saving…' : saved ? 'Save' : 'Add channel'}</button>
       <button class="button" type="button" disabled=${save.busy} onClick=${() => navigate('/channels')}>Cancel</button>
@@ -173,7 +173,7 @@ function TelegramFields({ form, set, saved, busy }) {
     ${canAsk && !found && !error ? html`<p class="muted small notify-step">Checking the token…</p>` : null}
     ${found && username ? html`<div class="notify-telegram">
       <strong>Connected to <a href=${`https://t.me/${username}`} target="_blank" rel="noopener noreferrer">@${username}</a></strong>
-      ${found.problem ? html`<${Notice}>${found.problem}<//>` : html`
+      ${found.problem ? html`<${Alert} variant="danger">${found.problem}<//>` : html`
         <p class="notify-step">
           Open <a href=${`https://t.me/${username}`} target="_blank" rel="noopener noreferrer">@${username}</a> and send it any message.
           For a group, add the bot to it and send a message that mentions it.
@@ -210,7 +210,7 @@ function DeleteDialog({ channel, onClose, onDeleted }) {
   return html`<${Modal} title=${`Delete ${channel.name}?`} onClose=${close} footer=${html`
     <button class="button" type="button" autofocus disabled=${busy} onClick=${close}>Cancel</button>
     <button class="button button-danger" type="button" disabled=${busy} onClick=${submit}>${busy ? 'Deleting…' : 'Delete'}</button>`}>
-    <${Notice} error=${error} />
+    <${Alert} error=${error} />
     <p style="margin:0">It stops receiving events, its address and token are forgotten, and what is still waiting to be sent to it is dropped.</p>
   <//>`;
 }

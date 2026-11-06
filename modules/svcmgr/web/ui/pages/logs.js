@@ -1,5 +1,5 @@
 import { html, useState } from '@lsongdev/panel/html.js';
-import { Page, Check } from '@lsongdev/panel/ui.js';
+import { PageHeader, Check } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, Journal, Unsupported, unitLabel } from '../services.js';
 
@@ -13,13 +13,13 @@ export default function Logs() {
   const [text, setText] = useState(query.q || '');
   const live = query.live !== '0';
 
-  if (system.data && !system.data.systemd) return html`<${Page} title="Logs"><${Unsupported} /><//>`;
+  if (system.data && !system.data.systemd) return html`<${PageHeader} title="Logs" /><${Unsupported} />`;
   const journal = { unit: query.unit || '', priority: query.priority || '', since: query.since || '', q: query.q || '', lines: 500 };
   const select = (key, options) => html`<select class="input" value=${query[key] || ''} aria-label=${key}
     onChange=${e => setQuery({ [key]: e.currentTarget.value })}>
     ${options.map(([value, label]) => html`<option key=${value} value=${value}>${label}</option>`)}
   </select>`;
-  return html`<${Page} title="Logs" subtitle="The system journal: every service and the kernel.">
+  return html`<${PageHeader} title="Logs" subtitle="The system journal: every service and the kernel." />
     <form class="filters" onSubmit=${e => { e.preventDefault(); setQuery({ q: text.trim() }); }}>
       ${select('unit', [['', 'All services'], ...(services.data || []).filter(u => u.load === 'loaded').map(u => [u.name, unitLabel(u.name)])])}
       ${select('priority', PRIORITIES)}
@@ -28,6 +28,5 @@ export default function Logs() {
         value=${text} onInput=${e => setText(e.currentTarget.value)} onBlur=${() => setQuery({ q: text.trim() })} />
       <${Check} label="Live" checked=${live} onChange=${e => setQuery({ live: e.currentTarget.checked ? '' : '0' })} />
     </form>
-    <${Journal} query=${journal} live=${live} />
-  <//>`;
+    <${Journal} query=${journal} live=${live} />`;
 }

@@ -1,6 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, KV, Table, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, KeyValue, Table, toast } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { bytes, datetime } from '@lsongdev/panel/format.js';
 import { useApi, kind, uptime, usage, HealthStatus } from '../disks.js';
@@ -15,7 +15,7 @@ export default function Disk({ params }) {
   const disk = useApi(path, d => (d?.health?.testing != null ? 15000 : 60000));
   const action = useAction();
   if (!disk.data) {
-    return html`<${Page} title=${params.name}>${disk.error ? html`<${Notice} error=${disk.error} />` : html`<${Loading}>Reading the disk…<//>`}<//>`;
+    return html`<${PageHeader} title=${params.name} />${disk.error ? html`<${Alert} error=${disk.error} />` : html`<${Loading}>Reading the disk…<//>`}`;
   }
   const d = disk.data, h = d.health || {}, r = d.report;
   const test = (kind, confirm) => {
@@ -36,16 +36,16 @@ export default function Disk({ params }) {
       <button class="button" disabled=${action.busy} onClick=${() => test('long', `Run an extended self-test? It reads the whole disk${polling?.extended ? `, about ${Math.round(polling.extended / 60)} hours` : ''}; the disk stays usable meanwhile.`)}>Extended test</button>`}
   </span>` : null;
 
-  return html`<${Page} title=${`${d.name}${d.model ? ` · ${d.model}` : ''}`} actions=${actions}>
-    <${Notice} error=${action.error} />
-    ${h.error ? html`<${Notice} tone="info">No SMART data: ${h.error}<//>` : null}
-    ${h.asleep ? html`<${Notice} tone="info">The disk is in standby, so it was left alone${r ? '' : ' and nothing new was read'}.
+  return html`<${PageHeader} title=${`${d.name}${d.model ? ` · ${d.model}` : ''}`} actions=${actions} />
+    <${Alert} error=${action.error} />
+    ${h.error ? html`<${Alert} variant="info">No SMART data: ${h.error}<//>` : null}
+    ${h.asleep ? html`<${Alert} variant="info">The disk is in standby, so it was left alone${r ? '' : ' and nothing new was read'}.
       <button class="button button-small" style="margin-left:8px" disabled=${action.busy} onClick=${wake}>Read now</button><//>` : null}
-    ${h.warnings?.length ? html`<${Notice} tone=${h.passed === false ? 'error' : 'warn'}>
+    ${h.warnings?.length ? html`<${Alert} variant=${h.passed === false ? 'danger' : 'warning'}>
       <ul class="warnings">${h.warnings.map(w => html`<li key=${w}>${w}</li>`)}</ul><//>` : null}
     <div class="grid-2">
       <div class="card"><h2>Disk</h2>
-        <${KV} items=${[
+        <${KeyValue} items=${[
           ['Health', html`<${HealthStatus} health=${h} />`],
           ['Model', r?.model_name || d.model],
           ['Family', r?.model_family],
@@ -57,7 +57,7 @@ export default function Disk({ params }) {
         ]} />
       </div>
       <div class="card"><h2>Condition</h2>
-        <${KV} items=${[
+        <${KeyValue} items=${[
           ['Temperature', h.temperature ? `${h.temperature} °C` : null],
           ['Powered on', h.power_on_hours ? `${uptime(h.power_on_hours)} (${h.power_on_hours.toLocaleString()} hours)` : null],
           ['Power cycles', h.power_cycles ? h.power_cycles.toLocaleString() : null],
@@ -80,7 +80,7 @@ export default function Disk({ params }) {
     </section>` : null}
     ${r?.nvme_smart_health_information_log && r.nvme_version?.string ? html`<section class="section">
       <h2>NVMe health</h2>
-      <div class="card"><${KV} items=${Object.entries(r.nvme_smart_health_information_log).map(([k, v]) => [k.replaceAll('_', ' '), String(v)])} /></div>
+      <div class="card"><${KeyValue} items=${Object.entries(r.nvme_smart_health_information_log).map(([k, v]) => [k.replaceAll('_', ' '), String(v)])} /></div>
     </section>` : null}
     ${r?.ata_smart_self_test_log?.standard?.table?.length ? html`<section class="section">
       <h2>Self-test log</h2>
@@ -90,6 +90,5 @@ export default function Disk({ params }) {
           <td>${t.type.string}</td><td class=${t.status.passed ? '' : 'text-error'}>${t.status.string}</td><td class="num">${t.lifetime_hours.toLocaleString()}</td>
         </tr>`)}</tbody>
       <//>
-    </section>` : null}
-  <//>`;
+    </section>` : null}`;
 }

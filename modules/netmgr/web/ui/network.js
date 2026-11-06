@@ -2,7 +2,8 @@
 import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
-import { Page as BasePage, Notice, Status, toast } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, toast } from '@lsongdev/scripts/react/components/index.js';
+import { Status } from '@lsongdev/panel/ui.js';
 
 export function useApi(path, interval) {
   const { api } = usePanel();
@@ -12,7 +13,7 @@ export function useApi(path, interval) {
 // Page is every page of this module: a change on trial shows on all of them,
 // since the time left matters more than the page one happens to be on.
 export function Page({ children, ...props }) {
-  return html`<${BasePage} ...${props}><${TrialBanner} />${children}<//>`;
+  return html`<${PageHeader} ...${props} /><${TrialBanner} />${children}`;
 }
 
 const clock = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -71,9 +72,9 @@ function TrialBanner() {
         <button class="button" disabled=${action.busy || lost} onClick=${() => finish('/trial/revert')}>Revert now</button>
       </div>
     </div>
-    ${lost ? html`<div class="trial-note"><${Notice} tone="warn">The server cannot be reached from here. If you changed its address, open the panel at the new address and keep the settings there; otherwise wait, and the previous settings come back when the time is up.<//></div>` : null}
-    ${trial.revert_error ? html`<div class="trial-note"><${Notice} tone="error">Restoring failed and is being retried: ${trial.revert_error}<//></div>` : null}
-    <${Notice} error=${action.error} />
+    ${lost ? html`<div class="trial-note"><${Alert} variant="warning">The server cannot be reached from here. If you changed its address, open the panel at the new address and keep the settings there; otherwise wait, and the previous settings come back when the time is up.<//></div>` : null}
+    ${trial.revert_error ? html`<div class="trial-note"><${Alert} variant="danger">Restoring failed and is being retried: ${trial.revert_error}<//></div>` : null}
+    <${Alert} error=${action.error} />
   </div>`;
 }
 
@@ -94,7 +95,7 @@ const STATES = {
 // LinkStatus reads an interface's state as a person would say it.
 export function LinkStatus({ link }) {
   if (!link.up) return html`<${Status} state="stopped" label="Off" />`;
-  if (!link.carrier) return html`<${Status} state="waiting" label="No link" tone="amber" title="The interface is on, but has no link" />`;
+  if (!link.carrier) return html`<${Status} state="waiting" label="No link" variant="warning" title="The interface is on, but has no link" />`;
   const [state, label] = STATES[link.state] || ['running', link.state];
   return html`<${Status} state=${state} label=${label} />`;
 }

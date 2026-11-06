@@ -1,5 +1,5 @@
 import { html } from '@lsongdev/panel/html.js';
-import { Page, Notice, Loading, Empty, Table } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Table } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { useApi, BuildStatus, EVENTS, active, datetime, short, duration } from '../ci.js';
 
@@ -8,8 +8,8 @@ export default function Builds() {
   const builds = useApi('/builds', list => (list?.some(b => active(b.status)) ? 2000 : 10000));
   const repos = useApi('/repos');
   const name = id => repos.data?.find(r => r.id === id)?.name || `#${id}`;
-  return html`<${Page} title="Builds" subtitle="Recent builds across all repositories.">
-    <${Notice} error=${builds.error} />
+  return html`<${PageHeader} title="Builds" subtitle="Recent builds across all repositories." />
+    <${Alert} error=${builds.error} />
     ${builds.data === undefined ? html`<${Loading} />` : !builds.data.length ? html`<${Empty}>No builds yet.<//>` : html`
       <${Table}>
         <thead><tr><th>Repository</th><th>Build</th><th>Status</th><th>Branch · Commit</th><th>Trigger</th><th>Created</th><th class="num">Duration</th></tr></thead>
@@ -23,6 +23,5 @@ export default function Builds() {
           <td class="nowrap muted">${datetime(b.created_at)}</td>
           <td class="num">${duration(b.started_at, b.finished_at)}</td>
         </tr>`)}</tbody>
-      <//>`}
-  <//>`;
+      <//>`}`;
 }

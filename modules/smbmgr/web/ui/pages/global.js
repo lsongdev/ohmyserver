@@ -1,6 +1,6 @@
 import { html, useState } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Page, Notice, Loading, Field } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Field } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { FormSection, useUnsavedChanges } from '@lsongdev/panel/forms.js';
 import { canon, lookup, savedToast, useApi, ParamsEditor } from '../samba.js';
@@ -9,7 +9,7 @@ import { ConfigText, CheckResult } from '../components/config-text.js';
 export default function Global() {
   const file = useApi('/config');
   const [mode, setMode] = useState('form');
-  if (!file.data) return html`<${Page} title="Server settings">${file.error ? html`<${Notice} error=${file.error} />` : html`<${Loading} />`}<//>`;
+  if (!file.data) return html`<${PageHeader} title="Server settings" />${file.error ? html`<${Alert} error=${file.error} />` : html`<${Loading} />`}`;
   return html`<${SettingsEditor} key=${file.data.version} file=${file.data} mode=${mode} setMode=${setMode} onSaved=${file.reload} />`;
 }
 
@@ -119,13 +119,13 @@ function SettingsEditor({ file, mode, setMode, onSaved }) {
     action.setError(null);
   };
 
-  return html`<${Page} title="Server settings" subtitle=${file.path} actions=${html`<span class="samba-editor-mode" aria-label="Editor mode">
+  return html`<${PageHeader} title="Server settings" subtitle=${file.path} actions=${html`<span class="samba-editor-mode" aria-label="Editor mode">
         <button type="button" class=${`button ${mode === 'form' ? 'active' : ''}`} aria-pressed=${mode === 'form'} disabled=${busy} onClick=${() => switchMode('form')}>Form</button>
         <button type="button" class=${`button ${mode === 'raw' ? 'active' : ''}`} aria-pressed=${mode === 'raw'} disabled=${busy} onClick=${() => switchMode('raw')}>smb.conf</button>
-    </span>`}>
+    </span>`} />
     <form class=${`form ${mode === 'form' ? 'settings-form' : ''}`} onSubmit=${submit}>
       <fieldset class="form-fields" disabled=${busy}>
-        <${Notice} error=${action.error} />
+        <${Alert} error=${action.error} />
         ${check ? html`<${CheckResult} check=${check} />` : null}
         ${mode === 'form' ? html`<${GlobalFields} f=${f} set=${patch => { set(patch); setCheck(null); }} busy=${busy} />`
           : html`<${ConfigText} text=${text} path=${file.path} onChange=${value => { setText(value); setCheck(null); }} />`}
@@ -136,8 +136,7 @@ function SettingsEditor({ file, mode, setMode, onSaved }) {
         <button type="button" class="button" disabled=${busy || !dirty} onClick=${revert}>Revert</button>
         ${dirty ? html`<span class="muted small">Unsaved changes</span>` : null}
       </div>
-    </form>
-  <//>`;
+    </form>`;
 }
 
 function GlobalFields({ f, set, busy }) {

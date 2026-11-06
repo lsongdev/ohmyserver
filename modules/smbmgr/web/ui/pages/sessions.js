@@ -1,5 +1,5 @@
 import { html } from '@lsongdev/panel/html.js';
-import { Page, Notice, Loading, Empty, Table, Badge } from '@lsongdev/panel/ui.js';
+import { PageHeader, Alert, Loading, Empty, Table, Badge } from '@lsongdev/scripts/react/components/index.js';
 import { datetime, ago } from '@lsongdev/panel/format.js';
 import { useApi } from '../samba.js';
 
@@ -9,8 +9,8 @@ const SHOW_FILES = 200;
 export default function Sessions() {
   const status = useApi('/status', 5000);
   const s = status.data;
-  return html`<${Page} title="Sessions" subtitle="Who is connected, as smbstatus reports it; refreshes every few seconds">
-    <${Notice} error=${status.error} />
+  return html`<${PageHeader} title="Sessions" subtitle="Who is connected, as smbstatus reports it; refreshes every few seconds" />
+    <${Alert} error=${status.error} />
     ${!s ? (status.error ? null : html`<${Loading} />`) : html`
       <section>
         <h2 class="section-title">Clients (${s.sessions.length})</h2>
@@ -21,8 +21,8 @@ export default function Sessions() {
             <td class="mono">${x.machine}</td>
             <td>${x.dialect}</td>
             <td><span class="tags">
-              ${x.encryption && x.encryption !== '-' ? html`<${Badge} tone="green">Encrypted<//>` : html`<${Badge}>Not encrypted<//>`}
-              ${x.signing && x.signing !== '-' ? html`<${Badge} tone="blue" title=${x.signing}>Signed<//>` : null}
+              ${x.encryption && x.encryption !== '-' ? html`<${Badge} variant="success">Encrypted<//>` : html`<${Badge}>Not encrypted<//>`}
+              ${x.signing && x.signing !== '-' ? html`<${Badge} variant="info" title=${x.signing}>Signed<//>` : null}
             </span></td>
             <td>${since(x.since)}</td>
           </tr>`)}</tbody>
@@ -48,6 +48,5 @@ export default function Sessions() {
           </tr>`)}</tbody>
         <//>`}
         ${s.open_files.length > SHOW_FILES ? html`<p class="muted small">Showing ${SHOW_FILES} of ${s.open_files.length}.</p>` : null}
-      </section>`}
-  <//>`;
+      </section>`}`;
 }
