@@ -142,7 +142,7 @@ function Navigation({ panel, path, onLogout }) {
   const logout = panel.auth
     ? html`<button class="button button-ghost sidebar-logout" onClick=${onLogout}><i aria-hidden="true">${faIcon('right-from-bracket')}</i><span>Sign out</span></button>`
     : null;
-  return html`<${Sidebar} brand=${panel.title} mark=${faIcon('server')} items=${tree} collapsible=${true} footer=${logout} />`;
+  return html`<${Sidebar} brand=${panel.title} mark=${faIcon('server')} items=${tree} collapsible=${true} storageKey="ohmyserver.sidebar" footer=${logout} />`;
 }
 
 function Login({ title, onLogin }) {
