@@ -1,6 +1,8 @@
 package shell
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"io/fs"
@@ -8,6 +10,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -103,11 +106,18 @@ func TestIndexHasStrictCSP(t *testing.T) {
 	h, _ := New(Options{Title: "<Panel>"}, module("docker"))
 	w := httptest.NewRecorder()
 	h.Handler().ServeHTTP(w, httptest.NewRequest("GET", "/", nil))
-	if csp := w.Header().Get("Content-Security-Policy"); !strings.Contains(csp, "script-src 'self' 'sha256-") {
-		t.Fatalf("csp = %s", csp)
-	}
-	if body := w.Body.String(); !strings.Contains(body, "&lt;Panel&gt;") || strings.Contains(body, "<script>") {
+	body := w.Body.String()
+	if !strings.Contains(body, "&lt;Panel&gt;") || strings.Contains(body, "<script>") {
 		t.Fatalf("index = %s", body)
+	}
+	// The policy must allow the import map as served, byte for byte.
+	m := regexp.MustCompile(`<script type="importmap">([^<]*)</script>`).FindStringSubmatch(body)
+	if m == nil {
+		t.Fatalf("no import map in %s", body)
+	}
+	sum := sha256.Sum256([]byte(m[1]))
+	if csp := w.Header().Get("Content-Security-Policy"); !strings.Contains(csp, "script-src 'self' 'sha256-"+base64.StdEncoding.EncodeToString(sum[:])+"'") {
+		t.Fatalf("csp = %s", csp)
 	}
 }
 

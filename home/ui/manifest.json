@@ -4,7 +4,6 @@
   "title": "Home",
   "icon": "◎",
   "entry": "module.js",
-  "styles": ["style.css"],
   "home": "/",
   "nav": [{ "path": "/", "title": "Dashboard", "icon": "◎" }]
 }

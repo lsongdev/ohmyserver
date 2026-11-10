@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{{.Title}}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 1l7 7-7 7-7-7z' fill='%232563eb'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="_shell/node_modules/@lsongdev/stylesheets/index.css">
+  <link rel="stylesheet" href="_shell/style.css">
+  {{- /* The import map resolves the bare specifiers that the shell and
+       every module import, so they all share one copy of the library and
+       of the panel runtime. The Content-Security-Policy allows it by its
+       hash, so it holds no template actions. */}}
+  <script type="importmap">{"imports":{"@lsongdev/scripts/":"./_shell/node_modules/@lsongdev/scripts/","@lsongdev/panel/":"./_shell/panel/"}}</script>
+  <script type="module" src="_shell/shell.js"></script>
+</head>
+<body class="app">
+  <div id="app"></div>
+  <noscript>This panel requires JavaScript.</noscript>
+</body>
+</html>

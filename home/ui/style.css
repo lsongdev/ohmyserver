@@ -1,5 +1,0 @@
-/* The host waits for these stylesheets before mounting the overview: the
-   component rules (custom properties inherit from the shell's document),
-   then the shell layout. */
-@import url('../../../_shell/stylesheets.css');
-@import url('../../../_shell/style.css');

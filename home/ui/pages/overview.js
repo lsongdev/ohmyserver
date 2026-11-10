@@ -9,7 +9,7 @@ import { bytes } from '@lsongdev/panel/format.js';
 
 function Card({ title, to, value, sub, error }) {
   const body = html`<span class="stat-label">${title}</span>
-    ${error ? html`<span class="stat-sub" style="color:var(--danger)">${error}</span>` : html`
+    ${error ? html`<span class="stat-sub" style="color:var(--color-danger)">${error}</span>` : html`
       <span class="stat-value">${value}</span>
       ${sub ? html`<span class="stat-sub">${sub}</span>` : null}`}`;
   return to ? html`<a class="card stat" href=${to}>${body}</a>` : html`<div class="card stat">${body}</div>`;

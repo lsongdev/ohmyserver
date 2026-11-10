@@ -7,13 +7,15 @@
 package shell
 
 import (
+	"bytes"
 	"crypto/sha256"
+	_ "embed"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/lsongdev/ohmyserver/panel"
-	"html"
+	"html/template"
 	"io/fs"
 	"net/http"
 	"path"
@@ -170,7 +172,11 @@ func New(opts Options, modules ...Module) (*Host, error) {
 	if opts.Home != "" && !seen[opts.Home] {
 		return nil, fmt.Errorf("shell: home module %q is not mounted", opts.Home)
 	}
-	h.index = fmt.Appendf(nil, indexPage, html.EscapeString(opts.Lang), html.EscapeString(opts.Title))
+	var index bytes.Buffer
+	if err := indexTemplate.Execute(&index, struct{ Lang, Title string }{opts.Lang, opts.Title}); err != nil {
+		return nil, fmt.Errorf("shell: index page: %w", err)
+	}
+	h.index = index.Bytes()
 	h.handler = h.routes()
 	return h, nil
 }
@@ -246,35 +252,22 @@ func (h *Host) serveManifest(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-const indexPage = `<!doctype html>
-<html lang="%s">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>%s</title>
-  <link rel="icon" href="data:image/svg+xml,%%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%%3E%%3Cpath d='M8 1l7 7-7 7-7-7z' fill='%%232563eb'/%%3E%%3C/svg%%3E">
-  <link rel="stylesheet" href="_shell/stylesheets.css">
-  <link rel="stylesheet" href="_shell/style.css">
-  ` + importMap + `
-  <script type="module" src="_shell/shell.js"></script>
-</head>
-<body>
-  <div id="app"></div>
-  <noscript>This panel requires JavaScript.</noscript>
-</body>
-</html>
-`
+// indexPage is the shell's document. Its import map resolves the bare
+// specifiers that the shell and every module import.
+//
+//go:embed index.html
+var indexPage string
 
-// importMap resolves the bare specifiers that the shell and every module
-// import, so they all share one copy of the library and of the panel runtime.
-const importMap = `<script type="importmap">{"imports":{"@lsongdev/scripts/":"./_shell/node_modules/@lsongdev/scripts/","@lsongdev/panel/":"./_shell/panel/"}}</script>`
+var indexTemplate = template.Must(template.New("index").Parse(indexPage))
 
 // csp allows only the panel's own scripts, styles, images and connections,
-// and the import map by its hash.
+// and the page's import map by its hash.
 var csp = func() string {
-	content := strings.TrimSuffix(strings.TrimPrefix(importMap, `<script type="importmap">`), `</script>`)
-	sum := sha256.Sum256([]byte(content))
+	m := regexp.MustCompile(`<script type="importmap">([^<]*)</script>`).FindStringSubmatch(indexPage)
+	if m == nil {
+		panic("shell: index.html has no import map")
+	}
+	sum := sha256.Sum256([]byte(m[1]))
 	return "default-src 'self'; script-src 'self' 'sha256-" + base64.StdEncoding.EncodeToString(sum[:]) + "'; " +
 		"img-src 'self' data:; style-src 'self' 'unsafe-inline'; " +
 		"connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
