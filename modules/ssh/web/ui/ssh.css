@@ -1,6 +1,9 @@
 /* SSH module styles; everything else comes from style.css. */
-.terminal { background: #000; border-radius: var(--radius-md); padding: 8px; height: max(360px, calc(100vh - 210px)); }
-.terminal .xterm { height: 100%; }
+/* The surface is the library's .terminal-frame (log.css); xterm draws on it transparently. */
+.terminal-frame { --terminal-height: max(360px, calc(100vh - 210px)); }
+.terminal-frame .xterm { height: 100%; }
+/* xterm.css paints its viewport black; let the frame show through. */
+.terminal-frame .xterm .xterm-viewport { background-color: transparent; }
 .choices { display: flex; gap: 16px; flex-wrap: wrap; }
 fieldset.field { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 .key-line { margin: 0; padding: 12px; border-radius: var(--radius-md); background: var(--color-surface-subtle); font: 12.5px/1.5 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }

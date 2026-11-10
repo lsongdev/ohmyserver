@@ -38,7 +38,7 @@ export default function Terminal({ params }) {
     }
     Promise.all([import('../node_modules/@xterm/xterm/lib/xterm.mjs'), import('../node_modules/@xterm/addon-fit/lib/addon-fit.mjs')]).then(([{ Terminal: XTerm }, { FitAddon }]) => {
       if (disposed) return;
-      const term = new XTerm({ cursorBlink: true, fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: 13, theme: { background: '#000000' } });
+      const term = new XTerm({ cursorBlink: true, fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: 13, allowTransparency: true, theme: { background: '#00000000' } });
       const fit = new FitAddon();
       term.loadAddon(fit);
       term.open(ref.current);
@@ -85,5 +85,5 @@ export default function Terminal({ params }) {
     <//>` : null}
     ${closed?.code === CONNECT_FAILED ? html`<${Alert} variant="danger">Connection failed: ${closed.reason}<//>` : null}
     <${Alert} error=${forget.error} />
-    <div class="terminal" ref=${ref}></div>`;
+    <div class="terminal-frame" ref=${ref}></div>`;
 }
