@@ -3,7 +3,7 @@
   "private": true,
   "description": "Browser dependencies of this UI, embedded by Go from node_modules (npm ci).",
   "dependencies": {
-    "@lsongdev/scripts": "git+https://github.com/lsongdev/scripts.git#b0d13e1bfa0c9365cd72474085cdf9624f0a89b9",
-    "@lsongdev/stylesheets": "git+https://github.com/lsongdev/stylesheets.git#31151aa8f47f5a54859f6427052a23575478c909"
+    "@lsongdev/scripts": "git+https://github.com/lsongdev/scripts.git#0b05d9a94628a41665374f8a1125a26d6bae9c0f",
+    "@lsongdev/stylesheets": "git+https://github.com/lsongdev/stylesheets.git#483723a986037f98092edb7bc09d6b2d7d63cc87"
   }
 }

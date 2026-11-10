@@ -5,7 +5,7 @@
 import { html, render, useState } from '@lsongdev/panel/html.js';
 import { Sidebar } from '@lsongdev/scripts/react/components/index.js';
 import { createHashNavigation } from '@lsongdev/scripts/navigation/hash.js';
-import { faIcon, navigationIcon } from './navigation-icons.js';
+import { faIcon, groupIcon, navigationIcon } from './navigation-icons.js';
 
 const navigation = createHashNavigation({ event: 'panel:routechange', stateKey: 'panelNavigation' });
 
@@ -135,14 +135,14 @@ function Navigation({ panel, path, onLogout }) {
     const m = item.module;
     const group = sharedGroups[m.id];
     const id = group ? `group:${group}` : `module:${m.id}`;
-    if (!groups.has(id)) groups.set(id, { id, title: group || m.title, items: [] });
+    if (!groups.has(id)) groups.set(id, { id, title: group || m.title, icon: groupIcon(group || m.id), items: [] });
     groups.get(id).items.push({ href: '#' + item.to, title: item.title, icon: navigationIcon(m, item), active: item === active });
   }
   const tree = panel.modules.length > 1 ? [...groups.values()] : [...groups.values()].flatMap(g => g.items);
   const logout = panel.auth
     ? html`<button class="button button-ghost sidebar-logout" onClick=${onLogout}><i aria-hidden="true">${faIcon('right-from-bracket')}</i><span>Sign out</span></button>`
     : null;
-  return html`<${Sidebar} brand=${panel.title} mark=${faIcon('server')} items=${tree} footer=${logout} />`;
+  return html`<${Sidebar} brand=${panel.title} mark=${faIcon('server')} items=${tree} collapsible=${true} footer=${logout} />`;
 }
 
 function Login({ title, onLogin }) {

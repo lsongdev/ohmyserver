@@ -43,3 +43,18 @@ export function navigationIcon(module, item) {
   const name = icons[module.id]?.[item.path];
   return name ? faIcon(name) : item.icon || faIcon('circle');
 }
+
+// A navigation group's icon, shown when the sidebar collapses to icons; by
+// shared group title or module id. Groups not listed take their first link's.
+const groupIcons = {
+  Home: 'house', Storage: 'hard-drive',
+  monitor: 'chart-line', docker: 'cubes', acme: 'certificate', gateway: 'tower-broadcast',
+  dns: 'globe', domains: 'at', dhcp: 'network-wired', forward: 'right-left', ssh: 'terminal',
+  cron: 'clock', ci: 'code-branch', packages: 'box', services: 'gears', network: 'ethernet',
+  samba: 'share-nodes', files: 'folder',
+};
+
+export function groupIcon(id) {
+  const name = groupIcons[id];
+  return name ? faIcon(name) : undefined;
+}
