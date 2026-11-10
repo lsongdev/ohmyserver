@@ -46,6 +46,35 @@ html {
   padding: 8px 0;
 }
 
+/* The panel's menu look: a group's heading is a small label over a flat
+   list. (The library draws headings like the links, with their icons; the
+   icons-only sidebar keeps that, as .menu-flyout.) */
+.layout .menu-group:not(.menu-flyout) > .menu-heading {
+  margin: 0;
+  padding: 12px 12px 4px;
+  color: var(--color-text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+
+.layout .menu-group:first-child:not(.menu-flyout) > .menu-heading {
+  padding-top: 0;
+}
+
+.layout .menu-group:not(.menu-flyout) > .menu-heading > i {
+  display: none;
+}
+
+.layout .menu-group:not(.menu-flyout) > button.menu-heading:hover {
+  background: none;
+  color: var(--color-text);
+}
+
+.layout .menu-group:not(.menu-flyout) > ul {
+  padding-left: 0;
+}
+
 .layout .sidebar-brand {
   padding: 0 8px;
   justify-content: flex-start;
