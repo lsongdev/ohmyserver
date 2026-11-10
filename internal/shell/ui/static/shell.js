@@ -128,22 +128,21 @@ function Navigation({ panel, path, onLogout }) {
     .sort((a, b) => b.to.length - a.to.length)[0];
   // Cross-module grouping is a host policy; item.group belongs inside a module.
   const sharedGroups = { home: 'Home', notify: 'Home', disks: 'Storage', zfs: 'Storage' };
-  const grouped = new Map();
+  // One menu tree: a group per module (or shared group), or the bare
+  // links when only one module is mounted.
+  const groups = new Map();
   for (const item of items) {
     const m = item.module;
     const group = sharedGroups[m.id];
-    const key = group ? `group:${group}` : `module:${m.id}`;
-    if (!grouped.has(key)) grouped.set(key, {
-      title: panel.modules.length > 1 ? group || m.title : null,
-      items: [],
-    });
-    grouped.get(key).items.push({ href: '#' + item.to, title: item.title, icon: navigationIcon(m, item), active: item === active });
+    const id = group ? `group:${group}` : `module:${m.id}`;
+    if (!groups.has(id)) groups.set(id, { id, title: group || m.title, items: [] });
+    groups.get(id).items.push({ href: '#' + item.to, title: item.title, icon: navigationIcon(m, item), active: item === active });
   }
-  const groups = [...grouped.values()];
+  const tree = panel.modules.length > 1 ? [...groups.values()] : [...groups.values()].flatMap(g => g.items);
   const logout = panel.auth
     ? html`<button class="button button-ghost sidebar-logout" onClick=${onLogout}><i aria-hidden="true">${faIcon('right-from-bracket')}</i><span>Sign out</span></button>`
     : null;
-  return html`<${Sidebar} brand=${panel.title} mark=${faIcon('server')} groups=${groups} footer=${logout} />`;
+  return html`<${Sidebar} brand=${panel.title} mark=${faIcon('server')} items=${tree} footer=${logout} />`;
 }
 
 function Login({ title, onLogin }) {
