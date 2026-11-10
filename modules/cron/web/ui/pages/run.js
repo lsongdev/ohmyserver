@@ -32,6 +32,6 @@ export default function Run({ params }) {
     </div>
     <section class="section">
       <h2>Output</h2>
-      <${LogView} lines=${lines} empty=${r.status === 'running' ? 'Waiting for output…' : 'No output'} />
+      <${LogView} ansi lines=${lines} empty=${r.status === 'running' ? 'Waiting for output…' : 'No output'} />
     </section>`;
 }

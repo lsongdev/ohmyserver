@@ -23,6 +23,6 @@ export default function Job({ params }) {
     </div>
     <section class="section">
       <h2>Output</h2>
-      <${LogView} lines=${j.output || []} empty=${j.status === 'running' ? 'Waiting for output…' : 'No output'} />
+      <${LogView} ansi lines=${j.output || []} empty=${j.status === 'running' ? 'Waiting for output…' : 'No output'} />
     </section>`;
 }

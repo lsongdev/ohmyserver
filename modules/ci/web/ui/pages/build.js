@@ -73,6 +73,6 @@ function StepLog({ build, step }) {
   const lines = text ? text.replace(/\r\n?/g, '\n').replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '').replace(/\n$/, '').split('\n') : [];
   return html`<div>
     <${Alert} error=${error} />
-    <${LogView} lines=${lines} empty=${step.status === 'skipped' ? 'Skipped' : running ? 'Waiting for output…' : 'No output'} />
+    <${LogView} ansi lines=${lines} empty=${step.status === 'skipped' ? 'Skipped' : running ? 'Waiting for output…' : 'No output'} />
   </div>`;
 }

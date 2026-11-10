@@ -1,8 +1,8 @@
 // Service manager UI helpers shared by the pages.
-import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
+import { html, useEffect, useState } from '@lsongdev/panel/html.js';
 import { useResource } from '@lsongdev/panel/hooks.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
-import { Alert } from '@lsongdev/scripts/react/components/index.js';
+import { Alert, LogView } from '@lsongdev/scripts/react/components/index.js';
 import { Status } from '@lsongdev/panel/ui.js';
 
 // useApi loads a GET endpoint, polling every interval(data) milliseconds
@@ -47,8 +47,6 @@ export function Journal({ query, live, showUnit = true }) {
   const [entries, setEntries] = useState(null);
   const [error, setError] = useState(null);
   const [state, setState] = useState('loading'); // loading, live, paused, reconnecting
-  const box = useRef(null);
-  const atBottom = useRef(true);
   const key = JSON.stringify(query);
 
   useEffect(() => {
@@ -87,25 +85,11 @@ export function Journal({ query, live, showUnit = true }) {
     return () => { closed = true; controller.abort(); source?.close(); clearTimeout(timer); };
   }, [key, live]);
 
-  useEffect(() => {
-    const el = box.current;
-    if (el && atBottom.current) el.scrollTop = el.scrollHeight;
-  }, [entries]);
-
-  const onScroll = e => {
-    const el = e.currentTarget;
-    atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-  };
+  const empty = entries === null ? 'Loading…' : `No entries${live ? ' yet. New ones appear here.' : '.'}`;
   return html`<div>
     <${Alert} error=${error} />
-    <div class="log journal" ref=${box} onScroll=${onScroll}>
-      ${entries === null ? html`<div class="journal-empty">Loading…</div>`
-        : entries.length === 0 ? html`<div class="journal-empty">No entries${live ? ' yet. New ones appear here.' : '.'}</div>`
-        : entries.map(e => html`<div class="journal-line ${tone(e.priority)}" key=${e.cursor} title=${PRIORITY[e.priority]}>
-            <span class="journal-time">${stamp(e.time)}</span>${' '}
-            ${showUnit ? html`<span class="journal-ident">${e.identifier || unitLabel(e.unit || '')}${e.pid ? `[${e.pid}]` : ''}:</span>${' '}` : null}${e.message}
-          </div>`)}
-    </div>
+    <${LogView} className="journal" lines=${entries || []} empty=${empty} lineKey=${e => e.cursor}
+      renderLine=${e => html`<span class="journal-entry ${tone(e.priority)}" title=${PRIORITY[e.priority]}><span class="journal-time">${stamp(e.time)}</span>${' '}${showUnit ? html`<span class="journal-ident">${e.identifier || unitLabel(e.unit || '')}${e.pid ? `[${e.pid}]` : ''}:</span>${' '}` : null}${e.message}</span>`} />
     <div class="journal-status muted small">
       ${state === 'live' ? html`<${Status} state="running" label="Live" />` : state === 'reconnecting' ? html`<${Status} state="starting" label="Reconnecting…" />` : null}
       ${entries ? html`<span>${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}${entries.length >= KEEP ? ` (the newest ${KEEP})` : ''}</span>` : null}
