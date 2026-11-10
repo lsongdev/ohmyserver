@@ -1,6 +1,7 @@
-import { html, useEffect, useRef, useState } from '@lsongdev/panel/html.js';
+import { html, useState } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
-import { PageHeader, Alert, Loading } from '@lsongdev/scripts/react/components/index.js';
+import { PageHeader, Alert, Loading, Terminal as TerminalView } from '@lsongdev/scripts/react/components/index.js';
+import { terminalSocket } from '@lsongdev/panel/terminal.js';
 import { Status } from '@lsongdev/panel/ui.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { target } from './hosts.js';
@@ -9,61 +10,40 @@ import { target } from './hosts.js';
 const CONNECT_FAILED = 4000;
 const HOST_KEY_CHANGED = 4001;
 
+// xterm is large, so it loads only when a terminal opens.
+const XTERM_CSS = new URL('../node_modules/@xterm/xterm/css/xterm.css', import.meta.url).href;
+const loadXterm = () => Promise.all([
+  import('../node_modules/@xterm/xterm/lib/xterm.mjs'),
+  import('../node_modules/@xterm/addon-fit/lib/addon-fit.mjs'),
+]).then(([{ Terminal }, { FitAddon }]) => ({ Terminal, FitAddon }));
+
 const LABELS = { connecting: 'Connecting…', open: 'Connected', closed: 'Session ended', error: 'The terminal failed to load' };
 
 export default function Terminal({ params }) {
   const { api, client, href } = usePanel();
   const host = useResource(signal => api.get(`/hosts/${params.id}`, { signal }), [params.id]);
-  const ref = useRef();
   const [status, setStatus] = useState('connecting');
   const [closed, setClosed] = useState(null); // { code, reason }
   const [session, setSession] = useState(0);
   const forget = useAction();
   const ready = host.data !== undefined;
 
-  useEffect(() => {
-    if (!ready) return;
-    let disposed = false;
-    let cleanup = () => {};
+  // Each session is a fresh Terminal (keyed by session), reconnecting.
+  const connect = terminalSocket(size => client.socketURL(`hosts/${params.id}/terminal`, size), {
+    onOpen: () => setStatus('open'),
+    onClose: (e, term) => {
+      setStatus('closed');
+      setClosed({ code: e.code, reason: e.reason });
+      const text = e.code === HOST_KEY_CHANGED ? 'The host key changed; connection refused' : e.reason || 'Connection closed';
+      term.write(`\r\n\x1b[90m[${text}]\x1b[0m\r\n`);
+    },
+  });
+  const start = term => {
+    setStatus('connecting');
     setClosed(null);
-    // xterm is large, so it is loaded only when a terminal opens. Inside a
-    // panel the module lives in a shadow root, which document styles do not
-    // reach: add the stylesheet where the terminal renders.
-    const root = ref.current.getRootNode();
-    const where = root instanceof ShadowRoot ? root : document.head;
-    if (!root.querySelector('link[data-xterm]')) {
-      const link = Object.assign(document.createElement('link'), { rel: 'stylesheet', href: new URL('../node_modules/@xterm/xterm/css/xterm.css', import.meta.url).href });
-      link.dataset.xterm = '';
-      where.append(link);
-    }
-    Promise.all([import('../node_modules/@xterm/xterm/lib/xterm.mjs'), import('../node_modules/@xterm/addon-fit/lib/addon-fit.mjs')]).then(([{ Terminal: XTerm }, { FitAddon }]) => {
-      if (disposed) return;
-      const term = new XTerm({ cursorBlink: true, fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: 13, allowTransparency: true, theme: { background: '#00000000' } });
-      const fit = new FitAddon();
-      term.loadAddon(fit);
-      term.open(ref.current);
-      fit.fit();
-      setStatus('connecting');
-      term.write(`\x1b[90mConnecting to ${target(host.data)}…\x1b[0m\r\n`);
-      const ws = new WebSocket(client.socketURL(`hosts/${params.id}/terminal`, { cols: term.cols, rows: term.rows }));
-      ws.binaryType = 'arraybuffer';
-      const encoder = new TextEncoder();
-      ws.onopen = () => { setStatus('open'); term.focus(); };
-      ws.onmessage = e => term.write(new Uint8Array(e.data));
-      ws.onclose = e => {
-        setStatus('closed');
-        setClosed({ code: e.code, reason: e.reason });
-        const text = e.code === HOST_KEY_CHANGED ? 'The host key changed; connection refused' : e.reason || 'Connection closed';
-        term.write(`\r\n\x1b[90m[${text}]\x1b[0m\r\n`);
-      };
-      const input = term.onData(data => ws.readyState === 1 && ws.send(encoder.encode(data)));
-      const resize = term.onResize(({ cols, rows }) => ws.readyState === 1 && ws.send(JSON.stringify({ type: 'resize', cols, rows })));
-      const observer = new ResizeObserver(() => fit.fit());
-      observer.observe(ref.current);
-      cleanup = () => { observer.disconnect(); input.dispose(); resize.dispose(); ws.close(); term.dispose(); };
-    }).catch(() => setStatus('error'));
-    return () => { disposed = true; cleanup(); };
-  }, [params.id, session, ready]);
+    term.write(`\x1b[90mConnecting to ${target(host.data)}…\x1b[0m\r\n`);
+    return connect(term);
+  };
 
   const forgetKey = () => {
     if (!window.confirm('Continue only if you know the server was reinstalled or its key replaced: forget the recorded host key and accept the one the server offers now?')) return;
@@ -85,5 +65,5 @@ export default function Terminal({ params }) {
     <//>` : null}
     ${closed?.code === CONNECT_FAILED ? html`<${Alert} variant="danger">Connection failed: ${closed.reason}<//>` : null}
     <${Alert} error=${forget.error} />
-    <div class="terminal-frame" ref=${ref}></div>`;
+    <${TerminalView} key=${`${params.id}:${session}`} load=${loadXterm} css=${XTERM_CSS} connect=${start} onError=${() => setStatus('error')} />`;
 }

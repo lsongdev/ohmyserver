@@ -181,7 +181,7 @@ module specifiers are resolved by an import map on the hosting document:
 | Specifier | What it is | In the shell |
 |---|---|---|
 | `@lsongdev/scripts/…` | Preact, htm, components, hooks and routing | the shell's copy, `./_shell/node_modules/@lsongdev/scripts/` |
-| `@lsongdev/panel/…` | this contract's runtime (`panel/ui` in this repository): `mount.js` (`createMount`), `panel.js` (`usePanel`), `forms.js`, `hooks.js`, `client.js`, `format.js`, `ui.js` and `standalone.js` | `./_shell/panel/` |
+| `@lsongdev/panel/…` | this contract's runtime (`panel/ui` in this repository): `mount.js` (`createMount`), `panel.js` (`usePanel`), `forms.js`, `hooks.js`, `client.js`, `format.js`, `ui.js`, `terminal.js` (`terminalSocket`, the terminal WebSocket protocol for the library's `Terminal`) and `standalone.js` | `./_shell/panel/` |
 
 Every module imports both only through these specifiers, never through a
 relative `node_modules` path, so a page and the runtime it uses share one
