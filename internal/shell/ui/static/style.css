@@ -19,9 +19,17 @@
   box-sizing: border-box;
 }
 
-/* Keep content width stable when a loading page acquires a scrollbar. */
+/* Keep content width stable when a loading page acquires a scrollbar.
+   The windowed frame (large screens, see layout.css) scrolls inside, with
+   a gutter of its own, and the page then needs none. */
 html {
   scrollbar-gutter: stable;
+}
+
+@media (min-width: 1280px) and (min-height: 760px) {
+  html:has(.app-layout-windowed) {
+    scrollbar-gutter: auto;
+  }
 }
 
 .app {
@@ -29,27 +37,20 @@ html {
 }
 
 /* The navigation beside (or, on narrow screens, above) the module. */
-.layout {
-  display: flex;
-  min-height: 100dvh;
-}
-
+/* The frame is the library's .app-layout, windowed on large screens; the
+   navigation is rendered into a wrapper that takes no box of its own. */
 .layout-nav {
   display: contents;
 }
 
-.layout .sidebar {
-  position: sticky;
-}
-
-.layout .menu-vertical {
+.app-layout .menu-vertical {
   padding: 8px 0;
 }
 
 /* The panel's menu look: a group's heading is a small label over a flat
    list. (The library draws headings like the links, with their icons; the
    icons-only sidebar keeps that, as .menu-flyout.) */
-.layout .menu-group:not(.menu-flyout) > .menu-heading {
+.app-layout .menu-group:not(.menu-flyout) > .menu-heading {
   margin: 0;
   padding: 12px 12px 4px;
   color: var(--color-text-muted);
@@ -58,25 +59,25 @@ html {
   letter-spacing: .04em;
 }
 
-.layout .menu-group:first-child:not(.menu-flyout) > .menu-heading {
+.app-layout .menu-group:first-child:not(.menu-flyout) > .menu-heading {
   padding-top: 0;
 }
 
-.layout .menu-group:not(.menu-flyout) > .menu-heading > i {
+.app-layout .menu-group:not(.menu-flyout) > .menu-heading > i {
   display: none;
 }
 
-.layout .menu-group:not(.menu-flyout) > button.menu-heading:hover {
+.app-layout .menu-group:not(.menu-flyout) > button.menu-heading:hover {
   background: none;
   color: var(--color-text);
 }
 
-.layout .menu-group:not(.menu-flyout) > ul {
+.app-layout .menu-group:not(.menu-flyout) > ul {
   padding: 0;
   background: none;
 }
 
-.layout .sidebar-brand {
+.app-layout .sidebar-brand {
   padding: 0 8px;
   justify-content: flex-start;
 }
@@ -84,28 +85,6 @@ html {
 .sidebar-logout {
   width: 100%;
   justify-content: flex-start;
-}
-
-.main {
-  flex: 1;
-  min-width: 0;
-  padding: 24px 28px 48px;
-}
-
-@media (min-width: 769px) {
-  .layout .sidebar {
-    height: 100dvh;
-  }
-}
-
-@media (max-width: 768px) {
-  .layout {
-    flex-direction: column;
-  }
-
-  .main {
-    padding: 16px 16px 40px;
-  }
 }
 
 /* Sign-in */

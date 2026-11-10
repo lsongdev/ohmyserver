@@ -187,7 +187,7 @@ function showMessage(text) {
   stop();
   render(null, app);
   app.innerHTML = '';
-  app.append(Object.assign(document.createElement('div'), { className: 'alert alert-danger main', textContent: text }));
+  app.append(Object.assign(document.createElement('div'), { className: 'alert alert-danger app-main', textContent: text }));
 }
 
 function showLogin(title) {
@@ -199,9 +199,9 @@ function showLogin(title) {
 function showPanel(panel) {
   stop();
   render(null, app);
-  app.innerHTML = '<div class="layout"><div class="layout-nav"></div><main class="main"></main></div>';
+  app.innerHTML = '<div class="app-layout app-layout-windowed"><div class="layout-nav"></div><main class="app-main"></main></div>';
   const sidebar = app.querySelector('.layout-nav');
-  const host = new ModuleHost(panel, app.querySelector('.main'));
+  const host = new ModuleHost(panel, app.querySelector('.app-main'));
   const logout = async () => {
     if (!navigation.canLeave()) return;
     await fetch(url('_auth/logout'), { method: 'POST' }).catch(() => {});
