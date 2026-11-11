@@ -34,8 +34,10 @@
   line-height: 1.55;
 }
 
-.install-card {
-  --card-margin: 0;
+.hero-install {
+  width: min(100%, 54rem);
+  min-width: 0;
+  margin-top: 2rem;
 }
 
 .install-command {
@@ -73,5 +75,9 @@
 
   .site-hero-title {
     font-size: clamp(2.625rem, 12vw, 3.875rem);
+  }
+
+  .site-hero {
+    padding-top: 3rem;
   }
 }

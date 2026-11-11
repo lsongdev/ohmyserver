@@ -24,7 +24,7 @@
     </a>
     <nav aria-label="Main navigation">
       <a href="#why">Features</a>
-      <a href="#install">Install</a>
+      <a href="#install">Get started</a>
       <a href="https://github.com/lsongdev/ohmyserver">GitHub</a>
     </nav>
   </header>
@@ -33,10 +33,14 @@
     <section class="site-hero" aria-labelledby="hero-title">
       <p class="eyebrow">Open source · Self-hosted</p>
       <h1 class="site-hero-title" id="hero-title">A web panel<br><span>for your servers.</span></h1>
-      <p class="site-hero-copy">Deploy Docker apps, manage DNS and TLS, and operate local and remote Linux hosts from your browser.</p>
-      <div class="site-hero-actions">
-        <a class="button button-primary" href="#install">Install OhMyServer <span aria-hidden="true">↓</span></a>
-        <a class="button button-secondary" href="#why">See features</a>
+      <p class="site-hero-copy">Deploy Docker apps, manage DNS and TLS, and manage local and remote servers from your browser.</p>
+      <div class="hero-install" id="install">
+        <div class="install-command">
+          <pre class="log"><code id="install-command">curl -fsSLo install.sh https://raw.githubusercontent.com/lsongdev/ohmyserver/master/install.sh &amp;&amp;
+  sudo sh install.sh</code></pre>
+          <button class="button button-primary" id="copy-command" type="button" aria-live="polite">Copy command</button>
+        </div>
+        <p class="install-note text-muted">This script installs the latest release as a service on Linux with systemd. For macOS and FreeBSD builds, <a href="https://github.com/lsongdev/ohmyserver/releases/latest">browse releases</a>.</p>
       </div>
     </section>
 
@@ -71,20 +75,12 @@
       </div>
     </section>
 
-    <section class="product-section" id="install" aria-labelledby="install-title">
-      <h2 id="install-title">Install on Linux</h2>
-      <p class="section-intro text-muted">Requires systemd and sudo or root access. The installer verifies the latest GitHub release and runs OhMyServer as a service. Supports AMD64, ARM64, ARMv7 and RISC-V 64.</p>
-      <div class="card install-card">
-        <div class="install-command">
-          <pre class="log"><code id="install-command">curl -fsSLo install.sh https://raw.githubusercontent.com/lsongdev/ohmyserver/master/install.sh &amp;&amp;
-  sudo sh install.sh</code></pre>
-          <button class="button button-secondary" id="copy-command" type="button" aria-live="polite">Copy command</button>
-        </div>
-        <p class="install-note text-muted">The panel defaults to <code>http://127.0.0.1:8080</code> on the server. From another machine, run <code>ssh -L 8080:127.0.0.1:8080 user@server</code> and open that address locally. Set a password before exposing the panel.</p>
-        <div class="button-actions">
-          <a class="button button-secondary" href="https://github.com/lsongdev/ohmyserver/blob/master/install.sh">View install.sh</a>
-          <a class="button button-ghost" href="https://github.com/lsongdev/ohmyserver/blob/master/config.yaml.example">Configuration reference</a>
-        </div>
+    <section class="product-section" aria-labelledby="access-title">
+      <h2 id="access-title">Open the dashboard</h2>
+      <p class="section-intro text-muted">The panel defaults to <code>http://127.0.0.1:8080</code> on the server. From another machine, run <code>ssh -L 8080:127.0.0.1:8080 user@server</code> and open that address locally. Set a password before exposing the panel.</p>
+      <div class="button-actions">
+        <a class="button button-secondary" href="https://github.com/lsongdev/ohmyserver/blob/master/install.sh">View install.sh</a>
+        <a class="button button-secondary" href="https://github.com/lsongdev/ohmyserver/blob/master/config.yaml.example">Configuration reference</a>
       </div>
     </section>
   </main>
