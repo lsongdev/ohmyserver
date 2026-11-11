@@ -1,0 +1,77 @@
+.product-section {
+  padding-block: clamp(3rem, 8vw, 6rem);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.product-section h2 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(2rem, 5vw, 3.375rem);
+  font-weight: 680;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.section-intro {
+  max-width: 68ch;
+  margin: 0 0 clamp(1.5rem, 4vw, 2.5rem);
+  line-height: 1.55;
+}
+
+.feature-grid {
+  --col-min: 16rem;
+  --grid-gap: 1rem;
+}
+
+.feature-grid h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
+.feature-grid p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.install-card {
+  --card-margin: 0;
+}
+
+.install-command {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.install-command pre {
+  --log-height: auto;
+  flex: 1 1 34rem;
+  min-width: 0;
+}
+
+.install-command code {
+  font: inherit;
+}
+
+.install-note {
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+  .site-header {
+    flex-wrap: wrap;
+    overflow: visible;
+    padding-block: 0.75rem;
+  }
+
+  .site-header nav {
+    flex: 0 1 auto;
+  }
+
+  .site-hero-title {
+    font-size: clamp(2.625rem, 12vw, 3.875rem);
+  }
+}
