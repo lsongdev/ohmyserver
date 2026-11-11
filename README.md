@@ -110,24 +110,35 @@ go run ./cmd/ohmyserver -d .
 ```
 
 Each UI, the shell's (`internal/shell/ui/static`) and every module's
-(`modules/*/web/ui`), declares its browser dependencies in its own
-`package.json`: @lsongdev/stylesheets, @lsongdev/scripts (with Preact and
+(`modules/*/web/ui` or `web/ui` in a sibling checkout), declares its browser
+dependencies in its own `package.json`: @lsongdev/stylesheets, @lsongdev/scripts (with Preact and
 htm) and, for SSH, xterm.js. Go embeds them from that UI's `node_modules`,
 which is not committed, so run `make deps` (or `make build`, `make test`)
 before any `go build`, `go run` or `go test`; without it the shell refuses
 to start and says so.
 
-On a server it runs as a systemd service:
-[`contrib/systemd/ohmyserver.service`](contrib/systemd/ohmyserver.service)
-explains installing it, with its configuration in
-`/var/lib/ohmyserver/config.yaml`.
+On Linux with systemd, install or upgrade from the latest GitHub release:
+
+```sh
+curl -fsSLo install.sh https://raw.githubusercontent.com/lsongdev/ohmyserver/master/install.sh &&
+  sudo sh install.sh
+```
+
+The installer verifies the binary and [systemd unit](contrib/systemd/ohmyserver.service)
+against the release's SHA-256 checksums, then enables and restarts the service.
+It supports AMD64, ARM64, ARMv7 and RISC-V 64 and preserves existing configuration
+and data. The panel defaults to `http://127.0.0.1:8080`. From another machine,
+forward the port with `ssh -L 8080:127.0.0.1:8080 user@server` and open that
+address in your browser. To configure the service, use
+[`config.yaml.example`](config.yaml.example) as a reference for
+`/var/lib/ohmyserver/config.yaml`. Set a password before exposing the panel.
 
 The gateway listens on :80 and :443 by default; `gateway.http` and
 `gateway.https` choose other addresses for a new installation, after which
-the configuration is edited in the panel. Likewise the DNS server starts as
-a forwarding resolver on :53 (UDP and TCP, `dns.listen` for a new
-installation); its listeners, upstreams and mode are then changed under
-DNS → Settings and take effect at once. A listener that cannot bind (a port
+the configuration is edited in the panel. The DNS server is off until enabled
+under DNS → Settings. Its initial configuration is a forwarding resolver on
+:53 (UDP and TCP, `dns.listen` for a new installation). Changes to its
+listeners, upstreams and mode take effect at once. A listener that cannot bind (a port
 taken, or :53 without the privilege) shows in the overview instead of
 stopping the panel.
 

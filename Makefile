@@ -5,7 +5,8 @@
 # The modules that are projects of their own (acme-go, dns-go, …) are
 # built from sibling checkouts (see go.work), as CI does too.
 
-UIS := internal/shell/ui/static $(patsubst %/package.json,%,$(wildcard modules/*/web/ui/package.json))
+MODULE_UIS := $(addsuffix /web/ui,../acme-go ../dhcp-go ../dns-go ../docker-go ../forward-go ../yabber)
+UIS := internal/shell/ui/static $(patsubst %/package.json,%,$(wildcard modules/*/web/ui/package.json)) $(MODULE_UIS)
 
 # Version defaults to the git description; CI passes a date such as 2026.10.28.
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -57,4 +58,4 @@ $(PLATFORMS): deps
 		go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o $(DIST)/$(binary) ./cmd/ohmyserver
 
 clean:
-	rm -rf ohmyserver $(DIST) $(addsuffix /node_modules,$(UIS))
+	rm -rf ohmyserver $(DIST) $(addsuffix /node_modules,$(filter-out $(MODULE_UIS),$(UIS)))

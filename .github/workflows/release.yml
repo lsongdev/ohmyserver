@@ -62,6 +62,31 @@ jobs:
         run: |
           echo "VERSION=$(date -u +%Y.%m.%d)" >> "$GITHUB_ENV"
           make -j4 dist VERSION="$(date -u +%Y.%m.%d)"
+      - name: Smoke test the Linux release binary
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        working-directory: ohmyserver
+        run: |
+          data=$(mktemp -d)
+          cat > "$data/config.yaml" <<'EOF'
+          listen: 127.0.0.1:18080
+          catalog: "-"
+          gateway:
+            http: "127.0.0.1:0"
+            https: "127.0.0.1:0"
+          EOF
+          env -u OHMYSERVER_PASSWORD ./dist/ohmyserver_linux_amd64 -d "$data" > "$data/log" 2>&1 &
+          pid=$!
+          cleanup() {
+            status=$?
+            kill "$pid" 2>/dev/null || true
+            wait "$pid" || true
+            if [ "$status" -ne 0 ]; then cat "$data/log"; fi
+            rm -rf "$data"
+          }
+          trap cleanup EXIT
+          curl --retry 8 --retry-connrefused --retry-delay 1 --max-time 3 -fsS -o /dev/null http://127.0.0.1:18080/
+          curl --max-time 3 -fsS -o /dev/null http://127.0.0.1:18080/m/docker/ui/module.js
+          kill -0 "$pid"
       - name: Publish
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
         working-directory: ohmyserver

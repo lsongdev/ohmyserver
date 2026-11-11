@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07110f">
-  <meta name="description" content="OhMyServer is a lightweight, self-hosted control panel for your servers.">
+  <meta name="description" content="OhMyServer is a self-hosted web panel for Docker, CI, reverse proxy and TLS, DNS, SSH, monitoring, and Linux administration.">
   <meta property="og:title" content="OhMyServer">
-  <meta property="og:description" content="Your server, one calm control plane.">
+  <meta property="og:description" content="Deploy Docker apps, manage DNS and TLS, and administer local and remote servers from one web panel.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://lsong.org/ohmyserver/">
   <meta property="og:image" content="https://lsong.org/ohmyserver/assets/banner.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://lsong.org/ohmyserver/assets/banner.png">
-  <title>OhMyServer — Your server, one calm control plane.</title>
+  <title>OhMyServer — Self-hosted server management</title>
   <link rel="icon" href="./assets/icon.png">
   <style>
     :root {
@@ -24,7 +24,6 @@
       --text: #f7f3ea;
       --muted: #9db0aa;
       --mint: #2ee6a6;
-      --amber: #ffbd2e;
       --max: 1120px;
     }
 
@@ -171,20 +170,6 @@
       color: #06100d;
     }
 
-    .showcase {
-      overflow: hidden;
-      margin: 36px 0 96px;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: var(--surface);
-    }
-
-    .showcase img {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-    }
-
     .section {
       padding: 48px 0;
       border-top: 1px solid var(--line);
@@ -219,20 +204,14 @@
     }
 
     .feature {
-      min-height: 190px;
       padding: 24px;
       border: 1px solid var(--line);
       border-radius: 14px;
       background: var(--surface);
     }
 
-    .feature-number {
-      color: var(--mint);
-      font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-    }
-
     .feature h3 {
-      margin: 44px 0 8px;
+      margin: 0 0 8px;
       font-size: 19px;
       letter-spacing: -.02em;
     }
@@ -267,23 +246,26 @@
 
     .terminal {
       display: flex;
-      align-items: center;
+      flex-wrap: wrap;
+      align-items: start;
       gap: 14px;
-      overflow-x: auto;
       padding: 17px 18px;
       border: 1px solid #304840;
       border-radius: 10px;
       background: #050b09;
     }
 
-    .terminal code {
-      flex: 1;
-      min-width: max-content;
+    .terminal pre {
+      flex: 1 1 32rem;
+      min-width: 0;
+      margin: 0;
       color: #cbe9de;
       font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
 
-    .prompt { color: var(--mint); }
+    .terminal code { font: inherit; }
 
     .copy {
       flex: 0 0 auto;
@@ -303,9 +285,9 @@
       border-color: var(--mint);
     }
 
-    .note {
-      margin-top: 13px;
-      color: var(--muted);
+    .install .note {
+      max-width: none;
+      margin-top: 14px;
       font-size: 13px;
     }
 
@@ -328,11 +310,8 @@
     @media (max-width: 760px) {
       .nav-links a:not(.button) { display: none; }
       .hero { padding-top: 52px; }
-      .showcase { margin-bottom: 68px; }
       .section-heading { grid-template-columns: 1fr; gap: 16px; }
       .features { grid-template-columns: 1fr; }
-      .feature { min-height: 0; }
-      .feature h3 { margin-top: 28px; }
       .install-top { align-items: start; flex-direction: column; }
       footer { align-items: flex-start; flex-direction: column; }
     }
@@ -351,7 +330,7 @@
         <span>OhMyServer</span>
       </a>
       <div class="nav-links">
-        <a href="#why">Why OhMyServer</a>
+        <a href="#why">Features</a>
         <a href="#install">Install</a>
         <a class="button" href="https://github.com/lsongdev/ohmyserver">View on GitHub</a>
       </div>
@@ -361,40 +340,43 @@
   <main>
     <section class="hero shell">
       <p class="eyebrow">Open source · Self-hosted</p>
-      <h1>Your server, one calm control plane.</h1>
-      <p class="hero-copy">OhMyServer brings the everyday work of running servers into a focused web interface—without adding another external control plane.</p>
+      <h1>A web panel for the servers you run.</h1>
+      <p class="hero-copy">Deploy Docker apps, manage DNS and TLS, and operate local and remote Linux hosts from your browser.</p>
       <div class="actions">
         <a class="button button-primary" href="#install">Install OhMyServer</a>
-        <a class="button" href="https://github.com/lsongdev/ohmyserver">Explore the source</a>
+        <a class="button" href="#why">See what you can manage</a>
       </div>
     </section>
 
-    <div class="shell">
-      <figure class="showcase">
-        <img src="./assets/banner.png" alt="OhMyServer connects server services through one control plane." width="1672" height="941">
-      </figure>
-    </div>
-
     <section class="section shell" id="why">
       <div class="section-heading">
-        <h2>Built for the server you actually own.</h2>
-        <p>A compact Go application that keeps common infrastructure work close, understandable, and under your control.</p>
+        <h2>What you can manage</h2>
+        <p>One Go binary includes the web interface and stores panel state in SQLite. Modules that manage Docker, Samba, ZFS, or system services use the corresponding software on the host.</p>
       </div>
       <div class="features">
         <article class="feature">
-          <span class="feature-number">01</span>
-          <h3>One place to operate</h3>
-          <p>See system health and manage containers, services, deployments, networking, and remote hosts.</p>
+          <h3>Docker and CI</h3>
+          <p>Manage containers, images and Compose apps, install from the app catalog, and use Git webhooks to trigger containerized builds and tests.</p>
         </article>
         <article class="feature">
-          <span class="feature-number">02</span>
-          <h3>Small operational footprint</h3>
-          <p>A single Go binary, an embedded interface, and SQLite keep installation and maintenance straightforward.</p>
+          <h3>Reverse proxy and certificates</h3>
+          <p>Route HTTP and HTTPS traffic to apps, publish Docker apps through the gateway, and issue and renew ACME certificates with automatic DNS validation for managed zones.</p>
         </article>
         <article class="feature">
-          <span class="feature-number">03</span>
-          <h3>Yours from end to end</h3>
-          <p>Self-hosted and MIT licensed, with no required hosted account or proprietary control service.</p>
+          <h3>DNS and network services</h3>
+          <p>Run a DNS resolver or serve authoritative zones. Edit DNS records in connected provider accounts, configure DHCP leases and reservations, and forward TCP or UDP ports.</p>
+        </article>
+        <article class="feature">
+          <h3>SSH, jobs and monitoring</h3>
+          <p>Open a browser terminal on saved SSH hosts, schedule local or remote commands, and monitor Linux hosts over SSH. See open issues and send notifications to chat services.</p>
+        </article>
+        <article class="feature">
+          <h3>Linux administration</h3>
+          <p>Manage apt or dnf packages, systemd services and journal logs. Inspect routes and listening ports, run diagnostics, and apply network changes with automatic rollback unless confirmed.</p>
+        </article>
+        <article class="feature">
+          <h3>Files and storage</h3>
+          <p>Browse, edit and transfer server files, inspect disk capacity, RAID and SMART health, manage Samba shares and users, and schedule ZFS snapshots with retention.</p>
         </article>
       </div>
     </section>
@@ -403,37 +385,40 @@
       <div class="install">
         <div class="install-top">
           <div>
-            <h2>Up and running in one command.</h2>
-            <p>For Linux servers with systemd. The installer supports AMD64 and ARM64 and downloads the latest GitHub release.</p>
+            <h2>Install on Linux</h2>
+            <p>Requires systemd and sudo or root access. The installer verifies the latest GitHub release and runs OhMyServer as a service. Supports AMD64, ARM64, ARMv7 and RISC-V 64.</p>
           </div>
-          <a class="button" href="https://raw.githubusercontent.com/lsongdev/ohmyserver/main/install.sh">Download install.sh</a>
+          <a class="button" href="https://github.com/lsongdev/ohmyserver/blob/master/install.sh">View install.sh</a>
         </div>
         <div class="terminal">
-          <code id="install-command"><span class="prompt">$</span> curl -fsSL https://raw.githubusercontent.com/lsongdev/ohmyserver/main/install.sh | sudo sh</code>
-          <button class="copy" type="button" data-copy="curl -fsSL https://raw.githubusercontent.com/lsongdev/ohmyserver/main/install.sh | sudo sh" aria-label="Copy install command">Copy</button>
+          <pre><code id="install-command">curl -fsSLo install.sh https://raw.githubusercontent.com/lsongdev/ohmyserver/master/install.sh &amp;&amp;
+  sudo sh install.sh</code></pre>
+          <button class="copy" type="button" aria-live="polite">Copy command</button>
         </div>
-        <p class="note">The script runs as root. Read <a href="https://github.com/lsongdev/ohmyserver/blob/main/install.sh">the source</a> before installing.</p>
+        <p class="note">The panel defaults to <code>http://127.0.0.1:8080</code> on the server. From another machine, run <code>ssh -L 8080:127.0.0.1:8080 user@server</code> and open that address locally. Set a password before exposing the panel. <a href="https://github.com/lsongdev/ohmyserver/blob/master/config.yaml.example">Configuration reference</a></p>
       </div>
     </section>
   </main>
 
   <footer class="shell">
     <span>© 2026 OhMyServer. Open source under the MIT License.</span>
-    <span><a href="https://github.com/lsongdev/ohmyserver">GitHub</a> · <a href="https://github.com/lsongdev/ohmyserver/tree/main/docs">Docs</a></span>
+    <span><a href="https://github.com/lsongdev/ohmyserver">GitHub</a> · <a href="https://github.com/lsongdev/ohmyserver/releases">Releases</a> · <a href="https://github.com/lsongdev/ohmyserver#readme">Docs</a></span>
   </footer>
 
   <script>
-    const copyButton = document.querySelector("[data-copy]");
+    const copyButton = document.querySelector(".copy");
+    const installCommand = document.querySelector("#install-command");
+    let resetCopyLabel;
     copyButton.addEventListener("click", async () => {
-      const original = copyButton.textContent;
       try {
-        await navigator.clipboard.writeText(copyButton.dataset.copy);
+        await navigator.clipboard.writeText(installCommand.textContent);
         copyButton.textContent = "Copied";
       } catch {
         copyButton.textContent = "Select command";
       }
-      window.setTimeout(() => {
-        copyButton.textContent = original;
+      window.clearTimeout(resetCopyLabel);
+      resetCopyLabel = window.setTimeout(() => {
+        copyButton.textContent = "Copy command";
       }, 1800);
     });
   </script>
