@@ -259,6 +259,11 @@ func (t *trials) keep() (any, error) {
 		return nil, errNoTrial
 	}
 	t.logger.Info("network change kept", "subject", t.active.Subject)
+	for _, file := range t.active.Undo.Cleanup {
+		if err := os.Remove(file); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			t.logger.Error("removing a file kept for the revert", "err", err)
+		}
+	}
 	t.finish("kept")
 	return TrialStatus{Last: t.last}, nil
 }

@@ -62,6 +62,10 @@ type Undo struct {
 	// NetworkManager: one entry per connection profile the change touches,
 	// in the order it touched them. Reverting walks them backwards.
 	Profiles []ProfileUndo `json:"profiles,omitempty"`
+	// Cleanup lists files that only a revert needs, such as the copy of a
+	// connection file before it was changed. They are removed when the change
+	// is kept.
+	Cleanup []string `json:"cleanup,omitempty"`
 }
 
 // ProfileUndo restores one NetworkManager connection profile.
@@ -72,6 +76,14 @@ type ProfileUndo struct {
 	Created bool              `json:"created,omitempty"`
 	Deleted bool              `json:"deleted,omitempty"` // the change removed it, so reverting adds it back
 	Props   map[string]string `json:"props,omitempty"`   // the values to put back
+	// File is the connection file of a profile this module writes. Backup is
+	// a hidden copy of it from before the change, which a revert puts back and
+	// loads; Reup then brings the connection up again, if it was up.
+	File   string `json:"file,omitempty"`
+	Backup string `json:"backup,omitempty"`
+	Reup   bool   `json:"reup,omitempty"`
+	// Down: the change brought the connection up, so a revert hangs it up.
+	Down bool `json:"down,omitempty"`
 }
 
 // Backend is the network manager in charge of this machine's interfaces.

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -372,7 +373,19 @@ func (n *NetworkManager) revertProfile(ctx context.Context, p ProfileUndo) error
 		if err := n.nmcli(ctx, "connection", "delete", p.Name); err != nil && !isUnknownConnection(err) {
 			return err
 		}
+		if p.File != "" {
+			if err := os.Remove(p.File); err != nil && !errors.Is(err, os.ErrNotExist) {
+				return err
+			}
+		}
 		return nil
+	case p.Down:
+		if err := n.nmcli(ctx, "connection", "down", p.UUID); err != nil && !isUnknownConnection(err) && !strings.Contains(err.Error(), "not an active") {
+			return err
+		}
+		return nil
+	case p.Backup != "":
+		return n.restoreFile(ctx, p)
 	case p.Deleted:
 		return n.recreate(ctx, p)
 	}
@@ -401,4 +414,20 @@ func (n *NetworkManager) SetUp(ctx context.Context, name string, up bool) error 
 	}
 	_, _, err := n.Run.Run(ctx, "", "nmcli", "device", verb, name)
 	return err
+}
+
+// restoreFile puts a connection file back as it was and loads it. A revert is
+// retried after a failure part-way, so a copy already moved back is not an
+// error.
+func (n *NetworkManager) restoreFile(ctx context.Context, p ProfileUndo) error {
+	if err := os.Rename(p.Backup, p.File); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	if err := n.nmcli(ctx, "connection", "load", p.File); err != nil {
+		return err
+	}
+	if p.Reup {
+		return n.redial(ctx, p.UUID)
+	}
+	return nil
 }

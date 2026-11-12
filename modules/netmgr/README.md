@@ -121,6 +121,33 @@ joined here.
 - Commands run in the `C.UTF-8` locale. Under plain `C`, `nmcli` prints each
   non-ASCII character of a network name as `?`.
 
+### PPPoE
+
+Dial-up connections to a provider, through NetworkManager and `pppd`. The page
+says what is missing (`pppd`, NetworkManager's PPP plugin) until both are
+installed; no restart is needed afterwards.
+
+- A connection is a file only root can read, with the user name and password,
+  loaded by NetworkManager. The password is on no command line, and not in the
+  log, the trial record or an API response. Editing with an empty password
+  keeps the saved one.
+- Saving dials, on trial: if the login fails, or the change is not kept, a new
+  connection is deleted and an edited one is put back as it was and dialed
+  again. The copy an edit keeps for that is hidden (NetworkManager ignores it)
+  and removed when the change is kept.
+- An edited connection is hung up before it is dialed again. Bringing a PPPoE
+  connection up while it is up failed on a device with "the device could not
+  be readied" and left it down.
+- The ppp interface is named `ppp-` and eight characters of the connection's
+  UUID, which NetworkManager requires and the firewall's `ppp*` matches. IPv6
+  is off, since asking for it can stall a login that works over IPv4.
+- The default route priority is 50, ahead of Ethernet's usual 100, and the MTU
+  1492. A connection holding the default route, or this client's connection,
+  is not hung up or forgotten from here, and forgetting (which deletes the
+  password) is not on trial.
+- Only connections this module wrote can be edited or forgotten; others are
+  listed, and can be dialed and hung up.
+
 ## Run
 
 ```sh
@@ -156,6 +183,11 @@ version 409 `conflict`, and a refused change 409 `in_use`.
 | GET | `/api/wifi/{name}/networks[?rescan=1]` | What the radio hears |
 | PUT | `/api/wifi/{name}/connection` | Join `{ssid, security, password, hidden}` on trial |
 | DELETE | `/api/wifi/saved/{uuid}` | Forget a saved network |
+| GET | `/api/pppoe` | Readiness, the Ethernet interfaces to dial through, and the connections (`protected`) |
+| PUT | `/api/pppoe/{name}` | Save and dial `{parent, username, password, service, mtu, metric}` on trial |
+| POST | `/api/pppoe/{name}/dial` | Dial a saved connection, on trial |
+| POST | `/api/pppoe/{name}/hangup` | Hang it up |
+| DELETE | `/api/pppoe/{name}` | Forget it and its password |
 | GET | `/api/bridges` | Bridges with their ports and spanning tree setting |
 | GET | `/api/bridges/{name}` | One of them, with the `version` to send back |
 | PUT | `/api/bridges/{name}` | Make or change `{version, config: {stp, ports}}` on trial; `version` is empty for a new bridge |

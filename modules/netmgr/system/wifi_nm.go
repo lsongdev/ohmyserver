@@ -173,8 +173,11 @@ func (n *NetworkManager) WifiScan(ctx context.Context, device string, rescan boo
 
 // wifiUUID names the connection made for a network. It comes from the name,
 // so the undo prepared before the connection exists can find it afterwards.
-func wifiUUID(ssid string) string {
-	sum := sha256.Sum256([]byte("ohmyserver-wifi\x00" + ssid))
+func wifiUUID(ssid string) string { return profileUUID("wifi", ssid) }
+
+// profileUUID names the connection made for a name of some kind.
+func profileUUID(kind, name string) string {
+	sum := sha256.Sum256([]byte("ohmyserver-" + kind + "\x00" + name))
 	b := sum[:16]
 	b[6], b[8] = b[6]&0x0f|0x50, b[8]&0x3f|0x80
 	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
