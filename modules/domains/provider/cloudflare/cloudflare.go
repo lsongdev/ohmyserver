@@ -20,12 +20,22 @@ import (
 
 func init() {
 	provider.Register(provider.Kind{
-		ID: "cloudflare", Title: "Cloudflare", Proxy: true,
-		Fields: []provider.Field{{Name: "api_token", Label: "API token", Secret: true,
-			Hint: "With Zone › Zone › Read and Zone › DNS › Edit permissions"}},
-		Help: "Create a token at dash.cloudflare.com › My Profile › API Tokens, from the \"Edit zone DNS\" template; limit it to the zones it should manage.",
+		ID: "cloudflare", Title: "Cloudflare", Proxy: true, Comments: true,
+		RecordTypes: []string{"A", "AAAA", "CNAME", "TXT", "MX", "NS", "SRV", "CAA"},
+		Fields: []provider.Field{
+			{Name: "api_token", Label: "API token", Secret: true, Optional: true,
+				Hint: "With Zone › Zone › Read and Zone › DNS › Edit permissions"},
+			{Name: "email", Label: "Account email", Optional: true, Hint: "Only needed with a Global API Key"},
+			{Name: "api_key", Label: "Global API Key", Secret: true, Optional: true, Hint: "Only needed when no API token is set"},
+		},
+		Help: "Use an API token from dash.cloudflare.com › My Profile › API Tokens (Edit zone DNS), or supply both your account email and Global API Key. A token takes precedence when set.",
 		New: func(c map[string]string) (provider.Provider, error) {
-			return New(strings.TrimSpace(c["api_token"])), nil
+			client := New(strings.TrimSpace(c["api_token"]))
+			client.Email, client.APIKey = strings.TrimSpace(c["email"]), strings.TrimSpace(c["api_key"])
+			if client.Token == "" && (client.Email == "" || client.APIKey == "") {
+				return nil, fmt.Errorf("%w: supply an API token or both account email and Global API Key", provider.ErrInvalid)
+			}
+			return client, nil
 		},
 	})
 }
@@ -36,6 +46,8 @@ const DefaultURL = "https://api.cloudflare.com/client/v4"
 // Client is a Cloudflare account reached with an API token.
 type Client struct {
 	Token   string
+	Email   string
+	APIKey  string
 	BaseURL string
 	HTTP    *http.Client
 }
@@ -85,7 +97,12 @@ func (c *Client) do(ctx context.Context, method, path string, query url.Values, 
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.Token)
+	if c.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.Token)
+	} else {
+		req.Header.Set("X-Auth-Email", c.Email)
+		req.Header.Set("X-Auth-Key", c.APIKey)
+	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}

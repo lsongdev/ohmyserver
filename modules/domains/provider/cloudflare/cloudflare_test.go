@@ -107,3 +107,47 @@ func TestClient(t *testing.T) {
 		t.Fatalf("bad token: %v", err)
 	}
 }
+
+func TestAuthentication(t *testing.T) {
+	for _, test := range []struct {
+		name        string
+		credentials map[string]string
+		valid       bool
+	}{
+		{"token", map[string]string{"api_token": "token"}, true},
+		{"global key", map[string]string{"email": "user@example.com", "api_key": "key"}, true},
+		{"token takes precedence", map[string]string{"api_token": "token", "email": "user@example.com", "api_key": "key"}, true},
+		{"missing", nil, false},
+		{"email only", map[string]string{"email": "user@example.com"}, false},
+		{"key only", map[string]string{"api_key": "key"}, false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			p, err := provider.Open("cloudflare", test.credentials)
+			if !test.valid {
+				if !errors.Is(err, provider.ErrInvalid) {
+					t.Fatalf("credentials accepted: %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if test.credentials["api_token"] != "" {
+					if r.Header.Get("Authorization") != "Bearer token" || r.Header.Get("X-Auth-Key") != "" || r.Header.Get("X-Auth-Email") != "" {
+						t.Error("incorrect token headers")
+					}
+				} else if r.Header.Get("Authorization") != "" || r.Header.Get("X-Auth-Email") != "user@example.com" || r.Header.Get("X-Auth-Key") != "key" {
+					t.Error("incorrect global key headers")
+				}
+				w.Write([]byte(`{"success":true,"result":[]}`))
+			}))
+			defer srv.Close()
+			c := p.(*Client)
+			c.BaseURL = srv.URL
+			if _, err := c.Zones(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}

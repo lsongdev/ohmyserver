@@ -158,3 +158,61 @@ func TestChallenges(t *testing.T) {
 		t.Fatalf("left after cleanup: %+v", got)
 	}
 }
+
+func TestBuiltInProviders(t *testing.T) {
+	for _, tc := range []struct {
+		kind        string
+		credentials map[string]string
+	}{
+		{"cloudflare", map[string]string{"api_token": "token"}},
+		{"dnspod", map[string]string{"token": "123,secret"}},
+		{"namecom", map[string]string{"user": "user", "token": "token"}},
+	} {
+		t.Run(tc.kind, func(t *testing.T) {
+			k, ok := provider.Lookup(tc.kind)
+			if !ok || len(k.Fields) == 0 {
+				t.Fatal("provider not registered")
+			}
+			if _, err := provider.Open(tc.kind, tc.credentials); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := provider.Open(tc.kind, nil); !errors.Is(err, ErrInvalid) {
+				t.Fatalf("missing credentials: %v", err)
+			}
+		})
+	}
+	if _, err := provider.Open("dnspod", map[string]string{"token": "not-a-dnspod-token"}); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("invalid DNSPod token: %v", err)
+	}
+}
+
+func TestProviderRecordSettings(t *testing.T) {
+	for _, tc := range []struct {
+		kind, recordType string
+		ttl, wantTTL     int
+		invalid          bool
+	}{
+		{"cloudflare", "A", 1, 1, false},
+		{"dnspod", "TXT", 1, 600, false},
+		{"namecom", "TXT", 120, 300, false},
+		{"namecom", "MX", 3600, 3600, false},
+		{"namecom", "ANAME", 300, 300, false},
+		{"namecom", "CAA", 300, 300, true},
+	} {
+		r := provider.Record{Type: tc.recordType, TTL: tc.ttl}
+		err := checkProviderRecord(&r, ZoneView{Kind: tc.kind})
+		if tc.invalid {
+			if !errors.Is(err, ErrInvalid) {
+				t.Fatalf("%s %s accepted", tc.kind, tc.recordType)
+			}
+			continue
+		}
+		if err != nil || r.TTL != tc.wantTTL {
+			t.Fatalf("%s %s: %+v, %v", tc.kind, tc.recordType, r, err)
+		}
+	}
+	r := provider.Record{Type: "TXT", TTL: 300}
+	if err := checkProviderRecord(&r, ZoneView{Kind: "dnspod", Zone: provider.Zone{MinTTL: 300}}); err != nil || r.TTL != 300 {
+		t.Fatalf("zone TTL: %+v, %v", r, err)
+	}
+}

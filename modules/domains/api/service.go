@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -15,6 +16,8 @@ import (
 
 	"github.com/lsongdev/ohmyserver/modules/domains/provider"
 	_ "github.com/lsongdev/ohmyserver/modules/domains/provider/cloudflare" // registers Cloudflare
+	_ "github.com/lsongdev/ohmyserver/modules/domains/provider/dnspod"
+	_ "github.com/lsongdev/ohmyserver/modules/domains/provider/namecom"
 	"github.com/lsongdev/ohmyserver/modules/domains/store"
 )
 
@@ -298,8 +301,11 @@ func (s *Service) zone(ctx context.Context, account int64, zoneID string) (ZoneV
 // ZoneDetail is a zone with its records.
 type ZoneDetail struct {
 	ZoneView
-	Records []provider.Record `json:"records"`
-	Proxy   bool              `json:"proxy"` // records can be proxied
+	Records     []provider.Record `json:"records"`
+	Proxy       bool              `json:"proxy"` // records can be proxied
+	Comments    bool              `json:"comments"`
+	MinTTL      int               `json:"min_ttl"`
+	RecordTypes []string          `json:"record_types,omitempty"`
 }
 
 // Zone returns a zone's records.
@@ -323,10 +329,30 @@ func (s *Service) Zone(ctx context.Context, account int64, zoneID string) (*Zone
 		return records[i].Type < records[j].Type
 	})
 	kind, _ := provider.Lookup(z.Kind)
-	return &ZoneDetail{ZoneView: z, Records: records, Proxy: kind.Proxy}, nil
+	minTTL := z.MinTTL
+	if minTTL == 0 {
+		minTTL = kind.MinTTL
+	}
+	return &ZoneDetail{ZoneView: z, Records: records, Proxy: kind.Proxy,
+		Comments: kind.Comments, MinTTL: minTTL, RecordTypes: kind.RecordTypes}, nil
 }
 
-var recordTypes = map[string]bool{"A": true, "AAAA": true, "CNAME": true, "TXT": true, "MX": true, "NS": true, "SRV": true, "CAA": true}
+var recordTypes = map[string]bool{"A": true, "AAAA": true, "ANAME": true, "CNAME": true, "TXT": true, "MX": true, "NS": true, "SRV": true, "CAA": true}
+
+func checkProviderRecord(r *provider.Record, z ZoneView) error {
+	k, _ := provider.Lookup(z.Kind)
+	if len(k.RecordTypes) > 0 && !slices.Contains(k.RecordTypes, r.Type) {
+		return invalid("%s does not support %s records", k.Title, r.Type)
+	}
+	minTTL := z.MinTTL
+	if minTTL == 0 {
+		minTTL = k.MinTTL
+	}
+	if minTTL > 0 && r.TTL < minTTL {
+		r.TTL = minTTL
+	}
+	return nil
+}
 
 // checkRecord validates r for zone and makes its name absolute: "www" and
 // "@" are relative to the zone.
@@ -366,6 +392,9 @@ func (s *Service) CreateRecord(ctx context.Context, account int64, zoneID string
 	if err := checkRecord(&r, z.Name); err != nil {
 		return r, err
 	}
+	if err := checkProviderRecord(&r, z); err != nil {
+		return r, err
+	}
 	_, p, err := s.open(ctx, account)
 	if err != nil {
 		return r, err
@@ -385,6 +414,9 @@ func (s *Service) UpdateRecord(ctx context.Context, account int64, zoneID, recor
 		return r, err
 	}
 	if err := checkRecord(&r, z.Name); err != nil {
+		return r, err
+	}
+	if err := checkProviderRecord(&r, z); err != nil {
 		return r, err
 	}
 	r.ID = recordID

@@ -18,6 +18,7 @@ type Zone struct {
 	Name        string   `json:"name"` // example.com, without the final dot
 	Status      string   `json:"status,omitempty"`
 	NameServers []string `json:"name_servers,omitempty"`
+	MinTTL      int      `json:"min_ttl,omitempty"` // account/zone-specific TTL floor, when known
 }
 
 // Record is a DNS record in a zone. Name is the full name
@@ -52,10 +53,11 @@ type Provider interface {
 
 // Field is a credential a kind needs, for the account form.
 type Field struct {
-	Name   string `json:"name"`
-	Label  string `json:"label"`
-	Secret bool   `json:"secret"`
-	Hint   string `json:"hint,omitempty"`
+	Name     string `json:"name"`
+	Label    string `json:"label"`
+	Secret   bool   `json:"secret"`
+	Hint     string `json:"hint,omitempty"`
+	Optional bool   `json:"optional,omitempty"`
 }
 
 // Kind is a DNS hosting service.
@@ -66,7 +68,10 @@ type Kind struct {
 	// Help says where to get the credentials.
 	Help string `json:"help,omitempty"`
 	// Features the service's records have.
-	Proxy bool `json:"proxy"` // records can be proxied
+	Proxy       bool     `json:"proxy"`                  // records can be proxied
+	Comments    bool     `json:"comments"`               // record comments can be edited
+	MinTTL      int      `json:"min_ttl"`                // zero means automatic TTL is supported
+	RecordTypes []string `json:"record_types,omitempty"` // empty uses the module's types
 	// New opens an account from its credentials.
 	New func(credentials map[string]string) (Provider, error) `json:"-"`
 }
@@ -98,8 +103,8 @@ func Kinds() []Kind {
 // ErrInvalid wraps rejected input.
 var ErrInvalid = errors.New("invalid")
 
-// Open returns the account of kind with credentials, checking that every
-// field is set.
+// Open returns the account of kind with credentials, checking required
+// fields. The kind validates alternative credential combinations.
 func Open(kind string, credentials map[string]string) (Provider, error) {
 	mu.RLock()
 	k, ok := kinds[kind]
@@ -108,7 +113,7 @@ func Open(kind string, credentials map[string]string) (Provider, error) {
 		return nil, fmt.Errorf("%w: unknown provider %q", ErrInvalid, kind)
 	}
 	for _, f := range k.Fields {
-		if strings.TrimSpace(credentials[f.Name]) == "" {
+		if !f.Optional && strings.TrimSpace(credentials[f.Name]) == "" {
 			return nil, fmt.Errorf("%w: %s is required", ErrInvalid, f.Label)
 		}
 	}
