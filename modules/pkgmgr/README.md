@@ -30,6 +30,14 @@ sudo PKGMGR_PASSWORD=secret ./pkgmgr -listen 127.0.0.1:8080
 Installing and removing packages needs root. Without `PKGMGR_PASSWORD` it
 serves without authentication, which is only safe on a loopback address.
 
+## Repositories
+
+The **Repositories** page edits native source files. On APT it covers
+`/etc/apt/sources.list` and the `.sources` and `.list` files in
+`/etc/apt/sources.list.d`. On DNF it covers the `.repo` files in
+`/etc/yum.repos.d`. Use **Refresh metadata** to run the package manager
+against the saved sources and see its output in Jobs.
+
 ## API
 
 Responses are `{"data": …}`, errors `{"error": {"code", "message"}}`.

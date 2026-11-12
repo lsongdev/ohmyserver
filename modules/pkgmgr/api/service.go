@@ -35,10 +35,11 @@ var (
 
 // Service manages the system's packages.
 type Service struct {
-	manager system.Manager // nil when unsupported
-	os      system.OS
-	docker  *system.Docker
-	logger  *slog.Logger
+	manager      system.Manager // nil when unsupported
+	os           system.OS
+	docker       *system.Docker
+	repositories system.Repositories
+	logger       *slog.Logger
 
 	mu      sync.Mutex
 	jobs    []*Job // newest last, at most keepJobs
@@ -76,8 +77,12 @@ func NewService(opts Options) *Service {
 		}
 	}
 	osInfo := system.ReadOS(root)
+	repositories := system.Repositories{Root: root}
+	if manager != nil {
+		repositories.Manager = manager.Name()
+	}
 	return &Service{
-		manager: manager, os: osInfo, logger: logger,
+		manager: manager, os: osInfo, logger: logger, repositories: repositories,
 		docker: &system.Docker{Manager: manager, OS: osInfo, Run: run, Root: root},
 	}
 }

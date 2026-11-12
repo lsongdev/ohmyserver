@@ -20,6 +20,11 @@
       "icon": "✦"
     },
     {
+      "path": "/repositories",
+      "title": "Repositories",
+      "icon": "▤"
+    },
+    {
       "path": "/jobs",
       "title": "Jobs",
       "icon": "⟳"

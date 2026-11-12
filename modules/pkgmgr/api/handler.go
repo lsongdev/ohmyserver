@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"io/fs"
 	"net/http"
 	"strconv"
 
@@ -35,6 +36,7 @@ func (s *Service) Handler() http.Handler {
 	mux.HandleFunc("GET /docker", func(w http.ResponseWriter, r *http.Request) {
 		respond(w, http.StatusOK, s.DockerStatus(r.Context()), nil)
 	})
+	s.registerRepositories(mux)
 	mux.HandleFunc("GET /jobs", func(w http.ResponseWriter, r *http.Request) {
 		respond(w, http.StatusOK, s.Jobs(), nil)
 	})
@@ -75,10 +77,14 @@ func respond(w http.ResponseWriter, status int, data any, err error) {
 		writeJSON(w, status, map[string]any{"data": data})
 	case errors.Is(err, system.ErrInvalid):
 		writeError(w, http.StatusBadRequest, "invalid_request", err.Error())
-	case errors.Is(err, ErrNotFound):
+	case errors.Is(err, ErrNotFound), errors.Is(err, fs.ErrNotExist):
 		writeError(w, http.StatusNotFound, "not_found", err.Error())
 	case errors.Is(err, ErrBusy):
 		writeError(w, http.StatusConflict, "busy", "Another job is running: wait for it to finish")
+	case errors.Is(err, system.ErrRepositoryConflict):
+		writeError(w, http.StatusConflict, "repository_conflict", err.Error())
+	case errors.Is(err, system.ErrRepositoryUnsupported):
+		writeError(w, http.StatusNotImplemented, "unsupported", err.Error())
 	case errors.Is(err, system.ErrUnsupported):
 		writeError(w, http.StatusServiceUnavailable, "unsupported", "No supported package manager (dnf, apt, pacman or brew) on this system")
 	default:
@@ -98,7 +104,11 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 }
 
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
-	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10))
+	return decodeLimit(w, r, v, 64<<10)
+}
+
+func decodeLimit(w http.ResponseWriter, r *http.Request, v any, limit int64) bool {
+	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, limit))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid_request", "invalid JSON: "+err.Error())

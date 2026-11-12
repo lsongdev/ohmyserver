@@ -11,3 +11,7 @@
 .small { font-size: 12.5px; }
 .link-button { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .link-button:hover { color: var(--color-primary); text-decoration: underline; }
+.repository-files { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.repository-files li { overflow-wrap: anywhere; }
+.repository-form { max-width: 880px; }
+.repository-form textarea { width: 100%; resize: vertical; }

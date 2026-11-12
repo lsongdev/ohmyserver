@@ -12,6 +12,8 @@ export function useApi(path, interval) {
   return useResource(signal => (path ? api.get(path, { signal }) : Promise.resolve(undefined)), [path], { interval });
 }
 
+export const supportsRepositories = manager => manager === 'apt' || manager === 'dnf';
+
 // useSystem loads the package manager and the running job, polling faster
 // while a job runs.
 export const useSystem = () => useApi('/system', s => (s?.running ? 2000 : 10000));
