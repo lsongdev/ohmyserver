@@ -262,12 +262,12 @@ func TestDialHangupAndForget(t *testing.T) {
 	if err := n.Hangup(context.Background(), "Provider"); err != nil || !reflect.DeepEqual(changes(run.calls), []string{"nmcli connection down " + uuid}) {
 		t.Errorf("hangup: %q, %v", run.calls, err)
 	}
-	backup := n.pppoeBackup(uuid)
+	backup := n.profileBackup(uuid)
 	os.WriteFile(backup, []byte("old password"), 0o600)
 	if err := n.ForgetPPPoE(context.Background(), "Provider"); err != nil {
 		t.Fatal(err)
 	}
-	for _, file := range []string{n.pppoePath(uuid), backup} {
+	for _, file := range []string{n.profilePath(uuid), backup} {
 		if _, err := os.Stat(file); err == nil {
 			t.Errorf("%s survived forgetting", file)
 		}

@@ -148,6 +148,32 @@ installed; no restart is needed afterwards.
 - Only connections this module wrote can be edited or forgotten; others are
   listed, and can be dialed and hung up.
 
+### Hotspot
+
+A radio can serve a network instead of joining one. NetworkManager runs a
+radio in one mode at a time, so starting a hotspot leaves the network the
+radio had joined; a revert stops the hotspot and brings that network back.
+
+- WPA2 (CCMP) only: a hotspot with no password is not offered. The password is
+  kept as every other connection's is, in a 0600 file, and is on no command
+  line, log, trial record or response. An empty password on an edit keeps the
+  saved one.
+- Starting is on trial. An edited hotspot is hung up before it is started
+  again, as a PPPoE connection is, and the file it replaced is put back by a
+  revert.
+- The hotspot has an IPv4 address of its own, or is a port of a bridge made
+  here. It does not hand out addresses: the DHCP server does, on the network
+  the hotspot is part of, and this module does not set that up.
+- Band and channel: 2.4 GHz channels 1 to 13, 5 GHz channels 36 to 165, or
+  empty to let the radio choose. A country's rules may refuse some channels
+  until its regulatory domain is set.
+- It starts ahead of joined networks at boot (autoconnect priority 10) until it
+  is stopped. Stopping hangs it up and turns that off, so the radio goes back
+  to the networks it knows; the profile and its password stay, and saving it
+  again starts it. A hotspot is not listed among saved networks.
+- Stopping is refused while a change is on trial, and when this client is
+  connected through the radio.
+
 ## Run
 
 ```sh
@@ -183,6 +209,9 @@ version 409 `conflict`, and a refused change 409 `in_use`.
 | GET | `/api/wifi/{name}/networks[?rescan=1]` | What the radio hears |
 | PUT | `/api/wifi/{name}/connection` | Join `{ssid, security, password, hidden}` on trial |
 | DELETE | `/api/wifi/saved/{uuid}` | Forget a saved network |
+| GET | `/api/wifi/{name}/hotspot` | The radio's hotspot (null if none), whether it can serve one, the bridges it could join, `protected` |
+| PUT | `/api/wifi/{name}/hotspot` | Start `{ssid, password, band, channel, hidden, address or bridge}` on trial |
+| POST | `/api/wifi/{name}/hotspot/stop` | Stop it and keep it from starting at boot |
 | GET | `/api/pppoe` | Readiness, the Ethernet interfaces to dial through, and the connections (`protected`) |
 | PUT | `/api/pppoe/{name}` | Save and dial `{parent, username, password, service, mtu, metric}` on trial |
 | POST | `/api/pppoe/{name}/dial` | Dial a saved connection, on trial |

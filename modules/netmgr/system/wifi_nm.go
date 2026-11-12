@@ -83,6 +83,14 @@ func (n *NetworkManager) WifiDevices(ctx context.Context) ([]WifiDevice, error) 
 			continue
 		}
 		d := WifiDevice{Name: f[0], State: f[2]}
+		if out, _, err := n.Run.Run(ctx, "", "nmcli", "-t", "-f", "WIFI-PROPERTIES.AP", "device", "show", f[0]); err == nil {
+			d.AP = strings.HasSuffix(strings.TrimSpace(string(out)), ":yes")
+		}
+		if active[f[0]] == wifiAPUUID(f[0]) {
+			if ap, _ := n.WifiAP(ctx, f[0]); ap != nil {
+				d.Hotspot = ap.SSID
+			}
+		}
 		for _, s := range saved {
 			if s.UUID == active[f[0]] {
 				d.SSID, d.Profile = s.SSID, s.Name
@@ -125,12 +133,15 @@ func (n *NetworkManager) WifiSaved(ctx context.Context) ([]WifiSaved, error) {
 			continue
 		}
 		show, _, err := n.Run.Run(ctx, "", "nmcli", "-t", "-e", "no", "-f",
-			"connection.id,connection.interface-name,connection.autoconnect,802-11-wireless.ssid,802-11-wireless-security.key-mgmt",
+			"connection.id,connection.interface-name,connection.autoconnect,802-11-wireless.ssid,802-11-wireless-security.key-mgmt,802-11-wireless.mode",
 			"connection", "show", f[0])
 		if err != nil {
 			continue // removed meanwhile
 		}
 		v := parseTerse(string(show))
+		if mode := clean(v["802-11-wireless.mode"]); mode != "" && mode != "infrastructure" {
+			continue // a hotspot is edited on its own page, not joined
+		}
 		saved = append(saved, WifiSaved{
 			UUID: f[0], Name: v["connection.id"], SSID: clean(v["802-11-wireless.ssid"]), Device: clean(v["connection.interface-name"]),
 			Kind: keyMgmtKind(clean(v["802-11-wireless-security.key-mgmt"])), Autoconnect: v["connection.autoconnect"] == "yes", Active: running[f[0]],

@@ -240,6 +240,7 @@ func (s *Service) Handler() http.Handler {
 	s.registerBridges(handle)
 	s.registerWifi(handle)
 	s.registerPPPoE(handle)
+	s.registerWifiAP(handle)
 	handle("GET /trial", func(r *http.Request) (any, error) { return s.trial.status(), nil })
 	handle("POST /trial/keep", func(r *http.Request) (any, error) { return s.trial.keep() })
 	handle("POST /trial/revert", func(r *http.Request) (any, error) { return s.trial.revertNow() })

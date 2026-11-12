@@ -8,6 +8,7 @@ const routes = [
   { path: '/interfaces/:name/settings', load: () => import('./pages/settings.js') },
   { path: '/wifi', load: () => import('./pages/wifi.js') },
   { path: '/wifi/:name/scan', load: () => import('./pages/wifi-scan.js') },
+  { path: '/wifi/:name/hotspot', load: () => import('./pages/wifi-hotspot.js') },
   { path: '/wifi/:name/connect', load: () => import('./pages/wifi-connect.js') },
   { path: '/bridges', load: () => import('./pages/bridges.js') },
   { path: '/bridges/new', load: () => import('./pages/bridge.js') },

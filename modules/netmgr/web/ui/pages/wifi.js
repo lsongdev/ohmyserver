@@ -34,14 +34,16 @@ function Radio({ device: d, reload }) {
     toast(`${d.name} disconnected`, 'success');
     reload();
   });
+  const serving = d.state.startsWith('connected') && d.hotspot;
   const joined = d.state.startsWith('connected') && d.ssid;
   return html`<section class="section">
     <h2 class="section-title">${d.name}</h2>
     <div class="card">
-      <div>${joined ? html`Connected to <strong>${d.ssid}</strong>` : html`<span class="muted">Not connected (${d.state})</span>`}</div>
+      <div>${serving ? html`Serving the hotspot <strong>${d.hotspot}</strong>` : joined ? html`Connected to <strong>${d.ssid}</strong>` : html`<span class="muted">Not connected (${d.state})</span>`}</div>
       <div class="form-actions">
         <a class="button button-primary" href=${href(`/wifi/${encodeURIComponent(d.name)}/scan`)}>Scan for networks</a>
         <a class="button" href=${href(`/wifi/${encodeURIComponent(d.name)}/connect`)}>Hidden network</a>
+        ${d.ap ? html`<a class="button" href=${href(`/wifi/${encodeURIComponent(d.name)}/hotspot`)}>Hotspot</a>` : null}
         <a class="button" href=${href(`/interfaces/${encodeURIComponent(d.name)}/settings`)}>Address settings</a>
         ${joined ? html`<button class="button" disabled=${off.busy || d.protected} title=${d.protected ? 'It carries this machine\'s default route or this connection' : null} onClick=${disconnect}>Disconnect</button>` : null}
       </div>

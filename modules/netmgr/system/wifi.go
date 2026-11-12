@@ -16,6 +16,10 @@ type WifiDevice struct {
 	State   string `json:"state"`
 	SSID    string `json:"ssid,omitempty"`    // of the saved network it is connected to
 	Profile string `json:"profile,omitempty"` // that network's connection id
+	// AP: the radio can serve a network. Hotspot is the name of the one it
+	// serves now.
+	AP      bool   `json:"ap"`
+	Hotspot string `json:"hotspot,omitempty"`
 }
 
 // WifiNetwork is a network a scan found. Kind says whether this page can

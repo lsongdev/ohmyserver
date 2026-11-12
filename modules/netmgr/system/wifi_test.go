@@ -108,7 +108,7 @@ func asValidation(err error, target **ValidationError) bool {
 	return ok
 }
 
-const savedKey = "nmcli -t -e no -f connection.id,connection.interface-name,connection.autoconnect,802-11-wireless.ssid,802-11-wireless-security.key-mgmt connection show "
+const savedKey = "nmcli -t -e no -f connection.id,connection.interface-name,connection.autoconnect,802-11-wireless.ssid,802-11-wireless-security.key-mgmt,802-11-wireless.mode connection show "
 
 // wifiRunner is a machine with a wired port, a radio joined to HomeNet, and
 // the saved network HomeNet.

@@ -12,14 +12,14 @@ import (
 
 const pppoeFields = "connection.id,connection.autoconnect,pppoe.parent,pppoe.username,pppoe.service,ppp.mtu,ipv4.route-metric"
 
-// pppoePath is the connection file this module keeps for a connection, and
-// pppoeBackup the hidden copy of it from before a change. NetworkManager
+// profilePath is the connection file this module keeps for a connection, and
+// profileBackup the hidden copy of it from before a change. NetworkManager
 // ignores hidden files, so the copy is never read as a second connection.
-func (n *NetworkManager) pppoePath(uuid string) string {
+func (n *NetworkManager) profilePath(uuid string) string {
 	return filepath.Join(n.connectionDir(), "ohmyserver-"+uuid+".nmconnection")
 }
 
-func (n *NetworkManager) pppoeBackup(uuid string) string {
+func (n *NetworkManager) profileBackup(uuid string) string {
 	return filepath.Join(n.connectionDir(), ".ohmyserver-"+uuid+".prev")
 }
 
@@ -39,9 +39,14 @@ func keyfileUnescape(s string) string {
 	return b.String()
 }
 
-// savedPassword reads the password out of a connection file this module
+// savedPassword reads a PPPoE password out of a connection file this module
 // wrote; ok is false when there is no such file.
 func savedPassword(path string) (password string, ok bool) {
+	return savedSecret(path, "pppoe", "password")
+}
+
+// savedSecret reads key from a section of such a file.
+func savedSecret(path, wantSection, key string) (value string, ok bool) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", false
@@ -51,7 +56,7 @@ func savedPassword(path string) (password string, ok bool) {
 		line = strings.TrimRight(line, "\r")
 		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
 			section = line[1 : len(line)-1]
-		} else if v, found := strings.CutPrefix(line, "password="); found && section == "pppoe" {
+		} else if v, found := strings.CutPrefix(line, key+"="); found && section == wantSection {
 			return keyfileUnescape(v), true
 		}
 	}
@@ -89,7 +94,7 @@ func (n *NetworkManager) PPPoEList(ctx context.Context) ([]PPPoE, error) {
 		v := parseTerse(string(show))
 		mtu, _ := strconv.Atoi(clean(v["ppp.mtu"]))
 		metric, _ := strconv.Atoi(clean(v["ipv4.route-metric"]))
-		password, managed := savedPassword(n.pppoePath(f[0]))
+		password, managed := savedPassword(n.profilePath(f[0]))
 		list = append(list, PPPoE{
 			UUID: f[0], Name: v["connection.id"], Parent: clean(v["pppoe.parent"]), Username: clean(v["pppoe.username"]),
 			Service: clean(v["pppoe.service"]), MTU: mtu, Metric: max(metric, 0), HasPassword: managed && password != "",
@@ -127,7 +132,7 @@ func (n *NetworkManager) PreparePPPoE(ctx context.Context, r PPPoERequest) (Undo
 		return Undo{}, err
 	}
 	uuid := pppoeUUID(r.Name)
-	path := n.pppoePath(uuid)
+	path := n.profilePath(uuid)
 	undo := Undo{Backend: n.Name(), Link: r.Parent}
 	switch {
 	case existing != nil && !existing.Managed:
@@ -142,7 +147,7 @@ func (n *NetworkManager) PreparePPPoE(ctx context.Context, r PPPoERequest) (Undo
 	if saved, _ := savedPassword(path); r.Password == "" && saved == "" {
 		return Undo{}, needPassword()
 	}
-	backup := n.pppoeBackup(uuid)
+	backup := n.profileBackup(uuid)
 	if err := copyFile(path, backup, 0o600); err != nil {
 		return Undo{}, err
 	}
@@ -155,7 +160,7 @@ func (n *NetworkManager) PreparePPPoE(ctx context.Context, r PPPoERequest) (Undo
 // one saved. A failure here is undone by the revert Prepare made possible.
 func (n *NetworkManager) SavePPPoE(ctx context.Context, r PPPoERequest) error {
 	uuid := pppoeUUID(r.Name)
-	path := n.pppoePath(uuid)
+	path := n.profilePath(uuid)
 	if r.Password == "" {
 		r.Password, _ = savedPassword(path)
 	}
@@ -217,7 +222,7 @@ func (n *NetworkManager) ForgetPPPoE(ctx context.Context, name string) error {
 	if err := n.nmcli(ctx, "connection", "delete", p.UUID); err != nil && !isUnknownConnection(err) {
 		return err
 	}
-	for _, file := range []string{n.pppoePath(p.UUID), n.pppoeBackup(p.UUID)} {
+	for _, file := range []string{n.profilePath(p.UUID), n.profileBackup(p.UUID)} {
 		if err := os.Remove(file); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
