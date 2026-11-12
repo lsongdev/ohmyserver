@@ -23,7 +23,7 @@ export default function Snapshot() {
 
   return html`<${PageHeader} title=${s?.short || name.split('@')[1] || 'Snapshot'} subtitle=${s?.dataset || name.split('@')[0]}
     back=${{ href: backHref, label: back.startsWith('/dataset') ? dataset : 'Snapshots' }}
-    actions=${s ? html`<span class="zfs-actions">
+    actions=${s ? html`<span class="form-actions">
       ${files ? html`<a class="button" href=${files}>Browse files</a>` : null}
       <button class="button" onClick=${() => setDialog('rename')}>Rename</button>
       <button class="button button-danger" onClick=${() => setDialog('rollback')}>Roll back…</button>

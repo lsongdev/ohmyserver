@@ -46,7 +46,7 @@ function Editor({ path, content }) {
     });
   };
   return html`<form class="form file-workspace" onSubmit=${submit}>
-    <div class="button-actions">
+    <div class="form-actions">
       <button class="button button-primary" disabled=${!dirty || save.busy}>${save.busy ? 'Saving…' : 'Save'}</button>
       <span class="muted small" role="status">${dirty ? 'Unsaved changes' : 'Saved'}</span>
     </div>

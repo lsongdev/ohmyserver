@@ -5,9 +5,5 @@
 .record-form h2 { font-size: 15px; font-weight: 600; }
 .record-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
 .content-cell { max-width: 420px; overflow-wrap: anywhere; }
-.choice-grid { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
-.choice-card { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; }
-.choice-card.selected { border-color: var(--color-primary); box-shadow: 0 0 0 1px var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface)); }
-.choice-card input { position: absolute; opacity: 0; pointer-events: none; }
 .zone-list { margin: 0; padding-left: 18px; }
 .proxied { color: #f38020; }

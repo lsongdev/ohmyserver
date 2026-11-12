@@ -13,7 +13,6 @@
 .zfs-dialog-body { display: grid; gap: 12px; }
 .zfs-dialog-body p { margin: 0; }
 
-.zfs-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .zfs-path { overflow-wrap: anywhere; }
 .zfs-keep { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
 .zfs-schedule { margin: 0 0 14px; }

@@ -22,7 +22,7 @@ export default function Dataset() {
   const returnTo = routeURL('/dataset', { name, from: query.from });
 
   return html`<${PageHeader} title=${name || 'Dataset'} subtitle=${d?.mountpoint || d?.type}
-    actions=${d ? html`<span class="zfs-actions">
+    actions=${d ? html`<span class="form-actions">
       ${files ? html`<a class="button" href=${files}>Browse files</a>` : null}
       ${d.type === 'filesystem' ? html`<a class="button" href=${href('/dataset/new', { parent: name })}>New child dataset</a>` : null}
     </span>` : null} />

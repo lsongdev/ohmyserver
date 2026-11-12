@@ -4,25 +4,6 @@
    module's shadow root before the module's own styles; a standalone module
    links it from its index.html. Theme tokens come from the hosting document. */
 @import url(../node_modules/@lsongdev/stylesheets/index.css);
-/* @import url(../node_modules/@lsongdev/stylesheets/card.css);
-@import url(../node_modules/@lsongdev/stylesheets/input.css);
-@import url(../node_modules/@lsongdev/stylesheets/button.css);
-@import url(../node_modules/@lsongdev/stylesheets/table.css);
-@import url(../node_modules/@lsongdev/stylesheets/pagination.css);
-@import url(../node_modules/@lsongdev/stylesheets/badge.css);
-@import url(../node_modules/@lsongdev/stylesheets/alert.css);
-@import url(../node_modules/@lsongdev/stylesheets/dialog.css);
-@import url(../node_modules/@lsongdev/stylesheets/page.css);
-@import url(../node_modules/@lsongdev/stylesheets/field.css);
-@import url(../node_modules/@lsongdev/stylesheets/switch.css);
-@import url(../node_modules/@lsongdev/stylesheets/progressbar.css);
-@import url(../node_modules/@lsongdev/stylesheets/tabs.css);
-@import url(../node_modules/@lsongdev/stylesheets/key-value.css);
-@import url(../node_modules/@lsongdev/stylesheets/spinner.css);
-@import url(../node_modules/@lsongdev/stylesheets/log.css);
-@import url(../node_modules/@lsongdev/stylesheets/toast.css);
-@import url(../node_modules/@lsongdev/stylesheets/theme/light.css);
-@import url(../node_modules/@lsongdev/stylesheets/theme/dark.css); */
 
 /* Spacing is the pages' own (see Cards below), so components add none. */
 :root, :host {
@@ -42,7 +23,7 @@ body {
   line-height: var(--line-height);
   -webkit-font-smoothing: antialiased;
 }
-a { color: var(--color-primary);  }
+a { color: var(--color-primary); text-decoration: none; }
 h1, h2, h3 { margin: 0; line-height: 1.3; }
 code, .mono { font-family: var(--font-mono); font-size: 12.5px; }
 .muted { color: var(--color-text-muted); }

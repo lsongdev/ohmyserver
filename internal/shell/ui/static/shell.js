@@ -127,7 +127,7 @@ function Navigation({ panel, path, onLogout }) {
     .filter(i => path === i.to || (!i.root && path.startsWith(i.to + '/')))
     .sort((a, b) => b.to.length - a.to.length)[0];
   // Cross-module grouping is a host policy; item.group belongs inside a module.
-  const sharedGroups = { home: 'Home', notify: 'Home', disks: 'Storage', zfs: 'Storage' };
+  const sharedGroups = { home: 'Home', notify: 'Notification', disks: 'Storage', zfs: 'Storage' };
   // One menu tree: a group per module (or shared group), or the bare
   // links when only one module is mounted.
   const groups = new Map();

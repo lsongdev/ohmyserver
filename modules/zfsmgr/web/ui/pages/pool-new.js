@@ -91,7 +91,7 @@ function Form({ disks }) {
         <//>
       </div>
     </div>
-    <div class="zfs-actions">
+    <div class="form-actions">
       <button class="button button-primary" type="submit" disabled=${busy || !spec.name || spec.disks.length < min}>${busy ? 'Checking…' : 'Review'}</button>
       <button class="button" type="button" disabled=${busy} onClick=${() => navigate('/')}>Cancel</button>
       ${spec.disks.length < min ? html`<span class="muted small">Choose at least ${min} disk${min === 1 ? '' : 's'} for this layout.</span>` : null}

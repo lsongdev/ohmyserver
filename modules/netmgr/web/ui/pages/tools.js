@@ -77,7 +77,7 @@ export default function Tools({ query, setQuery }) {
           </select>
         <//>` : null}
       </div>
-      <div class="button-actions">
+      <div class="form-actions">
         <button class="button button-primary" disabled=${running}>${running ? 'Running…' : 'Run'}</button>
         ${running ? html`<button type="button" class="button" onClick=${() => controller.current?.abort()}>Stop</button>` : null}
       </div>

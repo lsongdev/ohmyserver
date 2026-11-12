@@ -23,7 +23,7 @@ export default function Channels() {
     }
   };
   return html`<${PageHeader} title="Channels" subtitle="Where events are sent, and which ones"
-    actions=${html`<span class="notify-actions">
+    actions=${html`<span class="form-actions">
       <a class="button" href=${href('/deliveries')}>Delivery log</a>
       <a class="button button-primary" href=${href('/channels/new')}>Add channel</a>
     </span>`} />

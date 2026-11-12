@@ -37,31 +37,32 @@ function AccountForm({ kinds, account }) {
       if (isNew) await api.post('/accounts', body());
       else await api.put(`/accounts/${account.id}`, body());
       toast(isNew ? 'Account added' : 'Account saved', 'success');
-      navigate('/');
+      navigate('/accounts');
     });
   };
   const runTest = () => test.run(async () => setZones(await api.post('/accounts/test', { id: account?.id || 0, ...body() })));
   return html`<form class="form form-narrow" onSubmit=${submit}>
     ${isNew ? html`<${Field} label="Provider">
-      <div class="choice-grid">${kinds.map(x => html`<label key=${x.id} class=${`choice-card ${kind === x.id ? 'selected' : ''}`}>
-        <input type="radio" name="kind" checked=${kind === x.id} onChange=${() => setKind(x.id)} /><b>${x.title}</b></label>`)}</div>
+      <select class="input" value=${kind} onChange=${e => { setKind(e.currentTarget.value); setCreds({}); }}>
+        ${kinds.map(x => html`<option key=${x.id} value=${x.id}>${x.title}</option>`)}
+      </select>
     <//>` : null}
     ${k?.help ? html`<${Alert} variant="info">${k.help}<//>` : null}
     <${Field} label="Name" hint="To tell accounts apart">
       <input class="input" value=${name} placeholder=${k?.title} onInput=${e => setName(e.currentTarget.value)} />
     <//>
-    ${(k?.fields || []).map(f => html`<${Field} key=${f.name} label=${f.label} required=${isNew || !account.set?.[f.name]}
+    ${(k?.fields || []).map(f => html`<${Field} key=${f.name} label=${f.label} required=${!f.optional && (isNew || !account.set?.[f.name])}
       hint=${!isNew && account.set?.[f.name] ? `Leave empty to keep the saved ${f.label.toLowerCase()}` : f.hint}>
-      <input class="input mono" type=${f.secret ? 'password' : 'text'} autocomplete="off" required=${isNew || !account.set?.[f.name]}
+      <input class="input mono" type=${f.secret ? 'password' : 'text'} autocomplete="off" required=${!f.optional && (isNew || !account.set?.[f.name])}
         value=${creds[f.name] || ''} onInput=${e => { setCreds({ ...creds, [f.name]: e.currentTarget.value }); setZones(null); }} />
     <//>`)}
     <${Alert} error=${save.error || test.error} />
     ${zones ? html`<${Alert} variant="success">Connected. ${zones.length
       ? html`It reaches ${zones.length} ${zones.length === 1 ? 'domain' : 'domains'}: ${zones.map(z => z.name).join(', ')}.`
-      : 'It reaches no domains yet: check the token\'s zone permissions.'}<//>` : null}
-    <div class="button-actions">
-      <button class="button button-primary" disabled=${save.busy}>${save.busy ? 'Checking…' : isNew ? 'Add account' : 'Save'}</button>
-      <button class="button" type="button" disabled=${test.busy} onClick=${runTest}>${test.busy ? 'Testing…' : 'Test connection'}</button>
+      : 'It reaches no domains yet: check the account and its domain permissions.'}<//>` : null}
+    <div class="form-actions">
+      <button class="button button-primary" disabled=${save.busy || test.busy}>${save.busy ? 'Checking…' : isNew ? 'Add account' : 'Save'}</button>
+      <button class="button" type="button" disabled=${test.busy || save.busy} onClick=${runTest}>${test.busy ? 'Testing…' : 'Test connection'}</button>
     </div>
   </form>`;
 }

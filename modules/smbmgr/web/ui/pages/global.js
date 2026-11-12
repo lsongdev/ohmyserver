@@ -130,7 +130,7 @@ function SettingsEditor({ file, mode, setMode, onSaved }) {
         ${mode === 'form' ? html`<${GlobalFields} f=${f} set=${patch => { set(patch); setCheck(null); }} busy=${busy} />`
           : html`<${ConfigText} text=${text} path=${file.path} onChange=${value => { setText(value); setCheck(null); }} />`}
       </fieldset>
-      <div class="button-actions">
+      <div class="form-actions">
         <button class="button button-primary" disabled=${busy || !dirty}>${busy ? 'Working…' : 'Save'}</button>
         <button type="button" class="button" disabled=${busy} onClick=${runCheck}>Check</button>
         <button type="button" class="button" disabled=${busy || !dirty} onClick=${revert}>Revert</button>

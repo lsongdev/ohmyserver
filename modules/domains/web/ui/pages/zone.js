@@ -23,6 +23,7 @@ export default function Zone({ params }) {
     return html`<${PageHeader} title="Domain" back=${{ href: href('/'), label: 'Domains' }} />
       ${zone.error ? html`<${Alert} error=${zone.error} />` : html`<${Loading} />`}`;
   }
+  const types = z.record_types || TYPES;
   const type = query.type || '';
   const text = (query.q || '').trim().toLowerCase();
   const records = z.records.filter(r => (!type || r.type === type) && (!text || r.name.includes(text) || r.content.toLowerCase().includes(text)));
@@ -36,7 +37,7 @@ export default function Zone({ params }) {
       onDone=${saved => { setEditing(null); if (saved) zone.reload(); }} />` : null}
     <div class="toolbar">
       <select class="input" value=${type} aria-label="Type" style="max-width:140px" onChange=${e => setQuery({ type: e.currentTarget.value })}>
-        <option value="">All types</option>${TYPES.map(t => html`<option key=${t} value=${t}>${t}</option>`)}
+        <option value="">All types</option>${types.map(t => html`<option key=${t} value=${t}>${t}</option>`)}
       </select>
       <input class="input" type="search" placeholder="Filter by name or content" aria-label="Filter" value=${query.q || ''}
         onInput=${e => setQuery({ q: e.currentTarget.value })} />
@@ -64,9 +65,11 @@ export default function Zone({ params }) {
 function RecordForm({ base, zone, record, onDone }) {
   const { api } = usePanel();
   const isNew = !record.id;
+  const types = zone.record_types || TYPES;
+  const ttls = TTLS.filter(([v]) => !zone.min_ttl || v >= zone.min_ttl);
   const [r, setR] = useState({
     type: record.type || 'A', name: record.id ? short(record.name, zone.name) : '', content: record.content || '',
-    ttl: record.ttl || 1, priority: record.priority ?? 10, proxied: Boolean(record.proxied), comment: record.comment || '',
+    ttl: record.ttl || zone.min_ttl || 1, priority: record.priority ?? 10, proxied: Boolean(record.proxied), comment: record.comment || '',
   });
   const save = useAction();
   const set = patch => setR(prev => ({ ...prev, ...patch }));
@@ -83,14 +86,14 @@ function RecordForm({ base, zone, record, onDone }) {
     });
   };
   const placeholder = { A: '192.0.2.10', AAAA: '2001:db8::10', CNAME: 'target.example.com', TXT: 'v=spf1 -all', MX: 'mail.example.com',
-    NS: 'ns1.example.com', SRV: '10 5060 sip.example.com', CAA: '0 issue "letsencrypt.org"' }[r.type];
+    ANAME: 'target.example.com', NS: 'ns1.example.com', SRV: '10 5060 sip.example.com', CAA: '0 issue "letsencrypt.org"' }[r.type];
   return html`<form class="card record-form" onSubmit=${submit}>
     <h2>${isNew ? 'Add record' : `Edit ${record.type} ${short(record.name, zone.name)}`}</h2>
     <${Alert} error=${save.error} />
     <div class="record-grid">
       <${Field} label="Type">
         <select class="input" value=${r.type} disabled=${!isNew} onChange=${e => set({ type: e.currentTarget.value })}>
-          ${TYPES.map(t => html`<option key=${t} value=${t}>${t}</option>`)}
+          ${types.map(t => html`<option key=${t} value=${t}>${t}</option>`)}
         </select>
       <//>
       <${Field} label="Name" hint=${`@ for ${zone.name}`}>
@@ -101,19 +104,19 @@ function RecordForm({ base, zone, record, onDone }) {
       <//>
       <${Field} label="TTL">
         <select class="input" value=${r.ttl} onChange=${e => set({ ttl: Number(e.currentTarget.value) })}>
-          ${TTLS.map(([v, l]) => html`<option key=${v} value=${v}>${l}</option>`)}
-          ${TTLS.some(([v]) => v === r.ttl) ? null : html`<option value=${r.ttl}>${ttl(r.ttl)}</option>`}
+          ${ttls.map(([v, l]) => html`<option key=${v} value=${v}>${l}</option>`)}
+          ${ttls.some(([v]) => v === r.ttl) ? null : html`<option value=${r.ttl}>${ttl(r.ttl)}</option>`}
         </select>
       <//>
     </div>
-    <div class="button-actions">
+    <div class="form-actions">
       ${r.type === 'MX' || r.type === 'SRV' ? html`<${Field} label="Priority"><input class="input" type="number" min="0" max="65535" style="width:110px"
         value=${r.priority} onInput=${e => set({ priority: e.currentTarget.value })} /><//>` : null}
       ${zone.proxy && PROXIABLE.has(r.type) ? html`<${Check} label="Proxy through Cloudflare (hides the address; HTTP and HTTPS only)"
         checked=${r.proxied} onChange=${e => set({ proxied: e.currentTarget.checked })} />` : null}
     </div>
-    <${Field} label="Comment"><input class="input" value=${r.comment} onInput=${e => set({ comment: e.currentTarget.value })} /><//>
-    <div class="button-actions">
+    ${zone.comments ? html`<${Field} label="Comment"><input class="input" value=${r.comment} onInput=${e => set({ comment: e.currentTarget.value })} /><//>` : null}
+    <div class="form-actions">
       <button class="button button-primary" disabled=${save.busy}>${isNew ? 'Add' : 'Save'}</button>
       <button class="button" type="button" onClick=${() => onDone(false)}>Cancel</button>
     </div>

@@ -27,7 +27,7 @@ const icons = {
   cron: { '/': 'clock' },
   monitor: { '/': 'chart-line' },
   ci: { '/': 'code-branch', '/builds': 'hammer' },
-  packages: { '/': 'box', '/recommended': 'star', '/jobs': 'list-check' },
+  packages: { '/': 'box', '/recommended': 'star', '/repositories': 'database', '/jobs': 'list-check' },
   services: { '/': 'gears', '/logs': 'file-lines' },
   network: { '/': 'ethernet', '/routes': 'route', '/ports': 'plug', '/tools': 'stethoscope' },
   disks: { '/': 'gauge-high' },

@@ -66,7 +66,7 @@ function Form({ parent }) {
         </div>
       </div>
     </div>
-    <div class="zfs-actions">
+    <div class="form-actions">
       <button class="button button-primary" type="submit" disabled=${busy || !form.name.trim()}>${busy ? 'Creating…' : 'Create dataset'}</button>
       <button class="button" type="button" disabled=${busy} onClick=${leave}>Cancel</button>
     </div>

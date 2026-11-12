@@ -161,7 +161,7 @@ function ShareForm({ share, users, back }) {
         <${ParamsEditor} rows=${f.other} onChange=${other => set({ other })} disabled=${busy} />
       <//>
     </fieldset>
-    <div class="button-actions">
+    <div class="form-actions">
       <button class="button button-primary" disabled=${busy}>${save.busy ? 'Saving…' : isNew ? 'Add share' : 'Save'}</button>
       <a class="button" href=${href(back)}>Cancel</a>
       <span class="spacer"></span>

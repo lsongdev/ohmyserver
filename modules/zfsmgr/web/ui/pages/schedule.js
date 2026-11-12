@@ -85,7 +85,7 @@ export default function Schedule() {
           <p class="muted small">Zero takes none of that class and leaves the ones it already has. Only snapshots named <code>auto-…</code> by a schedule are ever removed, oldest first; manual, held and cloned ones stay. Child datasets without a schedule of their own follow this one.</p>
         </div>
         ${removed > 0 && dirty ? html`<${Alert} variant="warning">Saving removes the oldest ${removed} automatic snapshot${removed === 1 ? '' : 's'} within a minute.<//>` : null}
-        <div class="zfs-actions">
+        <div class="form-actions">
           <button class="button button-primary" type="submit" disabled=${busy || invalid || !dirty}>${busy ? 'Saving…' : 'Save'}</button>
           <button class="button" type="button" disabled=${busy} onClick=${leave}>Cancel</button>
           ${d.policy_source === 'local' ? html`<button class="button" type="button" disabled=${busy} onClick=${inherit}>${name.includes('/') ? "Follow parent's schedule" : 'Remove schedule'}</button>` : null}

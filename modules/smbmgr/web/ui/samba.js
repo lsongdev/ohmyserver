@@ -69,7 +69,7 @@ export function ParamsEditor({ rows, onChange, disabled }) {
       <button type="button" class="button button-ghost" aria-label=${`Remove ${r.key || 'parameter'}`} disabled=${disabled}
         onClick=${() => onChange(rows.filter((_, j) => j !== i))}>×</button>
     </div>`)}
-    <div class="params-actions">
+    <div class="form-actions">
       <button type="button" class="button button-small" disabled=${disabled} onClick=${() => onChange([...rows, { key: '', value: '' }])}>Add parameter</button>
     </div>
   </div>`;

@@ -106,7 +106,7 @@ function Form({ saved, onSaved }) {
     </div>
     <${Alert} error=${test.error} />
     ${tested ? html`<${Alert} variant="success">${tested}<//>` : null}
-    <div class="notify-actions">
+    <div class="form-actions">
       <button class="button button-primary" type="submit" disabled=${save.busy || (saved && !dirty)}>${save.busy ? 'Saving…' : saved ? 'Save' : 'Add channel'}</button>
       <button class="button" type="button" disabled=${save.busy} onClick=${() => navigate('/channels')}>Cancel</button>
       ${saved ? html`
