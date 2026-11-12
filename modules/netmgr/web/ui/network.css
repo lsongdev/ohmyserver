@@ -13,6 +13,10 @@
 .trial-text { flex: 1 1 280px; min-width: 0; }
 .trial-count { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .trial-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.checks { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.checks li { display: flex; gap: 4px 12px; align-items: baseline; flex-wrap: wrap; }
+.checks .check-fix { flex-basis: 100%; }
+.card > .checks { margin: 0; }
 
 /* Lists of values in the settings form. */
 .rows-title { font-weight: 550; }
@@ -37,3 +41,6 @@
 
 /* Diagnostics output. */
 .tool-output { --log-height: 420px; white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 16px; }
+
+/* Numbered steps in a guide. */
+.steps { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 6px; }

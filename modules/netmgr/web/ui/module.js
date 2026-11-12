@@ -6,6 +6,7 @@ const routes = [
   { path: '/', load: () => import('./pages/interfaces.js') },
   { path: '/interfaces/:name', load: () => import('./pages/interface.js') },
   { path: '/interfaces/:name/settings', load: () => import('./pages/settings.js') },
+  { path: '/pppoe', load: () => import('./pages/pppoe.js') },
   { path: '/routes', load: () => import('./pages/routes.js') },
   { path: '/ports', load: () => import('./pages/ports.js') },
   { path: '/tools', load: () => import('./pages/tools.js') },

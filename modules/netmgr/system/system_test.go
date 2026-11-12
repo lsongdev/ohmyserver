@@ -339,7 +339,7 @@ func TestNetworkdRefusesFilesItCannotEditSafely(t *testing.T) {
 func nmRunner() *fakeRunner {
 	return &fakeRunner{answers: map[string]string{
 		"nmcli -t -e no -f GENERAL.STATE,GENERAL.CON-UUID device show eth0": "GENERAL.STATE:100 (connected)\nGENERAL.CON-UUID:abc-123\n",
-		"nmcli -t -e no -f connection.id,connection.type,ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.dns,ipv4.routes,ipv6.method,ipv6.addresses,ipv6.gateway,ipv6.dns,ipv6.routes connection show abc-123": "connection.id:System eth0\nconnection.type:802-3-ethernet\nipv4.method:manual\nipv4.addresses:192.168.1.10/24\nipv4.gateway:192.168.1.1\nipv4.dns:1.1.1.1,8.8.8.8\nipv4.routes:10.0.0.0/8 192.168.1.2\nipv6.method:ignore\nipv6.addresses:\nipv6.gateway:\nipv6.dns:\nipv6.routes:\n",
+		"nmcli -t -e no -f connection.id,connection.type,ipv4.method,ipv4.addresses,ipv4.gateway,ipv4.dns,ipv4.routes,ipv6.method,ipv6.addresses,ipv6.gateway,ipv6.dns,ipv6.routes,ipv4.route-metric,ipv6.route-metric connection show abc-123": "connection.id:System eth0\nconnection.type:802-3-ethernet\nipv4.method:manual\nipv4.addresses:192.168.1.10/24\nipv4.gateway:192.168.1.1\nipv4.dns:1.1.1.1,8.8.8.8\nipv4.routes:10.0.0.0/8 192.168.1.2\nipv6.method:ignore\nipv6.addresses:\nipv6.gateway:\nipv6.dns:\nipv6.routes:\nipv4.route-metric:200\nipv6.route-metric:-1\n",
 		"nmcli -t -e no -f 802-3-ethernet.mtu connection show abc-123": "802-3-ethernet.mtu:1400\n",
 	}}
 }
@@ -352,7 +352,7 @@ func TestNetworkManagerRead(t *testing.T) {
 	}
 	c := s.Config
 	if c.DHCP4 || c.DHCP6 || c.Addresses[0] != "192.168.1.10/24" || c.Gateway4 != "192.168.1.1" || len(c.DNS) != 2 || c.MTU != 1400 ||
-		c.Routes[0] != (StaticRoute{"10.0.0.0/8", "192.168.1.2"}) || s.Target != "Connection System eth0" {
+		c.Routes[0] != (StaticRoute{"10.0.0.0/8", "192.168.1.2"}) || c.Metric != 200 || s.Target != "Connection System eth0" {
 		t.Errorf("setting = %+v", s)
 	}
 }
@@ -376,7 +376,7 @@ func TestNetworkManagerApplyKeepsDisabledIPv6AndFallsBackToUp(t *testing.T) {
 			modify = call
 		}
 	}
-	for _, want := range []string{"ipv4.method auto", "ipv6.method ignore", "ipv6.dns fd00::53", "802-3-ethernet.mtu auto"} {
+	for _, want := range []string{"ipv4.method auto", "ipv6.method ignore", "ipv6.dns fd00::53", "802-3-ethernet.mtu auto", "ipv4.route-metric -1", "ipv6.route-metric -1"} {
 		if !strings.Contains(modify, want) {
 			t.Errorf("missing %q in %q", want, modify)
 		}
@@ -388,7 +388,47 @@ func TestNetworkManagerApplyKeepsDisabledIPv6AndFallsBackToUp(t *testing.T) {
 	if err := n.Revert(context.Background(), undo); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(run.calls[0], "ipv4.addresses 192.168.1.10/24") || !strings.Contains(run.calls[0], "ipv4.method manual") || !strings.Contains(run.calls[0], "802-3-ethernet.mtu 1400") {
+	if !strings.Contains(run.calls[0], "ipv4.addresses 192.168.1.10/24") || !strings.Contains(run.calls[0], "ipv4.method manual") || !strings.Contains(run.calls[0], "802-3-ethernet.mtu 1400") || !strings.Contains(run.calls[0], "ipv4.route-metric 200") || !strings.Contains(run.calls[0], "ipv6.route-metric -1") {
 		t.Errorf("revert = %q", run.calls[0])
+	}
+}
+
+func TestRouteMetricIsWrittenToBothFamilies(t *testing.T) {
+	p := wanted(Config{DHCP4: true, Metric: 50}, map[string]string{"connection.type": "802-3-ethernet"})
+	if p["ipv4.route-metric"] != "50" || p["ipv6.route-metric"] != "50" {
+		t.Errorf("metric = %q, %q", p["ipv4.route-metric"], p["ipv6.route-metric"])
+	}
+	p = wanted(Config{DHCP4: true}, map[string]string{"connection.type": "802-3-ethernet"})
+	if p["ipv4.route-metric"] != "-1" {
+		t.Errorf("automatic metric = %q", p["ipv4.route-metric"])
+	}
+}
+
+func TestRouteMetricReadsEitherFamilyAndTreatsAutomaticAsZero(t *testing.T) {
+	for _, c := range []struct {
+		v4, v6 string
+		want   int
+	}{{"-1", "-1", 0}, {"", "", 0}, {"100", "-1", 100}, {"-1", "300", 300}, {"junk", "", 0}} {
+		if got := routeMetric(c.v4, c.v6); got != c.want {
+			t.Errorf("routeMetric(%q, %q) = %d, want %d", c.v4, c.v6, got, c.want)
+		}
+	}
+}
+
+func TestMetricIsValidated(t *testing.T) {
+	for _, m := range []int{-1, 65536} {
+		if _, err := (Config{DHCP4: true, Metric: m}).Normalize(); err == nil {
+			t.Errorf("metric %d accepted", m)
+		}
+	}
+	c, err := (Config{DHCP4: true, Metric: 600}).Normalize()
+	if err != nil || c.Metric != 600 {
+		t.Errorf("metric 600: %+v, %v", c, err)
+	}
+}
+
+func TestOnlyNetworkManagerSetsMetric(t *testing.T) {
+	if !SupportsMetric(&NetworkManager{}) || SupportsMetric(&Networkd{}) {
+		t.Error("wrong backends support a metric")
 	}
 }

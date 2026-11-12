@@ -47,7 +47,7 @@ function TrialBanner() {
     if (trial) { seen.current = trial.deadline; return; }
     const last = status.data?.last;
     if (seen.current && last) {
-      const [message, tone] = OUTCOMES[last.result](last.interface);
+      const [message, tone] = OUTCOMES[last.result](last.subject);
       toast(message, tone);
       dispatchEvent(new Event('network:changed'));
     }
@@ -64,7 +64,7 @@ function TrialBanner() {
     <div class="trial">
       <div class="trial-count" aria-label="Time left">${clock(left ?? trial.seconds)}</div>
       <div class="trial-text">
-        <strong>New settings of ${trial.interface} are on trial.</strong>
+        <strong>New settings of ${trial.subject} are on trial.</strong>
         <div class="muted small">They revert by themselves unless you keep them. Keeping them proves this connection still works.</div>
       </div>
       <div class="trial-actions">
@@ -74,6 +74,31 @@ function TrialBanner() {
     </div>
     ${lost ? html`<div class="trial-note"><${Alert} variant="warning">The server cannot be reached from here. If you changed its address, open the panel at the new address and keep the settings there; otherwise wait, and the previous settings come back when the time is up.<//></div>` : null}
     ${trial.revert_error ? html`<div class="trial-note"><${Alert} variant="danger">Restoring failed and is being retried: ${trial.revert_error}<//></div>` : null}
+    <${Alert} error=${action.error} />
+    <${ConnectivityCheck} disabled=${lost} />
+  </div>`;
+}
+
+const CHECKS = { route: 'Default route', gateway: 'Gateway', dns: 'DNS', internet: 'Internet' };
+
+// ConnectivityCheck tells whether this machine reaches the internet from
+// where it stands. Keeping a change proves the panel is reachable from the
+// local network, which says nothing about a new uplink, so the check is
+// there to look at before keeping one. It never blocks keeping: a network
+// with no internet is a legitimate result.
+function ConnectivityCheck({ disabled }) {
+  const { api } = usePanel();
+  const action = useAction();
+  const [result, setResult] = useState(null);
+  const run = () => action.run(async () => { setResult(await api.post('/connectivity/check')); });
+  return html`<div class="trial-note">
+    <button class="button" disabled=${action.busy || disabled} onClick=${run}>${action.busy ? 'Checking…' : 'Check connection'}</button>
+    ${result ? html`<ul class="checks" aria-label="Connection check">
+      ${result.checks.map(c => html`<li key=${c.id}>
+        <${Status} state=${c.ok ? 'running' : 'stopped'} label=${CHECKS[c.id] || c.id} />
+        <span class="muted small">${c.detail}</span>
+      </li>`)}
+    </ul>` : null}
     <${Alert} error=${action.error} />
   </div>`;
 }

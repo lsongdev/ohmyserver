@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -378,5 +379,136 @@ func TestUnsupported(t *testing.T) {
 	}
 	if code, _ := call(t, s.Handler(), "GET", "/info", ""); code != 200 {
 		t.Errorf("info: %d", code)
+	}
+}
+
+// featureBackend is a fake that also reports what NetworkManager would.
+type featureFake struct {
+	fakeBackend
+	features system.Features
+}
+
+func (f *featureFake) DetectFeatures(context.Context) system.Features { return f.features }
+
+func TestInfoReportsFeaturesOnlyForBackendsWithThem(t *testing.T) {
+	plain, _ := newService(t, &fakeBackend{}, time.Hour)
+	_, out := call(t, plain.Handler(), "GET", "/info", "")
+	if _, ok := out["data"].(map[string]any)["features"]; ok {
+		t.Errorf("features without support: %v", out)
+	}
+
+	yes := true
+	b := &featureFake{features: system.Features{WiFi: []string{"wlan0"}, PPPoE: system.Readiness{Missing: []string{"pppd"}}}}
+	s := New(Options{Runner: ipRunner{device: "lo"}, Backend: b, Installed: &yes, StateDir: t.TempDir(),
+		Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
+	t.Cleanup(func() { s.Close() })
+	_, out = call(t, s.Handler(), "GET", "/info", "")
+	features := out["data"].(map[string]any)["features"].(map[string]any)
+	if wifi := features["wifi"].([]any); len(wifi) != 1 || wifi[0] != "wlan0" {
+		t.Errorf("wifi = %v", wifi)
+	}
+	pppoe := features["pppoe"].(map[string]any)
+	if pppoe["ready"] != false || pppoe["missing"].([]any)[0] != "pppd" {
+		t.Errorf("pppoe = %v", pppoe)
+	}
+}
+
+func TestConnectivityCheckIsAPost(t *testing.T) {
+	yes := true
+	probe := system.Probe{
+		Run:     ipRunner{device: "lo"},
+		Dial:    func(context.Context, string, string) (net.Conn, error) { return nil, errors.New("down") },
+		Lookup:  func(context.Context, string) ([]string, error) { return []string{"203.0.113.9"}, nil },
+		Targets: []string{"1.1.1.1:443"}, Name: "example.test",
+	}
+	s := New(Options{Runner: ipRunner{device: "lo"}, Backend: &fakeBackend{}, Installed: &yes, StateDir: t.TempDir(), Probe: &probe,
+		Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
+	t.Cleanup(func() { s.Close() })
+	h := s.Handler()
+
+	if code, _ := call(t, h, "GET", "/connectivity/check", ""); code == 200 {
+		t.Error("a GET ran the check")
+	}
+	code, out := call(t, h, "POST", "/connectivity/check", "")
+	if code != 200 {
+		t.Fatalf("check: %d %v", code, out)
+	}
+	byID := map[string]bool{}
+	for _, c := range out["data"].(map[string]any)["checks"].([]any) {
+		c := c.(map[string]any)
+		byID[c["id"].(string)] = c["ok"].(bool)
+	}
+	// ipRunner has a default route; the gateway ping succeeds, the dial fails.
+	if !byID["route"] || !byID["dns"] || byID["internet"] || len(byID) != 4 {
+		t.Errorf("checks = %v", byID)
+	}
+}
+
+// The trial names what it changes as "subject", which Wi-Fi and dial-up
+// changes will share with interface changes.
+func TestTrialStatusNamesItsSubject(t *testing.T) {
+	s, _ := newService(t, &fakeBackend{}, time.Hour)
+	h := s.Handler()
+	call(t, h, "PUT", "/interfaces/eth0/config", goodBody)
+	_, out := call(t, h, "GET", "/trial", "")
+	trial := out["data"].(map[string]any)["trial"].(map[string]any)
+	if trial["subject"] != "eth0" {
+		t.Errorf("trial = %v", trial)
+	}
+	if _, old := trial["interface"]; old {
+		t.Errorf("old field present: %v", trial)
+	}
+	call(t, h, "POST", "/trial/keep", "")
+	_, out = call(t, h, "GET", "/trial", "")
+	if last := out["data"].(map[string]any)["last"].(map[string]any); last["subject"] != "eth0" || last["result"] != "kept" {
+		t.Errorf("last = %v", last)
+	}
+}
+
+// The undo that reaches disk carries the profile list, so a restart reverts
+// every profile the change touched.
+func TestTrialRecordKeepsProfiles(t *testing.T) {
+	b := &profileFake{}
+	yes := true
+	dir := t.TempDir()
+	s := New(Options{Runner: ipRunner{device: "lo"}, Backend: b, Installed: &yes, StateDir: dir, Window: time.Hour,
+		Logger: slog.New(slog.NewTextHandler(io.Discard, nil))})
+	t.Cleanup(func() { s.Close() })
+	if code, out := call(t, s.Handler(), "PUT", "/interfaces/eth0/config", goodBody); code != 200 {
+		t.Fatalf("apply: %d %v", code, out)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, recordFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rec record
+	if err := json.Unmarshal(data, &rec); err != nil {
+		t.Fatal(err)
+	}
+	if len(rec.Undo.Profiles) != 2 || !rec.Undo.Profiles[1].Created || rec.Subject != "eth0" {
+		t.Errorf("record = %+v", rec)
+	}
+}
+
+type profileFake struct{ fakeBackend }
+
+func (p *profileFake) Prepare(_ context.Context, l system.Link) (system.Undo, error) {
+	return system.Undo{Backend: p.Name(), Link: l.Name, Profiles: []system.ProfileUndo{
+		{UUID: "u1", Device: l.Name, Props: map[string]string{"ipv4.method": "auto"}},
+		{Name: "ohmyserver-ppp0", Created: true},
+	}}, nil
+}
+
+// A manager that cannot set a route priority refuses one instead of
+// dropping it, so the page never claims a priority that is not in effect.
+func TestMetricIsRefusedWhereItCannotBeSet(t *testing.T) {
+	s, _ := newService(t, &fakeBackend{}, time.Hour)
+	code, out := call(t, s.Handler(), "PUT", "/interfaces/eth0/config", `{"version":"v1","config":{"dhcp4":true,"metric":50}}`)
+	fields, _ := out["error"].(map[string]any)["fields"].(map[string]any)
+	if code != 422 || fields["metric"] == nil {
+		t.Errorf("%d %v", code, out)
+	}
+	if code, _ := call(t, s.Handler(), "PUT", "/interfaces/eth0/config", `{"version":"v1","config":{"dhcp4":true}}`); code != 200 {
+		t.Errorf("no metric: %d", code)
 	}
 }

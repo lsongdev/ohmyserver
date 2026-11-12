@@ -19,7 +19,8 @@ type Config struct {
 	Gateway4  string        `json:"gateway4"`
 	Gateway6  string        `json:"gateway6"`
 	DNS       []string      `json:"dns"`
-	MTU       int           `json:"mtu"` // 0 leaves it to the driver
+	MTU       int           `json:"mtu"`    // 0 leaves it to the driver
+	Metric    int           `json:"metric"` // priority of this interface's routes, lowest wins; 0 leaves it to the manager
 	Routes    []StaticRoute `json:"routes"`
 }
 
@@ -38,6 +39,7 @@ type Setting struct {
 	Preserved []string `json:"preserved,omitempty"` // settings the form has no field for, kept as they are
 	Reason    string   `json:"reason,omitempty"`    // why it cannot be changed here
 	NoMTU     bool     `json:"no_mtu,omitempty"`    // this connection type has no MTU to set
+	NoMetric  bool     `json:"no_metric,omitempty"` // this network manager cannot set a route priority
 }
 
 // Plan shows what saving a configuration would change, as text.
@@ -57,10 +59,18 @@ type Undo struct {
 	File    string `json:"file,omitempty"`
 	Content []byte `json:"content,omitempty"`
 	Existed bool   `json:"existed,omitempty"`
-	// NetworkManager
+	// NetworkManager: one entry per connection profile the change touches,
+	// in the order it touched them. Reverting walks them backwards.
+	Profiles []ProfileUndo `json:"profiles,omitempty"`
+}
+
+// ProfileUndo restores one NetworkManager connection profile.
+type ProfileUndo struct {
 	UUID    string            `json:"uuid,omitempty"`
-	Props   map[string]string `json:"props,omitempty"`
+	Name    string            `json:"name,omitempty"`   // of a created profile, which is deleted to undo
+	Device  string            `json:"device,omitempty"` // where a restored profile is reapplied
 	Created bool              `json:"created,omitempty"`
+	Props   map[string]string `json:"props,omitempty"` // the values to put back
 }
 
 // Backend is the network manager in charge of this machine's interfaces.
@@ -95,6 +105,14 @@ func Detect(ctx context.Context, run Runner) Backend {
 		}
 	}
 	return nil
+}
+
+// SupportsMetric reports whether a network manager can set the priority of
+// an interface's routes. systemd-networkd keeps it per route and per DHCP
+// lease, which the form has no way to say.
+func SupportsMetric(b Backend) bool {
+	_, ok := b.(*NetworkManager)
+	return ok
 }
 
 // restoreMTU puts the link's MTU back; a manager with nothing to say about
@@ -135,7 +153,7 @@ func (e *ValidationError) Error() string {
 // configuration file or a command.
 func (c Config) Normalize() (Config, error) {
 	fields := map[string]string{}
-	out := Config{DHCP4: c.DHCP4, DHCP6: c.DHCP6, MTU: c.MTU, Addresses: []string{}, DNS: []string{}, Routes: []StaticRoute{}}
+	out := Config{DHCP4: c.DHCP4, DHCP6: c.DHCP6, MTU: c.MTU, Metric: c.Metric, Addresses: []string{}, DNS: []string{}, Routes: []StaticRoute{}}
 	var prefixes []netip.Prefix
 	for _, s := range c.Addresses {
 		p, err := netip.ParsePrefix(strings.TrimSpace(s))
@@ -189,6 +207,9 @@ func (c Config) Normalize() (Config, error) {
 	}
 	if c.MTU != 0 && (c.MTU < 576 || c.MTU > 9216) {
 		fields["mtu"] = "MTU must be between 576 and 9216, or empty"
+	}
+	if c.Metric < 0 || c.Metric > 65535 {
+		fields["metric"] = "Priority must be between 1 and 65535, or empty"
 	}
 	for _, r := range c.Routes {
 		dst, err := netip.ParsePrefix(strings.TrimSpace(r.Destination))

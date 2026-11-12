@@ -28,6 +28,7 @@ function fromConfig(c) {
     gateway4: c.gateway4 || '', gateway6: c.gateway6 || '',
     dns: c.dns?.length ? [...c.dns] : [],
     mtu: c.mtu ? String(c.mtu) : '',
+    metric: c.metric ? String(c.metric) : '',
     routes: (c.routes || []).map(r => ({ destination: r.destination, gateway: r.gateway || '' })),
   };
 }
@@ -39,6 +40,7 @@ function toConfig(f) {
     gateway4: f.gateway4.trim(), gateway6: f.gateway6.trim(),
     dns: f.dns.map(a => a.trim()).filter(Boolean),
     mtu: f.mtu.trim() ? Number(f.mtu) : 0,
+    metric: f.metric.trim() ? Number(f.metric) : 0,
     routes: f.routes.filter(r => r.destination.trim() || r.gateway.trim()).map(r => ({ destination: r.destination.trim(), gateway: r.gateway.trim() })),
   };
 }
@@ -118,11 +120,15 @@ function SettingsForm({ name, path, setting }) {
         <${RouteRows} routes=${f.routes} onChange=${routes => set({ routes })} />
         ${error('routes')}
       <//>
-      ${setting.no_mtu ? null : html`<${FormSection} title="Advanced">
-        <${Field} label="MTU" hint="Largest packet size in bytes. Empty leaves it to the driver.">
+      ${setting.no_mtu && setting.no_metric ? null : html`<${FormSection} title="Advanced">
+        ${setting.no_metric ? null : html`<${Field} label="Route priority" hint="When several interfaces have a default route, the lowest number is used. Empty leaves it to the network manager: usually 100 for Ethernet and 600 for Wi-Fi.">
+          <input class="input mono" inputmode="numeric" pattern="[0-9]*" value=${f.metric} placeholder="100" onInput=${e => set({ metric: e.currentTarget.value })} />
+        <//>
+        ${error('metric')}`}
+        ${setting.no_mtu ? null : html`<${Field} label="MTU" hint="Largest packet size in bytes. Empty leaves it to the driver.">
           <input class="input mono" inputmode="numeric" pattern="[0-9]*" value=${f.mtu} placeholder="1500" onInput=${e => set({ mtu: e.currentTarget.value })} />
         <//>
-        ${error('mtu')}
+        ${error('mtu')}`}
       <//>`}
       ${setting.preserved?.length ? html`<${FormSection} title="Other settings" description="This form has no field for these. They stay as they are.">
         <ul class="preserved">${setting.preserved.map(p => html`<li key=${p}>${p}</li>`)}</ul>

@@ -45,6 +45,8 @@ type Options struct {
 	Window time.Duration
 	// ResolvConf is read for DNS servers; empty is /etc/resolv.conf.
 	ResolvConf string
+	// Probe overrides the connectivity check's network operations, for tests.
+	Probe *system.Probe
 }
 
 // Service serves the API.
@@ -56,6 +58,7 @@ type Service struct {
 	resolvConf string
 	logger     *slog.Logger
 	trial      *trials
+	probe      system.Probe
 }
 
 // New finds the network tools, and finishes a change left on trial by a
@@ -85,7 +88,11 @@ func New(opts Options) *Service {
 	if resolvConf == "" {
 		resolvConf = "/etc/resolv.conf"
 	}
-	s := &Service{run: run, backend: backend, installed: installed, window: window, resolvConf: resolvConf, logger: logger}
+	probe := system.DefaultProbe(run)
+	if opts.Probe != nil {
+		probe = *opts.Probe
+	}
+	s := &Service{run: run, backend: backend, installed: installed, window: window, resolvConf: resolvConf, logger: logger, probe: probe}
 	s.trial = newTrials(opts.StateDir, run, opts.Backend, logger)
 	return s
 }
@@ -104,9 +111,15 @@ func (s *Service) Close() error {
 
 // Info describes the machine.
 type Info struct {
-	Supported bool   `json:"supported"`
-	Backend   string `json:"backend,omitempty"` // empty: settings cannot be changed here
-	Hostname  string `json:"hostname,omitempty"`
+	Supported bool             `json:"supported"`
+	Backend   string           `json:"backend,omitempty"` // empty: settings cannot be changed here
+	Hostname  string           `json:"hostname,omitempty"`
+	Features  *system.Features `json:"features,omitempty"` // Wi-Fi and dial-up, with NetworkManager only
+}
+
+// featureBackend is a network manager that can also say what else it does.
+type featureBackend interface {
+	DetectFeatures(ctx context.Context) system.Features
 }
 
 // Interface is a link as the pages show it.
@@ -181,6 +194,10 @@ func (s *Service) Handler() http.Handler {
 		info := Info{Supported: s.installed}
 		if s.backend != nil {
 			info.Backend = s.backend.Name()
+			if fb, ok := s.backend.(featureBackend); ok {
+				features := fb.DetectFeatures(r.Context())
+				info.Features = &features
+			}
 		}
 		info.Hostname, _ = os.Hostname()
 		respond(w, info, nil)
@@ -209,6 +226,13 @@ func (s *Service) Handler() http.Handler {
 	handle("GET /interfaces/{name}/config", s.readConfig)
 	handle("POST /interfaces/{name}/config/preview", s.previewConfig)
 	handle("PUT /interfaces/{name}/config", s.applyConfig)
+	// A check opens connections to other hosts, so it is a POST: nothing
+	// that merely fetches a page should cause it.
+	handle("POST /connectivity/check", func(r *http.Request) (any, error) {
+		result := s.probe.Check(r.Context())
+		s.logger.Info("connectivity checked", "result", result.String())
+		return result, nil
+	})
 	handle("GET /trial", func(r *http.Request) (any, error) { return s.trial.status(), nil })
 	handle("POST /trial/keep", func(r *http.Request) (any, error) { return s.trial.keep() })
 	handle("POST /trial/revert", func(r *http.Request) (any, error) { return s.trial.revertNow() })
@@ -344,6 +368,9 @@ func (s *Service) changeable(r *http.Request) (*system.Link, *configBody, error)
 	if reason := system.EditableReason(*l); reason != "" {
 		return nil, nil, &errInUse{reason}
 	}
+	if body.Config.Metric != 0 && !system.SupportsMetric(s.backend) {
+		return nil, nil, &system.ValidationError{Fields: map[string]string{"metric": s.backend.Name() + " cannot set a route priority here"}}
+	}
 	return l, &body, nil
 }
 
@@ -363,7 +390,25 @@ func (s *Service) applyConfig(r *http.Request) (any, error) {
 	// Commands continue if the change ends this client's connection.
 	ctx, cancel := context.WithTimeout(context.Background(), applyTimeout)
 	defer cancel()
-	return s.trial.start(ctx, s.backend, *l, body.Version, body.Config, s.window)
+	backend, link, cfg := s.backend, *l, body.Config
+	return s.trial.start(ctx, change{
+		subject: link.Name,
+		begin: func(ctx context.Context) (string, system.Backend, system.Undo, error) {
+			current, err := backend.Read(ctx, link)
+			if err != nil {
+				return "", nil, system.Undo{}, err
+			}
+			if current.Reason != "" {
+				return "", nil, system.Undo{}, &errInUse{current.Reason}
+			}
+			if body.Version != current.Version {
+				return "", nil, system.Undo{}, system.ErrConflict
+			}
+			undo, err := backend.Prepare(ctx, link)
+			return current.Target, backend, undo, err
+		},
+		apply: func(ctx context.Context, b system.Backend) error { return b.Apply(ctx, link, cfg) },
+	}, s.window)
 }
 
 func decode(r *http.Request, v any) error {

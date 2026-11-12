@@ -18,7 +18,7 @@ func (*NetworkManager) Name() string { return "NetworkManager" }
 // The properties this module owns. MTU's name depends on the connection's
 // type, and only these types have one the form can set.
 var (
-	nmProps   = []string{"ipv4.method", "ipv4.addresses", "ipv4.gateway", "ipv4.dns", "ipv4.routes", "ipv6.method", "ipv6.addresses", "ipv6.gateway", "ipv6.dns", "ipv6.routes"}
+	nmProps   = []string{"ipv4.method", "ipv4.addresses", "ipv4.gateway", "ipv4.dns", "ipv4.routes", "ipv6.method", "ipv6.addresses", "ipv6.gateway", "ipv6.dns", "ipv6.routes", "ipv4.route-metric", "ipv6.route-metric"}
 	nmMTUProp = map[string]string{"802-3-ethernet": "802-3-ethernet.mtu", "802-11-wireless": "802-11-wireless.mtu"}
 )
 
@@ -77,6 +77,17 @@ func (n *NetworkManager) props(ctx context.Context, uuid string) (map[string]str
 	return props, nil
 }
 
+// routeMetric is the priority set on either family; -1 is NetworkManager's
+// "choose by device type", which the form calls empty.
+func routeMetric(v4, v6 string) int {
+	for _, v := range []string{v4, v6} {
+		if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 0
+}
+
 func splitList(v string) []string {
 	out := []string{}
 	for _, s := range strings.Split(v, ",") {
@@ -122,6 +133,7 @@ func configFromProps(props map[string]string) (Config, []string) {
 	if mtu := nmMTUProp[props["connection.type"]]; mtu != "" {
 		c.MTU, _ = strconv.Atoi(props[mtu]) // "auto" is 0
 	}
+	c.Metric = routeMetric(props["ipv4.route-metric"], props["ipv6.route-metric"])
 	four, simple4 := parseNMRoutes(props["ipv4.routes"])
 	six, simple6 := parseNMRoutes(props["ipv6.routes"])
 	c.Routes = append(four, six...)
@@ -161,7 +173,12 @@ func wanted(c Config, current map[string]string) map[string]string {
 			routes6 = append(routes6, s)
 		}
 	}
+	metric := "-1"
+	if c.Metric > 0 {
+		metric = strconv.Itoa(c.Metric)
+	}
 	p := map[string]string{
+		"ipv4.route-metric": metric, "ipv6.route-metric": metric,
 		"ipv4.addresses": strings.Join(addr4, ","), "ipv4.gateway": c.Gateway4,
 		"ipv4.dns": strings.Join(dns4, ","), "ipv4.routes": strings.Join(routes4, ","),
 		"ipv6.addresses": strings.Join(addr6, ","), "ipv6.gateway": c.Gateway6,
@@ -278,14 +295,14 @@ func (n *NetworkManager) Prepare(ctx context.Context, link Link) (Undo, error) {
 	}
 	undo := Undo{Backend: n.Name(), Link: link.Name, MTU: link.MTU}
 	if uuid == "" {
-		undo.Created = true
+		undo.Profiles = []ProfileUndo{{Name: createdName(link.Name), Device: link.Name, Created: true}}
 		return undo, nil
 	}
 	props, err := n.props(ctx, uuid)
 	if err != nil {
 		return Undo{}, err
 	}
-	undo.UUID, undo.Props = uuid, map[string]string{}
+	saved := map[string]string{}
 	for k, v := range props {
 		if strings.HasPrefix(k, "connection.") {
 			continue
@@ -293,8 +310,9 @@ func (n *NetworkManager) Prepare(ctx context.Context, link Link) (Undo, error) {
 		if v == "--" {
 			v = ""
 		}
-		undo.Props[k] = v
+		saved[k] = v
 	}
+	undo.Profiles = []ProfileUndo{{UUID: uuid, Device: link.Name, Props: saved}}
 	return undo, nil
 }
 
@@ -333,17 +351,20 @@ func (n *NetworkManager) activate(ctx context.Context, name, uuid string) error 
 }
 
 func (n *NetworkManager) Revert(ctx context.Context, undo Undo) error {
-	if undo.Created {
-		if _, _, err := n.Run.Run(ctx, "", "nmcli", "connection", "delete", createdName(undo.Link)); err != nil {
+	for i := len(undo.Profiles) - 1; i >= 0; i-- {
+		p := undo.Profiles[i]
+		if p.Created {
+			if _, _, err := n.Run.Run(ctx, "", "nmcli", "connection", "delete", p.Name); err != nil {
+				return err
+			}
+			continue
+		}
+		if _, _, err := n.Run.Run(ctx, "", "nmcli", modifyArgs(p.UUID, p.Props)...); err != nil {
 			return err
 		}
-		return restoreMTU(ctx, n.Run, undo)
-	}
-	if _, _, err := n.Run.Run(ctx, "", "nmcli", modifyArgs(undo.UUID, undo.Props)...); err != nil {
-		return err
-	}
-	if err := n.activate(ctx, undo.Link, undo.UUID); err != nil {
-		return err
+		if err := n.activate(ctx, p.Device, p.UUID); err != nil {
+			return err
+		}
 	}
 	return restoreMTU(ctx, n.Run, undo)
 }

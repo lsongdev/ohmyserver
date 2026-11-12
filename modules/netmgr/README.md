@@ -32,6 +32,18 @@ Only one change can be on trial at a time, and the banner on every page shows
 the countdown. The commands run independently of the request, which the change
 itself may end.
 
+A trial is not tied to interface settings: it holds a *subject* (what the
+change is about), a target, and an undo that lists every NetworkManager
+connection profile the change touched. Reverting walks that list backwards,
+deleting profiles the change created and restoring the ones it modified. Other
+kinds of change share the same safety net.
+
+Keeping a change proves the panel is reachable from where the client is, which
+says nothing about a new uplink. The banner therefore has a **Check
+connection** button that tests, in order, the default route, the gateway, DNS
+and a TCP connection to a public address. It informs the decision and never
+blocks it.
+
 Interfaces other software looks after (loopback, Docker bridges, veth, tun,
 WireGuard, ports of a bridge or bond) cannot be changed here. An interface that
 carries the default route, or this client's connection, cannot be turned off.
@@ -55,6 +67,12 @@ carries the default route, or this client's connection, cannot be turned off.
 
 - The connection profile the device uses is changed with `nmcli connection
   modify`, then `nmcli device reapply`, falling back to `nmcli connection up`.
+- The route priority (`metric`) sets `ipv4.route-metric` and `ipv6.route-metric`
+  together. Empty is `-1`, which leaves it to NetworkManager (about 100 for
+  Ethernet and 600 for Wi-Fi). When several interfaces have a default route,
+  the lowest number carries the traffic. systemd-networkd keeps the priority
+  per route and per DHCP lease, which the form cannot express, so there a
+  non-zero value is refused (`no_metric` in the settings response).
 - An ethernet device without a profile gets one named `ohmyserver-<name>`. The
   IPv6 method stays as it was (`disabled`, `ignore`) unless the form says
   otherwise. Route metrics and attributes have no field and are dropped when
@@ -80,14 +98,15 @@ version 409 `conflict`, and a refused change 409 `in_use`.
 
 | Method | Path | |
 |---|---|---|
-| GET | `/api/info` | Whether it can run here, the network manager, the host name |
+| GET | `/api/info` | Whether it can run here, the network manager, the host name, and with NetworkManager its `features`: Wi-Fi devices and whether PPPoE is ready (`pppoe.missing` names what to install) |
 | GET | `/api/interfaces` | Interfaces with addresses and counters |
 | GET | `/api/interfaces/{name}` | One of them |
 | POST | `/api/interfaces/{name}/{up,down}` | Turn it on or off |
 | GET | `/api/interfaces/{name}/config` | Its stored settings: `{config, version, target, preserved, reason, protected}` |
 | POST | `/api/interfaces/{name}/config/preview` | What `{version, config}` would change: `{target, before, after}` |
 | PUT | `/api/interfaces/{name}/config` | Apply `{version, config}` on trial |
-| GET | `/api/trial` | The change on trial and how the last one ended |
+| GET | `/api/trial` | The change on trial and how the last one ended: `{trial: {subject, target, deadline, seconds}, last: {subject, result, at}}` |
+| POST | `/api/connectivity/check` | Test the route, gateway, DNS and internet: `{checks: [{id, ok, detail}]}` |
 | POST | `/api/trial/keep` | Make it permanent |
 | POST | `/api/trial/revert` | Restore the previous settings now |
 | GET | `/api/routes` | The main routing tables |

@@ -451,7 +451,7 @@ func (n *Networkd) Read(ctx context.Context, link Link) (*Setting, error) {
 	}
 	u := parseUnit(text)
 	c, preserved := configOf(u)
-	s := &Setting{Config: c, Version: version(text), Target: t.file, Exists: t.exists, Preserved: preserved, Reason: t.reason}
+	s := &Setting{Config: c, Version: version(text), Target: t.file, Exists: t.exists, Preserved: preserved, Reason: t.reason, NoMetric: true}
 	if t.exists && s.Reason == "" {
 		s.Reason = matchReason(u)
 		for _, l := range u.named("Link") {
