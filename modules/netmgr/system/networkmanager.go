@@ -12,7 +12,11 @@ import (
 
 // NetworkManager keeps settings in connection profiles, read and changed
 // through nmcli.
-type NetworkManager struct{ Run Runner }
+type NetworkManager struct {
+	Run Runner
+	// ConnDir holds connection files; empty is /etc/NetworkManager/system-connections.
+	ConnDir string
+}
 
 func (*NetworkManager) Name() string { return "NetworkManager" }
 
@@ -371,6 +375,9 @@ func (n *NetworkManager) revertProfile(ctx context.Context, p ProfileUndo) error
 		return nil
 	case p.Deleted:
 		return n.recreate(ctx, p)
+	}
+	if len(p.Props) == 0 {
+		return n.up(ctx, p.UUID, p.Device)
 	}
 	if err := n.nmcli(ctx, modifyArgs(p.UUID, p.Props)...); err != nil {
 		return err

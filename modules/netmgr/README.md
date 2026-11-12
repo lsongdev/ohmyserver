@@ -99,6 +99,28 @@ NetworkManager only, and every change to it is on trial like any other.
 - A bridge or port whose change fails part-way is restored at once. Reverts
   can be retried: a profile already gone is not an error.
 
+### Wi-Fi
+
+Wi-Fi is joined through NetworkManager only. Scanning lists each network once,
+at its strongest, with its band, channel and what it needs: open, WPA2 or
+WPA3 password. Enterprise (802.1X) and WEP networks are listed but cannot be
+joined here.
+
+- Joining is on trial like any change. If the new network does not answer
+  within 30 seconds, or the change is not kept, the connection it made is
+  deleted and the one that was active on the radio comes back.
+- The password is written to a connection file only root can read and loaded
+  by NetworkManager. It is on no command line, and not in the log, the trial
+  record or an API response. It must be 8 to 63 printable ASCII characters (or
+  64 hex digits for WPA2).
+- A saved network is joined as saved. Giving it a new password is refused:
+  forget it first. Forgetting deletes the connection and its password for
+  good, so it is not on trial; it is refused while a change is on trial, and
+  for the network a radio is using if that radio carries the default route or
+  this client's connection.
+- Commands run in the `C.UTF-8` locale. Under plain `C`, `nmcli` prints each
+  non-ASCII character of a network name as `?`.
+
 ## Run
 
 ```sh
@@ -130,6 +152,10 @@ version 409 `conflict`, and a refused change 409 `in_use`.
 | POST | `/api/connectivity/check` | Test the route, gateway, DNS and internet: `{checks: [{id, ok, detail}]}` |
 | POST | `/api/trial/keep` | Make it permanent |
 | POST | `/api/trial/revert` | Restore the previous settings now |
+| GET | `/api/wifi` | Radios (with `protected`) and saved networks |
+| GET | `/api/wifi/{name}/networks[?rescan=1]` | What the radio hears |
+| PUT | `/api/wifi/{name}/connection` | Join `{ssid, security, password, hidden}` on trial |
+| DELETE | `/api/wifi/saved/{uuid}` | Forget a saved network |
 | GET | `/api/bridges` | Bridges with their ports and spanning tree setting |
 | GET | `/api/bridges/{name}` | One of them, with the `version` to send back |
 | PUT | `/api/bridges/{name}` | Make or change `{version, config: {stp, ports}}` on trial; `version` is empty for a new bridge |

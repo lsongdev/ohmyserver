@@ -29,6 +29,10 @@ const DefaultWindow = 2 * time.Minute
 // on the request: the change may well end the client's connection.
 const applyTimeout = 45 * time.Second
 
+// connectTimeout bounds joining a Wi-Fi network, which waits up to 30 seconds
+// for the network to answer before the commands around it.
+const connectTimeout = 75 * time.Second
+
 // Options configures the API.
 type Options struct {
 	Logger *slog.Logger
@@ -234,6 +238,7 @@ func (s *Service) Handler() http.Handler {
 		return result, nil
 	})
 	s.registerBridges(handle)
+	s.registerWifi(handle)
 	handle("GET /trial", func(r *http.Request) (any, error) { return s.trial.status(), nil })
 	handle("POST /trial/keep", func(r *http.Request) (any, error) { return s.trial.keep() })
 	handle("POST /trial/revert", func(r *http.Request) (any, error) { return s.trial.revertNow() })

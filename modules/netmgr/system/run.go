@@ -34,12 +34,18 @@ func (e *ExitError) Error() string {
 	return fmt.Sprintf("%s: exit status %d", e.Command, e.Code)
 }
 
-// Exec runs commands on this host with LC_ALL=C.
+// locale keeps command output in English and parseable, and in UTF-8: under
+// plain C, nmcli prints every non-ASCII character of a network name as "?",
+// which would show the wrong name and make a join compare the wrong one. A
+// system without C.UTF-8 falls back to C, as before.
+const locale = "LC_ALL=C.UTF-8"
+
+// Exec runs commands on this host in the locale above.
 type Exec struct{}
 
 func (Exec) Run(ctx context.Context, stdin string, name string, args ...string) ([]byte, []byte, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
-	cmd.Env = append(os.Environ(), "LC_ALL=C")
+	cmd.Env = append(os.Environ(), locale)
 	if stdin != "" {
 		cmd.Stdin = strings.NewReader(stdin)
 	}

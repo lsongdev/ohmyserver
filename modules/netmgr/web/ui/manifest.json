@@ -15,6 +15,11 @@
       "icon": "▤"
     },
     {
+      "path": "/wifi",
+      "title": "Wi-Fi",
+      "icon": "☰"
+    },
+    {
       "path": "/bridges",
       "title": "Bridges",
       "icon": "⇄"

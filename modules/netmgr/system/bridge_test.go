@@ -43,7 +43,7 @@ func bridgeRunner() *fakeRunner {
 func changes(calls []string) []string {
 	var out []string
 	for _, c := range calls {
-		if strings.HasPrefix(c, "nmcli connection ") || strings.HasPrefix(c, "nmcli device reapply") {
+		if strings.HasPrefix(c, "nmcli connection ") || strings.HasPrefix(c, "nmcli --wait ") || strings.HasPrefix(c, "nmcli device reapply") {
 			out = append(out, c)
 		}
 	}
