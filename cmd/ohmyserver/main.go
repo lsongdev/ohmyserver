@@ -48,6 +48,7 @@ import (
 	diskmgr "github.com/lsongdev/ohmyserver/modules/diskmgr/web"
 	domainsweb "github.com/lsongdev/ohmyserver/modules/domains/web"
 	filemgr "github.com/lsongdev/ohmyserver/modules/filemgr/web"
+	fwmgr "github.com/lsongdev/ohmyserver/modules/fwmgr/web"
 	"github.com/lsongdev/ohmyserver/modules/monitor/collector"
 	monitorweb "github.com/lsongdev/ohmyserver/modules/monitor/web"
 	netmgr "github.com/lsongdev/ohmyserver/modules/netmgr/web"
@@ -297,6 +298,10 @@ func run(cfg config.Config, logger *slog.Logger) error {
 	// diagnostics. A change on trial is remembered in its directory, so it
 	// still reverts after a crash.
 	network := netmgr.New(netmgr.Options{StateDir: filepath.Join(dataDir, "network"), Logger: logger})
+	// Firewall: nftables rules for the interfaces facing the internet, and
+	// NAT. The kernel forgets them at boot, so the saved ones are applied as
+	// the panel starts; a change on trial is remembered in its directory.
+	firewall := fwmgr.New(fwmgr.Options{StateDir: filepath.Join(dataDir, "firewall"), Logger: logger})
 	// Samba: shares, server settings and users in smb.conf, and who is
 	// connected.
 	samba := smbmgr.New(smbmgr.Options{Logger: logger})
@@ -344,6 +349,10 @@ func run(cfg config.Config, logger *slog.Logger) error {
 	// Network reads through iproute2, which only Linux has.
 	if network.API.Supported() {
 		modules = append(modules, network)
+	}
+	// The firewall is nftables, which only Linux has.
+	if firewall.API.Supported() {
+		modules = append(modules, firewall)
 	}
 	modules = append(modules, disks)
 	// Likewise Samba, without smbd and testparm.

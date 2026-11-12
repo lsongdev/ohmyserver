@@ -1,0 +1,23 @@
+/* Firewall manager styles; everything else comes from style.css. */
+.small { font-size: 12.5px; }
+.section-title { font-size: 15px; font-weight: 600; margin: 0 0 10px; }
+.mono-block { margin: 0; padding: 10px 12px; background: var(--color-surface-subtle); border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  font: 12.5px/1.6 var(--font-mono); overflow-wrap: anywhere; white-space: pre-wrap; max-height: 420px; overflow: auto; }
+
+/* The change on trial. */
+.trial-card { margin-bottom: 16px; }
+.trial-note { margin-top: 12px; }
+.trial { display: flex; gap: 12px 16px; align-items: center; flex-wrap: wrap; }
+.trial-text { flex: 1 1 280px; min-width: 0; }
+.trial-count { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.trial-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Lists of values in the form. */
+.rows { display: grid; gap: 6px; }
+.rows-row { display: grid; grid-template-columns: 110px minmax(0, 1fr) auto; gap: 6px; }
+.rows-actions { display: flex; gap: 8px; }
+.field-error { color: var(--color-danger); font-size: 12.5px; margin-top: 4px; }
+.port-note { margin-left: 8px; }
+@media (max-width: 560px) {
+  .rows-row { grid-template-columns: 100px minmax(0, 1fr) auto; }
+}

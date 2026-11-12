@@ -1,0 +1,18 @@
+{
+  "contract": 1,
+  "id": "firewall",
+  "title": "Firewall",
+  "icon": "▥",
+  "entry": "module.js",
+  "styles": [
+    "firewall.css"
+  ],
+  "home": "/",
+  "nav": [
+    {
+      "path": "/",
+      "title": "Firewall",
+      "icon": "▥"
+    }
+  ]
+}

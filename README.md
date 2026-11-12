@@ -24,6 +24,7 @@ Modules that are still small and change with the panel live in
 | Packages (dnf, apt, installing Docker) | [modules/pkgmgr](modules/pkgmgr) | `pkgmgr` |
 | Services (systemd) and logs (journal) | [modules/svcmgr](modules/svcmgr) | `svcmgr` |
 | Network (interfaces and settings, routes, ports, diagnostics) | [modules/netmgr](modules/netmgr) | `netmgr` |
+| Firewall (nftables for the WAN, NAT) | [modules/fwmgr](modules/fwmgr) | `fwmgr` |
 | Disks (capacity, RAID, SMART health) | [modules/diskmgr](modules/diskmgr) | `diskmgr` |
 | Samba shares, settings and users (smb.conf) | [modules/smbmgr](modules/smbmgr) | `smbmgr` |
 | ZFS pools, datasets, snapshots and schedules | [modules/zfsmgr](modules/zfsmgr) | `zfsmgr` |
