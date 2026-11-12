@@ -29,7 +29,11 @@ const icons = {
   ci: { '/': 'code-branch', '/builds': 'hammer' },
   packages: { '/': 'box', '/recommended': 'star', '/repositories': 'database', '/jobs': 'list-check' },
   services: { '/': 'gears', '/logs': 'file-lines' },
-  network: { '/': 'ethernet', '/routes': 'route', '/ports': 'plug', '/tools': 'stethoscope' },
+  network: {
+    '/': 'ethernet', '/wifi': 'wifi', '/bridges': 'network-wired', '/pppoe': 'link',
+    '/routes': 'route', '/ports': 'plug', '/tools': 'stethoscope',
+  },
+  firewall: { '/': 'shield-halved' },
   disks: { '/': 'gauge-high' },
   samba: { '/': 'share-nodes', '/users': 'users', '/sessions': 'plug', '/logs': 'file-lines', '/global': 'gear' },
   notify: { '/': 'bell', '/channels': 'paper-plane' },
@@ -51,7 +55,7 @@ const groupIcons = {
   monitor: 'chart-line', docker: 'cubes', acme: 'certificate', gateway: 'tower-broadcast',
   dns: 'globe', domains: 'at', dhcp: 'network-wired', forward: 'right-left', ssh: 'terminal',
   cron: 'clock', ci: 'code-branch', packages: 'box', services: 'gears', network: 'ethernet',
-  samba: 'share-nodes', files: 'folder',
+  firewall: 'shield-halved', samba: 'share-nodes', files: 'folder',
 };
 
 export function groupIcon(id) {

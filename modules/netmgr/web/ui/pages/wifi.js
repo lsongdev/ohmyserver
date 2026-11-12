@@ -1,6 +1,6 @@
 import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
-import { Alert, Loading, Empty, Table, Badge, toast } from '@lsongdev/scripts/react/components/index.js';
+import { Alert, Loading, Empty, Badge, toast } from '@lsongdev/scripts/react/components/index.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { Page, useApi, useChanged } from '../network.js';
 
@@ -8,7 +8,6 @@ import { Page, useApi, useChanged } from '../network.js';
 // joining are pages of their own (wifi-scan.js, wifi-connect.js), since a
 // password and a list to choose from do not fit a row.
 export default function Wifi() {
-  const { href } = usePanel();
   const info = useApi('/info');
   const supported = info.data?.backend === 'NetworkManager';
   const wifi = useApi(supported ? '/wifi' : null, 5000);
@@ -40,7 +39,7 @@ function Radio({ device: d, reload }) {
     <h2 class="section-title">${d.name}</h2>
     <div class="card">
       <div>${serving ? html`Serving the hotspot <strong>${d.hotspot}</strong>` : joined ? html`Connected to <strong>${d.ssid}</strong>` : html`<span class="muted">Not connected (${d.state})</span>`}</div>
-      <div class="form-actions">
+      <div class="wifi-actions">
         <a class="button button-primary" href=${href(`/wifi/${encodeURIComponent(d.name)}/scan`)}>Scan for networks</a>
         <a class="button" href=${href(`/wifi/${encodeURIComponent(d.name)}/connect`)}>Hidden network</a>
         ${d.ap ? html`<a class="button" href=${href(`/wifi/${encodeURIComponent(d.name)}/hotspot`)}>Hotspot</a>` : null}
@@ -69,14 +68,17 @@ function Saved({ saved, reload }) {
   return html`<section class="section">
     <h2 class="section-title">Saved networks</h2>
     <${Alert} error=${action.error} />
-    ${saved.length === 0 ? html`<${Empty}>No saved networks. Scan for one to join it.<//>` : html`<${Table}>
-      <thead><tr><th>Network</th><th>Security</th><th>Status</th><th></th></tr></thead>
-      <tbody>${saved.map(s => html`<tr key=${s.uuid}>
-        <td class="cell-main">${s.ssid}</td>
-        <td>${KINDS[s.kind] || s.kind}</td>
-        <td>${s.active ? html`<${Badge} variant="success">Connected<//>` : s.autoconnect ? html`<span class="muted">Joins automatically</span>` : html`<span class="muted">Manual</span>`}</td>
-        <td><button class="button button-small" disabled=${action.busy} onClick=${() => forget(s)}>Forget</button></td>
-      </tr>`)}</tbody>
-    <//>`}
+    ${saved.length === 0 ? html`<${Empty}>No saved networks. Scan for one to join it.<//>` : html`<ul class="wifi-saved">
+      ${saved.map(s => html`<li key=${s.uuid}>
+        <div>
+          <div class="cell-main">${s.ssid}</div>
+          <div class="tags">
+            <span class="muted">${KINDS[s.kind] || s.kind}</span>
+            ${s.active ? html`<${Badge} variant="success">Connected<//>` : html`<span class="muted">${s.autoconnect ? 'Joins automatically' : 'Manual'}</span>`}
+          </div>
+        </div>
+        <button class="button button-small" aria-label=${`Forget ${s.ssid}`} disabled=${action.busy} onClick=${() => forget(s)}>Forget</button>
+      </li>`)}
+    </ul>`}
   </section>`;
 }

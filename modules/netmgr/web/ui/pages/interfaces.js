@@ -7,7 +7,6 @@ export default function Interfaces() {
   const { href } = usePanel();
   const links = useApi('/interfaces', 3000);
   const info = useApi('/info');
-  const resolvers = useApi('/resolvers');
   const rates = useRates(links.data);
   useChanged(links.reload);
   const backend = info.data?.backend;
@@ -33,21 +32,5 @@ export default function Interfaces() {
         </tr>`;
       })}</tbody>
     <//>`}
-    ${resolvers.data ? html`<section class="section">
-      <h2 class="section-title">DNS servers</h2>
-      <div class="card">
-        ${dnsSummary(resolvers.data)}
-      </div>
-    </section>` : null}
   <//>`;
-}
-
-function dnsSummary(r) {
-  const links = Object.entries(r.links || {});
-  const stubNote = r.stub && !links.length && !(r.global || []).length;
-  return html`
-    ${links.map(([name, servers]) => html`<div key=${name}><span class="mono">${name}</span>: <span class="mono small">${servers.join(', ')}</span></div>`)}
-    ${(r.global || []).length ? html`<div>Global: <span class="mono small">${r.global.join(', ')}</span></div>` : null}
-    ${!links.length && !(r.global || []).length ? html`<div>${r.servers.length ? html`<span class="mono small">${r.servers.join(', ')}</span>` : html`<span class="muted">None set</span>`}${stubNote ? html` <span class="muted">(a resolver on this machine)</span>` : null}</div>` : null}
-    ${r.search.length ? html`<div class="muted small">Search domains: ${r.search.join(', ')}</div>` : null}`;
 }
