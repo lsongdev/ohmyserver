@@ -33,6 +33,7 @@ export default function InterfaceDetail({ params }) {
     ${l.up
       ? html`<button class="button" disabled=${toggle.busy || l.protected} title=${l.protected ? 'It carries this machine\'s default route or this connection' : null} onClick=${() => setUp(false)}>Turn off</button>`
       : html`<button class="button" disabled=${toggle.busy} onClick=${() => setUp(true)}>Turn on</button>`}
+    ${l.kind === 'bridge' ? html`<a class="button" href=${href(`/bridges/${encodeURIComponent(name)}`)}>Edit ports</a>` : null}
     <a class="button button-primary" href=${href(`${path}/settings`)}>Edit settings</a>` : null;
 
   return html`<${Page} title=${name} subtitle=${l ? [l.kind, speed(l.speed_mbps)].filter(Boolean).join(' · ') : null}

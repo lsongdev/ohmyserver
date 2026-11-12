@@ -70,7 +70,8 @@ type ProfileUndo struct {
 	Name    string            `json:"name,omitempty"`   // of a created profile, which is deleted to undo
 	Device  string            `json:"device,omitempty"` // where a restored profile is reapplied
 	Created bool              `json:"created,omitempty"`
-	Props   map[string]string `json:"props,omitempty"` // the values to put back
+	Deleted bool              `json:"deleted,omitempty"` // the change removed it, so reverting adds it back
+	Props   map[string]string `json:"props,omitempty"`   // the values to put back
 }
 
 // Backend is the network manager in charge of this machine's interfaces.

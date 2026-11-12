@@ -15,6 +15,11 @@
       "icon": "▤"
     },
     {
+      "path": "/bridges",
+      "title": "Bridges",
+      "icon": "⇄"
+    },
+    {
       "path": "/pppoe",
       "title": "PPPoE",
       "icon": "☎"

@@ -78,6 +78,27 @@ carries the default route, or this client's connection, cannot be turned off.
   otherwise. Route metrics and attributes have no field and are dropped when
   saving; the preview shows this.
 
+### Bridges
+
+A bridge joins Ethernet interfaces into one network. It is made through
+NetworkManager only, and every change to it is on trial like any other.
+
+- A bridge is a connection profile (`ohmyserver-<name>`), and each port gets a
+  profile that names it as its master. A port without a profile gets
+  `ohmyserver-<port>`. A port gives up its own address; the bridge's addresses
+  are set afterwards in its interface settings, like any interface's. A new
+  bridge starts with none.
+- Only Ethernet interfaces can be ports, and not ones another bridge or other
+  software has taken. Names Docker generates (`br-` and twelve hex digits),
+  `docker0` and `virbr*` cannot be used for a bridge; `br-lan` can.
+- Removing a bridge frees its ports, which ask for an address again, and
+  brings them up on their own devices. Reverting it makes the bridge again and
+  puts the ports back with the settings they had.
+- Ports that stay in a bridge when it changes are not touched, so they keep
+  their link.
+- A bridge or port whose change fails part-way is restored at once. Reverts
+  can be retried: a profile already gone is not an error.
+
 ## Run
 
 ```sh
@@ -109,6 +130,10 @@ version 409 `conflict`, and a refused change 409 `in_use`.
 | POST | `/api/connectivity/check` | Test the route, gateway, DNS and internet: `{checks: [{id, ok, detail}]}` |
 | POST | `/api/trial/keep` | Make it permanent |
 | POST | `/api/trial/revert` | Restore the previous settings now |
+| GET | `/api/bridges` | Bridges with their ports and spanning tree setting |
+| GET | `/api/bridges/{name}` | One of them, with the `version` to send back |
+| PUT | `/api/bridges/{name}` | Make or change `{version, config: {stp, ports}}` on trial; `version` is empty for a new bridge |
+| DELETE | `/api/bridges/{name}?version=…` | Remove it on trial |
 | GET | `/api/routes` | The main routing tables |
 | GET | `/api/resolvers` | DNS servers, from resolv.conf and systemd-resolved |
 | GET | `/api/ports` | Listening sockets and their processes |

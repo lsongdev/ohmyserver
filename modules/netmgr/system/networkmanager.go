@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/netip"
 	"sort"
@@ -352,21 +353,38 @@ func (n *NetworkManager) activate(ctx context.Context, name, uuid string) error 
 
 func (n *NetworkManager) Revert(ctx context.Context, undo Undo) error {
 	for i := len(undo.Profiles) - 1; i >= 0; i-- {
-		p := undo.Profiles[i]
-		if p.Created {
-			if _, _, err := n.Run.Run(ctx, "", "nmcli", "connection", "delete", p.Name); err != nil {
-				return err
-			}
-			continue
-		}
-		if _, _, err := n.Run.Run(ctx, "", "nmcli", modifyArgs(p.UUID, p.Props)...); err != nil {
-			return err
-		}
-		if err := n.activate(ctx, p.Device, p.UUID); err != nil {
+		if err := n.revertProfile(ctx, undo.Profiles[i]); err != nil {
 			return err
 		}
 	}
 	return restoreMTU(ctx, n.Run, undo)
+}
+
+// revertProfile puts one profile back. A revert is retried after a failure
+// part-way, so a profile already gone is not an error.
+func (n *NetworkManager) revertProfile(ctx context.Context, p ProfileUndo) error {
+	switch {
+	case p.Created:
+		if err := n.nmcli(ctx, "connection", "delete", p.Name); err != nil && !isUnknownConnection(err) {
+			return err
+		}
+		return nil
+	case p.Deleted:
+		return n.recreate(ctx, p)
+	}
+	if err := n.nmcli(ctx, modifyArgs(p.UUID, p.Props)...); err != nil {
+		return err
+	}
+	// A device cannot be moved in or out of a bridge by reapplying.
+	if _, port := p.Props["connection.master"]; port {
+		return n.up(ctx, p.UUID, p.Device)
+	}
+	return n.activate(ctx, p.Device, p.UUID)
+}
+
+func isUnknownConnection(err error) bool {
+	var exit *ExitError
+	return errors.As(err, &exit) && strings.Contains(strings.ToLower(exit.Output), "unknown connection")
 }
 
 func (n *NetworkManager) SetUp(ctx context.Context, name string, up bool) error {

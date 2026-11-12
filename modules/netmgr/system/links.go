@@ -233,7 +233,10 @@ func EditableReason(l Link) string {
 	if l.Master != "" {
 		return "This interface is part of " + l.Master + "; addresses belong there."
 	}
-	for _, prefix := range []string{"docker", "br-", "virbr", "veth", "cni", "flannel", "tailscale"} {
+	if dockerBridge.MatchString(l.Name) {
+		return "This interface is set up by the software that created it."
+	}
+	for _, prefix := range []string{"docker", "virbr", "veth", "cni", "flannel", "tailscale"} {
 		if strings.HasPrefix(l.Name, prefix) {
 			return "This interface is set up by the software that created it."
 		}
