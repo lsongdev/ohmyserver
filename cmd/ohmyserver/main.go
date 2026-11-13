@@ -57,6 +57,7 @@ import (
 	smbmgr "github.com/lsongdev/ohmyserver/modules/smbmgr/web"
 	sshweb "github.com/lsongdev/ohmyserver/modules/ssh/web"
 	svcmgr "github.com/lsongdev/ohmyserver/modules/svcmgr/web"
+	xrayweb "github.com/lsongdev/ohmyserver/modules/xray/web"
 	zfsmgr "github.com/lsongdev/ohmyserver/modules/zfsmgr/web"
 	"github.com/lsongdev/ohmyserver/monitor"
 	"github.com/lsongdev/ohmyserver/notify"
@@ -364,8 +365,15 @@ func run(cfg config.Config, logger *slog.Logger) error {
 		modules = append(modules, snapshots)
 	}
 	modules = append(modules, fileManager)
+	// Xray runs inside the panel and uses its own draft and applied configuration.
+	xray, err := xrayweb.New(filepath.Join(dataDir, "xray"))
+	if err != nil {
+		return fmt.Errorf("xray: %w", err)
+	}
+	modules = append(modules, xray)
 	host, err := shell.New(opts, modules...)
 	if err != nil {
+		_ = xray.Close()
 		return err
 	}
 	defer host.Close() // closes the modules after the server stops

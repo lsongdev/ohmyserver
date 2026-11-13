@@ -1,0 +1,9 @@
+{
+  "name": "ohmyserver-xray-ui",
+  "private": true,
+  "description": "Browser dependencies of this UI, embedded by Go from node_modules (npm ci).",
+  "dependencies": {
+    "@lsongdev/scripts": "git+https://github.com/lsongdev/scripts.git#6781191ce6794a30ccdcfd4195e5a164cd1e4dc9",
+    "@lsongdev/stylesheets": "git+https://github.com/lsongdev/stylesheets.git#a7c8bceca8f502eb638cdface4c5a7a2b2311823"
+  }
+}

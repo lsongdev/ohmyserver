@@ -1,0 +1,16 @@
+{
+  "contract": 1,
+  "id": "xray",
+  "title": "Xray",
+  "icon": "⇄",
+  "entry": "module.js",
+  "styles": ["xray.css"],
+  "home": "/",
+  "nav": [
+    {"path": "/", "title": "Overview"},
+    {"path": "/inbounds", "title": "Inbounds"},
+    {"path": "/outbounds", "title": "Outbounds"},
+    {"path": "/rules", "title": "Rules"},
+    {"path": "/config", "title": "Configuration"}
+  ]
+}

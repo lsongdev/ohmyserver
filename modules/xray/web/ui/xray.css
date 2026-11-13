@@ -1,0 +1,12 @@
+.xray-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.xray-status, .xray-links { margin-block: 1rem; }
+.xray-links li { margin-block: .35rem; }
+.xray-rows { padding: 0; list-style: none; }
+.xray-row {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: .5rem 1rem; padding-block: .75rem; border-bottom: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+.xray-row small { display: block; }
+.xray-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .5rem 1rem; }
+.xray-json { width: 100%; font-family: ui-monospace, monospace; resize: vertical; }

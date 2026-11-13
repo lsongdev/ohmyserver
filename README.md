@@ -19,6 +19,7 @@ Modules that are still small and change with the panel live in
 |---|---|---|
 | SSH hosts and web terminal | [modules/ssh](modules/ssh) | `ssh-go` |
 | Scheduled jobs (cron) | [modules/cron](modules/cron) | `cron-go` |
+| Xray proxy and routing | [modules/xray](modules/xray) | `xray-go` |
 | Host monitoring | [modules/monitor](modules/monitor) | `monitor-go` |
 | CI (builds and tests in Docker) | [modules/ci](modules/ci) | `ci-go` |
 | Packages (dnf, apt, installing Docker) | [modules/pkgmgr](modules/pkgmgr) | `pkgmgr` |

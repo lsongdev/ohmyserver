@@ -13,7 +13,9 @@ When redesigning a shared library, prefer the clearest context-aware public API 
 - Show success with a lightweight notification, field errors beside their fields, and submission failures inline without clearing input. Long-running work uses visible progress and a task/detail page.
 - Do not nest business-task modals. Warn about discarding changes only when changes exist. Protect input consistently across cancel, close, backdrop, Escape, navigation, and reload; prevent duplicate submissions.
 - Dedicated editing pages must have stable URLs, work after refresh, and support browser Back. Save/cancel should return to the originating list or detail page while retaining available query/filter context.
-- Page-level return links belong on the same row as the page title, aligned to the far right. Use the shared `Page` component's `back={{ href, label }}` prop; never place return navigation in a subtitle or mix it into action-button markup. Subtitles contain descriptions, paths, or status only. Keep title and return link together on narrow screens and let action buttons wrap onto another row.
+- Put page-level actions in the shared page header's `actions` slot, aligned to the top right. When the page header has actions, omit the page-level return link. This rule applies to header actions; form submit/cancel controls and row actions stay with their forms and rows.
+- Wrap bottom-of-form Save and Cancel controls together in a shared `.form-actions` container.
+- When a page needs a return link and has no header actions, use the shared page header's `back={{ href, label }}` prop. Keep the title and return link on the same row, including on narrow screens. Let header actions wrap when needed. Subtitles contain descriptions, paths, or status only.
 - Retained dialogs must have an accessible name, sensible initial focus, focus containment, Escape handling, and restored focus on close. Prefer initial focus on Cancel for destructive confirmation. Avoid horizontal scrolling and long scrolling forms; do not shrink controls or enlarge dialogs just to fit a complex task.
 
 # Build and service updates

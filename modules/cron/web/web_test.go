@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/lsongdev/ohmyserver/panel"
 )
 
 // The assets satisfy the panel module contract (version 1).
@@ -102,7 +104,7 @@ func TestModuleImportsResolve(t *testing.T) {
 	}
 }
 func TestStatic(t *testing.T) {
-	h := Static(UI)
+	h := panel.Static(UI)
 	get := func(path, etag string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest("GET", path, nil)
 		if etag != "" {
