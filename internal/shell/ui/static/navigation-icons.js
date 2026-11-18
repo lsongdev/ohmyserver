@@ -23,6 +23,7 @@ const icons = {
   domains: { '/': 'globe', '/accounts': 'user-shield' },
   dhcp: { '/': 'network-wired', '/reservations': 'thumbtack', '/activity': 'wave-square', '/settings': 'gear' },
   forward: { '/': 'right-left' },
+  xray: { '/': 'gauge-high', '/inbounds': 'plug', '/outbounds': 'right-left', '/rules': 'route', '/config': 'gear' },
   ssh: { '/': 'terminal', '/key': 'key' },
   cron: { '/': 'clock' },
   monitor: { '/': 'chart-line' },
@@ -54,7 +55,7 @@ export function navigationIcon(module, item) {
 const groupIcons = {
   Home: 'house', Storage: 'hard-drive',
   monitor: 'chart-line', docker: 'cubes', acme: 'certificate', gateway: 'tower-broadcast',
-  dns: 'globe', domains: 'at', dhcp: 'network-wired', forward: 'right-left', ssh: 'terminal',
+  dns: 'globe', domains: 'at', dhcp: 'network-wired', forward: 'right-left', xray: 'right-left', ssh: 'terminal',
   cron: 'clock', ci: 'code-branch', packages: 'box', services: 'gears', network: 'ethernet',
   cellular: 'signal', firewall: 'shield-halved', samba: 'share-nodes', files: 'folder',
 };
