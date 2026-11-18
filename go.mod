@@ -70,8 +70,10 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/tklauser/go-sysconf v0.4.0 // indirect
 	github.com/tklauser/numcpus v0.12.0 // indirect
+	github.com/warthog618/sms v0.3.0
 	github.com/xtls/xray-core v1.260327.0
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
+	go.bug.st/serial v1.7.1
 	golang.org/x/sys v0.49.0 // indirect
 	modernc.org/libc v1.79.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect

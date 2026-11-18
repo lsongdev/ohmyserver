@@ -3,7 +3,7 @@
 // receives its route through mount/update, and changes it through
 // ctx.navigate. The shell owns the address bar: "#/<module id><module path>".
 import { html, render, useState } from '@lsongdev/panel/html.js';
-import { Sidebar } from '@lsongdev/scripts/react/components/index.js';
+import { Sidebar } from './sidebar.js';
 import { createHashNavigation } from '@lsongdev/scripts/navigation/hash.js';
 import { faIcon, groupIcon, navigationIcon } from './navigation-icons.js';
 

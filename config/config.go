@@ -20,6 +20,8 @@ const defaultCatalog = dockerweb.DefaultCatalog
 // Config is <dir>/config.yaml (config.yaml.example documents every
 // setting). A missing file, or a setting left out, takes the default.
 type Config struct {
+	// CellularPort overrides automatic detection of the modem AT port.
+	CellularPort string `yaml:"cellular_port"`
 	// Listen is the panel's address.
 	Listen string `yaml:"listen"`
 	// Data holds the shared database and one subdirectory per module.

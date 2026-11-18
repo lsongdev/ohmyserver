@@ -135,6 +135,25 @@ address in your browser. To configure the service, use
 [`config.yaml.example`](config.yaml.example) as a reference for
 `/var/lib/ohmyserver/config.yaml`. Set a password before exposing the panel.
 
+### ImmortalWrt and OpenWrt
+
+The [procd service](contrib/openwrt/ohmyserver) runs `/usr/bin/ohmyserver`
+with configuration and persistent data under `/etc/ohmyserver`.
+For a fresh install on an ARM64 Photonicat, build with `make linux/arm64`
+and copy the binary and service script to the router:
+
+```sh
+scp -O dist/ohmyserver_linux_arm64 root@172.16.0.1:/usr/bin/ohmyserver
+scp -O contrib/openwrt/ohmyserver root@172.16.0.1:/etc/init.d/ohmyserver
+ssh root@172.16.0.1 'chmod 755 /usr/bin/ohmyserver /etc/init.d/ohmyserver && mkdir -p -m 700 /etc/ohmyserver'
+```
+
+Before starting the service, configure `/etc/ohmyserver/config.yaml`.
+Set a password when exposing the panel on the LAN. For a fresh installation,
+choose an alternate gateway HTTP address if LuCI already uses port 80.
+Start the service with `/etc/init.d/ohmyserver start` and enable it at boot
+with `/etc/init.d/ohmyserver enable`.
+
 The gateway listens on :80 and :443 by default; `gateway.http` and
 `gateway.https` choose other addresses for a new installation, after which
 the configuration is edited in the panel. The DNS server is off until enabled

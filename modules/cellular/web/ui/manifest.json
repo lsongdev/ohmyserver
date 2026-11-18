@@ -1,0 +1,13 @@
+{
+  "contract": 1,
+  "id": "cellular",
+  "title": "Cellular",
+  "entry": "module.js",
+  "styles": ["cellular.css"],
+  "home": "/",
+  "nav": [
+    { "path": "/", "title": "Overview" },
+    { "path": "/sms", "title": "SMS" },
+    { "path": "/at", "title": "AT Commands" }
+  ]
+}

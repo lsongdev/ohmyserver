@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -41,6 +42,7 @@ import (
 	"github.com/lsongdev/ohmyserver/home"
 	"github.com/lsongdev/ohmyserver/internal/shell"
 	"github.com/lsongdev/ohmyserver/internal/stores"
+	cellularweb "github.com/lsongdev/ohmyserver/modules/cellular/web"
 	ciapi "github.com/lsongdev/ohmyserver/modules/ci/api"
 	ciweb "github.com/lsongdev/ohmyserver/modules/ci/web"
 	"github.com/lsongdev/ohmyserver/modules/cron/runner"
@@ -350,6 +352,11 @@ func run(cfg config.Config, logger *slog.Logger) error {
 	// Network reads through iproute2, which only Linux has.
 	if network.API.Supported() {
 		modules = append(modules, network)
+	}
+	if runtime.GOOS == "linux" || cfg.CellularPort != "" {
+		cellular := cellularweb.New(cellularweb.Options{Port: cfg.CellularPort, Authenticated: opts.Auth != nil})
+		defer cellular.Close()
+		modules = append(modules, cellular)
 	}
 	// The firewall is nftables, which only Linux has.
 	if firewall.API.Supported() {

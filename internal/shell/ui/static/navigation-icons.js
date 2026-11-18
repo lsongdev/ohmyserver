@@ -33,6 +33,7 @@ const icons = {
     '/': 'ethernet', '/wifi': 'wifi', '/bridges': 'network-wired', '/pppoe': 'link',
     '/routes': 'route', '/ports': 'plug', '/tools': 'stethoscope',
   },
+  cellular: { '/': 'gauge-high', '/sms': 'envelope', '/at': 'terminal' },
   firewall: { '/': 'shield-halved' },
   disks: { '/': 'gauge-high' },
   samba: { '/': 'share-nodes', '/users': 'users', '/sessions': 'plug', '/logs': 'file-lines', '/global': 'gear' },
@@ -55,7 +56,7 @@ const groupIcons = {
   monitor: 'chart-line', docker: 'cubes', acme: 'certificate', gateway: 'tower-broadcast',
   dns: 'globe', domains: 'at', dhcp: 'network-wired', forward: 'right-left', ssh: 'terminal',
   cron: 'clock', ci: 'code-branch', packages: 'box', services: 'gears', network: 'ethernet',
-  firewall: 'shield-halved', samba: 'share-nodes', files: 'folder',
+  cellular: 'signal', firewall: 'shield-halved', samba: 'share-nodes', files: 'folder',
 };
 
 export function groupIcon(id) {

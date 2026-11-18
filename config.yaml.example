@@ -5,6 +5,9 @@
 # Panel address. Set a password whenever it listens beyond loopback.
 listen: 127.0.0.1:8080
 
+# Override automatic Quectel AT port discovery.
+# cellular_port: /dev/ttyUSB2
+
 # Shared database and module data; relative to <dir>, which is the default.
 data: .
 

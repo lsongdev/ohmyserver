@@ -4,6 +4,8 @@ When redesigning a shared library, prefer the clearest context-aware public API 
 
 # Interaction and forms
 
+- Use Font Awesome icons for sidebar groups and links. Register icons in `internal/shell/ui/static/navigation-icons.js` using `groupIcons` for groups and the module ID and route in `icons` for links. Keep module manifests independent of Font Awesome.
+
 - Default to completing tasks in the page. Use modals only for decisions that need an immediate response or brief, contextual input.
 - A modal should normally contain at most three simple fields and one primary action. This is a project review guideline, not an industry standard. Judge the task's complexity as well as its field count.
 - Use dedicated, addressable pages for complex creation and configuration: grouped settings, dynamic lists, credentials, command/code editing, connection tests, previews, or workflows that require consulting other pages. CI repositories, scheduled jobs, and SSH hosts follow this rule.
@@ -14,7 +16,7 @@ When redesigning a shared library, prefer the clearest context-aware public API 
 - Do not nest business-task modals. Warn about discarding changes only when changes exist. Protect input consistently across cancel, close, backdrop, Escape, navigation, and reload; prevent duplicate submissions.
 - Dedicated editing pages must have stable URLs, work after refresh, and support browser Back. Save/cancel should return to the originating list or detail page while retaining available query/filter context.
 - Put page-level actions in the shared page header's `actions` slot, aligned to the top right. When the page header has actions, omit the page-level return link. This rule applies to header actions; form submit/cancel controls and row actions stay with their forms and rows.
-- Wrap bottom-of-form Save and Cancel controls together in a shared `.form-actions` container.
+- Wrap bottom-of-form Save and Cancel controls together in a shared `.form-actions` container. Right-align dialog action buttons and place the primary action last.
 - When a page needs a return link and has no header actions, use the shared page header's `back={{ href, label }}` prop. Keep the title and return link on the same row, including on narrow screens. Let header actions wrap when needed. Subtitles contain descriptions, paths, or status only.
 - Retained dialogs must have an accessible name, sensible initial focus, focus containment, Escape handling, and restored focus on close. Prefer initial focus on Cancel for destructive confirmation. Avoid horizontal scrolling and long scrolling forms; do not shrink controls or enlarge dialogs just to fit a complex task.
 
