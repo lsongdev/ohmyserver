@@ -16,6 +16,9 @@ import (
 
 type smsTransport struct {
 	commands        []string
+	store           string
+	storeReplies    map[string][]string
+	queryErrors     map[string]error
 	responses       map[string][]string
 	submissions     []*tpdu.TPDU
 	loseSecondReply bool
@@ -23,8 +26,18 @@ type smsTransport struct {
 
 func (s *smsTransport) Query(_ context.Context, command string, match func(string) bool, _ func(string)) ([]string, error) {
 	s.commands = append(s.commands, command)
+	if err := s.queryErrors[command]; err != nil {
+		return nil, err
+	}
+	if strings.HasPrefix(command, `AT+CPMS="`) {
+		s.store = strings.TrimSuffix(strings.TrimPrefix(command, `AT+CPMS="`), `"`)
+	}
+	lines := s.responses[command]
+	if command == "AT+CMGL=4" && s.storeReplies != nil {
+		lines = s.storeReplies[s.store]
+	}
 	var replies []string
-	for _, line := range s.responses[command] {
+	for _, line := range lines {
 		if match(line) {
 			replies = append(replies, line)
 		}
@@ -66,19 +79,20 @@ func TestListSMS(t *testing.T) {
 		t.Fatal(err)
 	}
 	wire := &smsTransport{responses: map[string][]string{
+		"AT+CPMS=?": {`+CPMS: ("ME"),("ME"),("ME")`},
 		"AT+CPMS?":  {`+CPMS: "ME",1,255,"ME",1,255,"ME",1,255`},
 		"AT+CMGL=4": {"+CMGL: 1,0,,20", "+CMT: ,5", "0000", body, "+CMGL: 2,1,,1"},
 	}}
 	result, err := NewDevice(wire).ListSMS(context.Background())
-	if err != nil || result.Storage != "ME" || len(result.Messages) != 2 {
+	if err != nil || (len(result.Stores) != 1 || result.Stores[0].Name != "ME") || len(result.Messages) != 2 {
 		t.Fatalf("inbox=%+v, error=%v", result, err)
 	}
-	first := result.Messages[0]
+	first := result.Messages[1]
 	if first.Text != "蜂窝网络" || first.Number != "+15550100" || first.Status != "Unread" || first.Error != "" {
 		t.Errorf("first message=%+v", first)
 	}
-	if result.Messages[1].Error == "" {
-		t.Errorf("missing data was silently accepted: %+v", result.Messages[1])
+	if result.Messages[0].Error == "" {
+		t.Errorf("missing data was silently accepted: %+v", result.Messages[0])
 	}
 }
 
@@ -157,13 +171,16 @@ func TestSMS350DescriptionPreservesRejection(t *testing.T) {
 	}
 }
 
-func TestListSMSSelectsIncomingStore(t *testing.T) {
+func TestListSMSReadsBothStoresAndRestoresReadStore(t *testing.T) {
 	wire := &smsTransport{responses: map[string][]string{
 		"AT+CPMS?":     {`+CPMS: "ME",3,255,"ME",3,255,"SM",4,50`},
+		"AT+CPMS=?":    {`+CPMS: ("ME","MT","SM"),("ME","SM"),("ME","SM")`},
 		`AT+CPMS="SM"`: {"+CPMS: 4,50,3,255,4,50"},
+		`AT+CPMS="ME"`: {"+CPMS: 3,255,3,255,4,50"},
 	}}
 	inbox, err := NewDevice(wire).ListSMS(context.Background())
-	if err != nil || inbox.Storage != "SM" || strings.Join(wire.commands, "|") != `AT+CPMS?|AT+CPMS="SM"|AT+CMGF=0|AT+CMGL=4` {
-		t.Fatalf("inbox=%+v, err=%v", inbox, err)
+	if err != nil || len(inbox.Stores) != 2 ||
+		strings.Join(wire.commands, "|") != `AT+CPMS?|AT+CPMS=?|AT+CMGF=0|AT+CPMS="SM"|AT+CMGL=4|AT+CPMS="ME"|AT+CMGL=4` {
+		t.Fatalf("inbox=%+v, commands=%q, err=%v", inbox, wire.commands, err)
 	}
 }

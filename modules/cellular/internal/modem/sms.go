@@ -15,20 +15,35 @@ import (
 	"github.com/warthog618/sms/encoding/tpdu"
 )
 
+// MessageSource identifies a physical record, including a part of a long SMS.
+type MessageSource struct {
+	Storage string `json:"storage"`
+	Index   int    `json:"index"`
+	Part    int    `json:"part,omitempty"`
+}
+
 type Message struct {
-	Index  int        `json:"index"`
-	Status string     `json:"status"`
-	Number string     `json:"number,omitempty"`
-	Text   string     `json:"text,omitempty"`
-	Time   *time.Time `json:"time,omitempty"`
-	Part   int        `json:"part,omitempty"`
-	Parts  int        `json:"parts,omitempty"`
-	Error  string     `json:"error,omitempty"`
+	ID       string          `json:"id"`
+	Status   string          `json:"status"`
+	Number   string          `json:"number,omitempty"`
+	Text     string          `json:"text,omitempty"`
+	Time     *time.Time      `json:"time,omitempty"`
+	Parts    int             `json:"parts"`
+	Received int             `json:"received"`
+	Missing  []int           `json:"missing,omitempty"`
+	Sources  []MessageSource `json:"sources"`
+	Error    string          `json:"error,omitempty"`
+}
+
+type MessageStore struct {
+	Name    string `json:"name"`
+	Records int    `json:"records"`
+	Error   string `json:"error,omitempty"`
 }
 
 type Inbox struct {
-	Storage  string    `json:"storage"`
-	Messages []Message `json:"messages"`
+	Stores   []MessageStore `json:"stores"`
+	Messages []Message      `json:"messages"`
 }
 
 type Submission struct {
@@ -56,42 +71,102 @@ func ValidateSMS(number, text string) error {
 	return nil
 }
 
-// ListSMS reads the modem's current message storage. On Quectel, CMGL
-// marks previously unread messages as read.
-func (d Device) ListSMS(ctx context.Context) (Inbox, error) {
-	inbox := Inbox{Messages: []Message{}}
-	storage, err := d.query(ctx, "AT+CPMS?", prefixMatch("+CPMS:"))
+// ListSMS reads physical SIM and modem stores, then reassembles messages.
+// CMGL marks unread messages as read. Only the CPMS read store is switched;
+// the original read store is restored before this operation completes.
+func (d Device) ListSMS(ctx context.Context) (inbox Inbox, err error) {
+	inbox = Inbox{Stores: []MessageStore{}, Messages: []Message{}}
+	value, err := d.value(ctx, "AT+CPMS?", "+CPMS:")
 	if err != nil {
 		return inbox, err
 	}
-	if len(storage) != 1 {
+	values := fields("+CPMS: " + value)
+	if len(values) < 9 {
 		return inbox, InvalidReply("AT+CPMS?")
 	}
-	values := fields(storage[0])
-	if len(values) == 0 {
+	original := values[0]
+	if original != "SM" && original != "ME" && original != "MT" {
 		return inbox, InvalidReply("AT+CPMS?")
 	}
-	inbox.Storage = values[0]
-	// CPMS reports read, write and incoming stores. Read the incoming store
-	// so messages delivered to the SIM are visible when mem1 defaults to ME.
-	if len(values) >= 9 && values[6] != values[0] {
-		switch values[6] {
-		case "SM", "ME", "MT":
-			if _, err := d.query(ctx, `AT+CPMS="`+values[6]+`"`, prefixMatch("+CPMS:")); err != nil {
-				return inbox, err
-			}
-			inbox.Storage = values[6]
+	stores, err := d.messageStores(ctx)
+	if err != nil {
+		return inbox, err
+	}
+	current := original
+	defer func() {
+		if current == original {
+			return
 		}
-	}
+		restoreCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+		defer cancel()
+		_, restoreErr := d.query(restoreCtx, `AT+CPMS="`+original+`"`, prefixMatch("+CPMS:"))
+		if restoreErr != nil {
+			err = errors.Join(err, fmt.Errorf("restore SMS read storage: %w", restoreErr))
+		}
+	}()
 	if _, err := d.query(ctx, "AT+CMGF=0", func(string) bool { return false }); err != nil {
 		return inbox, err
 	}
-	lines, err := d.query(ctx, "AT+CMGL=4", listReplyMatcher())
-	if err != nil {
-		return inbox, err
+	var records []smsRecord
+	for _, store := range stores {
+		summary := MessageStore{Name: store}
+		if current != store {
+			_, err = d.query(ctx, `AT+CPMS="`+store+`"`, prefixMatch("+CPMS:"))
+			if err == nil {
+				current = store
+			}
+		}
+		var lines []string
+		if err == nil {
+			lines, err = d.query(ctx, "AT+CMGL=4", listReplyMatcher())
+		}
+		if err != nil {
+			if !replyError(err) {
+				return inbox, err
+			}
+			summary.Error = err.Error()
+			err = nil
+		} else {
+			decoded := decodeRecords(store, lines)
+			summary.Records = len(decoded)
+			records = append(records, decoded...)
+		}
+		inbox.Stores = append(inbox.Stores, summary)
 	}
-	inbox.Messages = decodeMessages(lines)
+	inbox.Messages = assembleMessages(records)
 	return inbox, nil
+}
+
+func (d Device) messageStores(ctx context.Context) ([]string, error) {
+	value, err := d.value(ctx, "AT+CPMS=?", "+CPMS:")
+	if err != nil {
+		return nil, err
+	}
+	_, options, ok := strings.Cut(value, "(")
+	options, _, closed := strings.Cut(options, ")")
+	if !ok || !closed {
+		return nil, InvalidReply("AT+CPMS=?")
+	}
+	values := fields("+CPMS: " + options)
+	var stores []string
+	// MT may alias ME or combine SM and ME. Read physical stores once.
+	for _, name := range []string{"SM", "ME"} {
+		for _, option := range values {
+			if option == name {
+				stores = append(stores, name)
+				break
+			}
+		}
+	}
+	if len(stores) == 0 {
+		for _, option := range values {
+			if option == "MT" {
+				return []string{"MT"}, nil
+			}
+		}
+		return nil, InvalidReply("AT+CPMS=?")
+	}
+	return stores, nil
 }
 
 func listReplyMatcher() func(string) bool {
@@ -117,74 +192,6 @@ func listReplyMatcher() func(string) bool {
 			return true
 		}
 		return false
-	}
-}
-
-func decodeMessages(lines []string) []Message {
-	messages := make([]Message, 0, len(lines)/2)
-	for i := 0; i < len(lines); i++ {
-		line := lines[i]
-		if !strings.HasPrefix(line, "+CMGL:") {
-			continue
-		}
-		values := fields(line)
-		index, status := number(values, 0), number(values, 1)
-		if index == nil || status == nil {
-			continue
-		}
-		message := Message{Index: *index, Status: "Unknown", Error: "Missing SMS data"}
-		switch *status {
-		case 0:
-			message.Status = "Unread"
-		case 1:
-			message.Status = "Received"
-		case 2:
-			message.Status = "Draft"
-		case 3:
-			message.Status = "Sent"
-		}
-		if i+1 < len(lines) && !strings.HasPrefix(lines[i+1], "+CMGL:") {
-			i++
-			decodeMessage(&message, lines[i], *status < 2)
-		}
-		messages = append(messages, message)
-	}
-	return messages
-}
-
-func decodeMessage(message *Message, raw string, inbound bool) {
-	pdu, err := pdumode.UnmarshalHexString(raw)
-	if err != nil {
-		message.Error = "Invalid SMS data"
-		return
-	}
-	packet := tpdu.TPDU{Direction: tpdu.MO}
-	if inbound {
-		packet.Direction = tpdu.MT
-	}
-	if err := packet.UnmarshalBinary(pdu.TPDU); err != nil {
-		message.Error = "Invalid SMS data"
-		return
-	}
-	switch packet.SmsType() {
-	case tpdu.SmsDeliver:
-		message.Number = address(packet.OA)
-		message.Time = &packet.SCTS.Time
-	case tpdu.SmsSubmit:
-		message.Number = address(packet.DA)
-	default:
-		message.Error = "Unsupported SMS record type"
-		return
-	}
-	text, err := sms.Decode([]*tpdu.TPDU{&packet})
-	if err != nil {
-		message.Error = "Unsupported SMS encoding"
-		return
-	}
-	message.Text = string(text)
-	message.Error = ""
-	if parts, part, _, ok := packet.ConcatInfo(); ok {
-		message.Parts, message.Part = parts, part
 	}
 }
 

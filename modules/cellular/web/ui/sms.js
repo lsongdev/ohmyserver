@@ -1,8 +1,10 @@
 import { html, useEffect, useState } from '@lsongdev/panel/html.js';
 import { useAction, useResource } from '@lsongdev/panel/hooks.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
-import { Alert, Empty, Field, Loading, PageHeader, toast } from '@lsongdev/scripts/react/components/index.js';
+import { Alert, Badge, Empty, Field, Loading, PageHeader, toast } from '@lsongdev/scripts/react/components/index.js';
 import { Dialog } from '@lsongdev/scripts/react/components/dialog.js';
+
+const storageName = name => ({ SM: 'SIM (SM)', ME: 'Modem (ME)', MT: 'Combined (MT)' })[name] || name;
 
 export default function SMS() {
   const { api, beforeLeave } = usePanel();
@@ -62,18 +64,29 @@ export default function SMS() {
     ` : null}
     ${available && inbox.data ? html`
       <section class="card" aria-label="Messages">
-        <p class="muted">Storage: ${inbox.data.storage}</p>
-        ${inbox.data.messages.length === 0 ? html`<${Empty}>No messages in this storage.<//>` : html`
+        <p class="muted">${inbox.data.messages.length} messages · ${inbox.data.stores.map(store => `${storageName(store.name)}: ${store.error ? 'unavailable' : `${store.records} records`}`).join(' · ')}</p>
+        ${inbox.data.stores.filter(store => store.error).map(store => html`
+          <${Alert} key=${store.name} variant="warning">${storageName(store.name)}: ${store.error}<//>
+        `)}
+        ${inbox.data.messages.length === 0 ? html`<${Empty}>${inbox.data.stores.every(store => store.error) ? 'Messages could not be loaded.' : 'No messages in these stores.'}<//>` : html`
           <ul class="list">
             ${inbox.data.messages.toReversed().map(message => html`
-              <li key=${message.index} class="list-item">
+              <li key=${message.id} class="list-item">
                 <div class="list-item-content">
-                  <strong class="list-item-headline">${message.number || `Message ${message.index}`}</strong>
+                  <div class="sms-headline">
+                    <strong class="list-item-headline">${message.number || 'Message'}</strong>
+                    ${[...new Set(message.sources.map(source => source.storage))].map(storage => html`<${Badge} key=${storage}>${storageName(storage)}<//>`)}
+                  </div>
                   <div class="list-item-supporting">
                     ${[message.status, message.time && new Date(message.time).toLocaleString(),
-                      message.parts && `Part ${message.part} of ${message.parts}`].filter(Boolean).join(' · ')}
+                      message.parts > 1 && (message.missing?.length ? `${message.received} of ${message.parts} parts received` : `${message.parts} parts combined`)].filter(Boolean).join(' · ')}
                   </div>
-                  <p class="sms-text">${message.error || message.text}</p>
+                  ${message.error ? html`<p class="muted">${message.error}</p>` : null}
+                  ${message.text ? html`<p class="sms-text">${message.text}</p>` : null}
+                  <details class="small muted">
+                    <summary>Storage records</summary>
+                    <ul>${message.sources.map(source => html`<li key=${`${source.storage}:${source.index}`}>${storageName(source.storage)} #${source.index}${source.part ? ` · part ${source.part}` : ''}</li>`)}</ul>
+                  </details>
                 </div>
               </li>
             `)}

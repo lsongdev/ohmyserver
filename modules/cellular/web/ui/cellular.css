@@ -175,3 +175,15 @@
 .cellular-console-form .input::placeholder {
   color: #a6b3c2;
 }
+
+.sms-headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.sms-headline .list-item-headline {
+  margin-inline-end: auto;
+  overflow-wrap: anywhere;
+}

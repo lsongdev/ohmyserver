@@ -29,12 +29,19 @@ require panel sign-in. The status endpoint is `GET /m/cellular/api/status`.
 SMS is available when host sign-in is configured. In OhMyServer, use the
 panel password. In the standalone server, set `CELLULAR_PASSWORD`.
 
-The SMS page reads the modem's configured incoming storage (shown as
-`ME`, `SM`, or another modem-reported label). Opening the page loads the list and can mark
-unread messages as read on Quectel. When the read store differs from the incoming store, the driver selects the
-incoming store with CPMS before listing. The modem sends SMS in PDU mode with
-GSM-7 and Unicode support, including up to six parts. Confirmation means
-the modem accepted the submission. Delivery depends on the carrier.
+The SMS page reads both supported physical stores, SIM (`SM`) and modem
+(`ME`), and labels each message's sources. The original CPMS read store is
+restored after loading. Opening the page can mark unread records as read.
+A failure in one store is reported alongside messages from the other store.
+
+Long SMS messages are assembled by their protocol headers, sender, encoding
+and timestamp window. Duplicate PDUs retain all storage locations. Missing
+parts remain visible with their sequence numbers, and conflicting parts are
+shown separately. The list is sorted by message time.
+
+The modem sends SMS in PDU mode with GSM-7 and Unicode support, including up
+to six parts. Confirmation means the modem accepted the submission. Delivery
+depends on the carrier.
 
 Before each submission the driver checks SIM readiness, CS/LTE/5G
 registration, SMS domain selection and the presence of an SMS service
