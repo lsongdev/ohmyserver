@@ -9,6 +9,7 @@ export default function SMS() {
   const availability = useResource(signal => api.get('/sms', { signal }), []);
   const available = availability.data?.available === true;
   const inbox = useResource(signal => available ? api.post('/sms/list', undefined, { signal }) : null, [available]);
+  const readiness = useResource(signal => available ? api.get('/sms/check', { signal }) : null, [available]);
   const send = useAction();
   const [open, setOpen] = useState(false);
   const [number, setNumber] = useState('');
@@ -32,7 +33,12 @@ export default function SMS() {
     event.preventDefault();
     if (inbox.loading) return;
     return send.run(async () => {
-      const result = await api.post('/sms/send', { number, text });
+      let result;
+      try {
+        result = await api.post('/sms/send', { number, text });
+      } finally {
+        readiness.reload();
+      }
       setNumber('');
       setText('');
       setOpen(false);
@@ -41,7 +47,7 @@ export default function SMS() {
   };
 
   const actions = available ? html`
-    <button class="button" type="button" disabled=${inbox.loading || send.busy} onClick=${inbox.reload}>Refresh</button>
+    <button class="button" type="button" disabled=${inbox.loading || send.busy} onClick=${() => { inbox.reload(); readiness.reload(); }}>Refresh</button>
     <button class="button button-primary" type="button" onClick=${() => setOpen(true)}>Send SMS</button>
   ` : null;
 
@@ -50,6 +56,10 @@ export default function SMS() {
     <${Alert} error=${availability.error || (available && inbox.error)} />
     ${availability.loading || (available && inbox.loading && !inbox.data) ? html`<${Loading} />` : null}
     ${availability.data?.available === false ? html`<${Alert} variant="info">Enable panel sign-in to view and send SMS.<//>` : null}
+    ${available && readiness.error ? html`<${Alert} error=${readiness.error} />` : null}
+    ${available && readiness.data && !readiness.data.ready ? html`
+      <${Alert} variant="warning">${readiness.data.issues.join(' ')}<//>
+    ` : null}
     ${available && inbox.data ? html`
       <section class="card" aria-label="Messages">
         <p class="muted">Storage: ${inbox.data.storage}</p>

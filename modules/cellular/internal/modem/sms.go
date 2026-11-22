@@ -72,6 +72,17 @@ func (d Device) ListSMS(ctx context.Context) (Inbox, error) {
 		return inbox, InvalidReply("AT+CPMS?")
 	}
 	inbox.Storage = values[0]
+	// CPMS reports read, write and incoming stores. Read the incoming store
+	// so messages delivered to the SIM are visible when mem1 defaults to ME.
+	if len(values) >= 9 && values[6] != values[0] {
+		switch values[6] {
+		case "SM", "ME", "MT":
+			if _, err := d.query(ctx, `AT+CPMS="`+values[6]+`"`, prefixMatch("+CPMS:")); err != nil {
+				return inbox, err
+			}
+			inbox.Storage = values[6]
+		}
+	}
 	if _, err := d.query(ctx, "AT+CMGF=0", func(string) bool { return false }); err != nil {
 		return inbox, err
 	}
@@ -228,6 +239,13 @@ func (d Device) SendSMS(ctx context.Context, recipient, text string) (Submission
 		return Submission{}, err
 	}
 	result := Submission{References: []int{}, Parts: len(parts)}
+	check, err := d.CheckSMS(ctx)
+	if err != nil {
+		return result, err
+	}
+	if !check.Ready {
+		return result, &SMSFailure{Message: "SMS was not submitted. " + strings.Join(check.Issues, " ")}
+	}
 	if _, err := d.query(ctx, "AT+CMGF=0", func(string) bool { return false }); err != nil {
 		return result, err
 	}
@@ -237,7 +255,7 @@ func (d Device) SendSMS(ctx context.Context, recipient, text string) (Submission
 		cancel()
 		if err != nil && len(lines) == 0 {
 			result.Uncertain = submitted && !replyError(err)
-			return result, err
+			return result, smsFailure(err)
 		}
 		if len(lines) > 0 {
 			ref := number(fields(lines[0]), 0)

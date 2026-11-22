@@ -8,18 +8,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lsongdev/ohmyserver/modules/cellular/internal/at"
 	"github.com/warthog618/sms"
 	"github.com/warthog618/sms/encoding/pdumode"
 	"github.com/warthog618/sms/encoding/tpdu"
 )
 
 type smsTransport struct {
+	commands        []string
 	responses       map[string][]string
 	submissions     []*tpdu.TPDU
 	loseSecondReply bool
 }
 
 func (s *smsTransport) Query(_ context.Context, command string, match func(string) bool, _ func(string)) ([]string, error) {
+	s.commands = append(s.commands, command)
 	var replies []string
 	for _, line := range s.responses[command] {
 		if match(line) {
@@ -81,7 +84,7 @@ func TestListSMS(t *testing.T) {
 
 func TestSendMultipartSMS(t *testing.T) {
 	text := strings.Repeat("蜂窝", 60)
-	wire := &smsTransport{}
+	wire := &smsTransport{responses: smsReadyResponses()}
 	result, err := NewDevice(wire).SendSMS(context.Background(), "+15550100", text)
 	if err != nil || result.Parts != 2 || len(result.References) != 2 || result.Uncertain {
 		t.Fatalf("result=%+v, error=%v", result, err)
@@ -93,12 +96,74 @@ func TestSendMultipartSMS(t *testing.T) {
 }
 
 func TestSendStopsAfterUncertainPart(t *testing.T) {
-	wire := &smsTransport{loseSecondReply: true}
+	wire := &smsTransport{responses: smsReadyResponses(), loseSecondReply: true}
 	result, err := NewDevice(wire).SendSMS(context.Background(), "15550100", strings.Repeat("中", 180))
 	if !errors.Is(err, context.DeadlineExceeded) || result.Parts != 3 || len(result.References) != 1 || !result.Uncertain || len(wire.submissions) != 2 {
 		t.Fatalf("result=%+v, attempts=%d, error=%v", result, len(wire.submissions), err)
 	}
 	if got := wire.submissions[0].DA.TypeOfNumber(); got != tpdu.TonUnknown {
 		t.Errorf("local number type=%v", got)
+	}
+}
+
+func smsReadyResponses() map[string][]string {
+	return map[string][]string{
+		"AT+CPIN?":      {"+CPIN: READY"},
+		"AT+CREG?":      {"+CREG: 0,0"},
+		"AT+CEREG?":     {"+CEREG: 0,0"},
+		"AT+C5GREG?":    {"+C5GREG: 0,1"},
+		"AT+CGSMS?":     {"+CGSMS: 2"},
+		"AT+CSCA?":      {`+CSCA: "+15550000",145`},
+		`AT+QCFG="ims"`: {`+QCFG: "ims",1,0`},
+	}
+}
+
+func TestSMSPreflight(t *testing.T) {
+	tests := []struct {
+		name      string
+		command   string
+		response  string
+		wantIssue string
+	}{
+		{"SIM locked", "AT+CPIN?", "+CPIN: SIM PIN", "SIM is not ready"},
+		{"CS only on 5G", "AT+CGSMS?", "+CGSMS: 1", "circuit-switched only"},
+		{"SMSC missing", "AT+CSCA?", `+CSCA: "",145`, "No SMS service centre"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			wire := &smsTransport{responses: smsReadyResponses()}
+			wire.responses[test.command] = []string{test.response}
+			device := NewDevice(wire)
+			check, err := device.CheckSMS(context.Background())
+			if err != nil || check.Ready || !strings.Contains(strings.Join(check.Issues, " "), test.wantIssue) {
+				t.Fatalf("check=%+v, err=%v", check, err)
+			}
+			_, err = device.SendSMS(context.Background(), "15550100", "test")
+			var failure *SMSFailure
+			if !errors.As(err, &failure) || len(wire.submissions) != 0 {
+				t.Fatalf("preflight allowed submission: err=%v, submissions=%d", err, len(wire.submissions))
+			}
+		})
+	}
+}
+
+func TestSMS350DescriptionPreservesRejection(t *testing.T) {
+	cause := at.Rejection("+CMS ERROR: 350")
+	err := smsFailure(cause)
+	var failure *SMSFailure
+	var rejection at.Rejection
+	if !errors.As(err, &failure) || !errors.As(err, &rejection) || !strings.Contains(err.Error(), "IMS") {
+		t.Fatalf("error=%v", err)
+	}
+}
+
+func TestListSMSSelectsIncomingStore(t *testing.T) {
+	wire := &smsTransport{responses: map[string][]string{
+		"AT+CPMS?":     {`+CPMS: "ME",3,255,"ME",3,255,"SM",4,50`},
+		`AT+CPMS="SM"`: {"+CPMS: 4,50,3,255,4,50"},
+	}}
+	inbox, err := NewDevice(wire).ListSMS(context.Background())
+	if err != nil || inbox.Storage != "SM" || strings.Join(wire.commands, "|") != `AT+CPMS?|AT+CPMS="SM"|AT+CMGF=0|AT+CMGL=4` {
+		t.Fatalf("inbox=%+v, err=%v", inbox, err)
 	}
 }

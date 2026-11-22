@@ -29,8 +29,22 @@ require panel sign-in. The status endpoint is `GET /m/cellular/api/status`.
 SMS is available when host sign-in is configured. In OhMyServer, use the
 panel password. In the standalone server, set `CELLULAR_PASSWORD`.
 
-The SMS page lists the modem's currently selected storage (shown as
+The SMS page reads the modem's configured incoming storage (shown as
 `ME`, `SM`, or another modem-reported label). Opening the page loads the list and can mark
-unread messages as read on Quectel. The modem sends SMS in PDU mode with
+unread messages as read on Quectel. When the read store differs from the incoming store, the driver selects the
+incoming store with CPMS before listing. The modem sends SMS in PDU mode with
 GSM-7 and Unicode support, including up to six parts. Confirmation means
 the modem accepted the submission. Delivery depends on the carrier.
+
+Before each submission the driver checks SIM readiness, CS/LTE/5G
+registration, SMS domain selection and the presence of an SMS service
+centre. The SMS page displays configuration conflicts. The driver reports
+CMS 350 with guidance to check the carrier service and IMS, retaining the
+original modem error. It never automatically retries a submitted message.
+
+On the Photonicat's RM520N-GL with China Unicom 5G SA, the tested working
+configuration is packet-domain preferred (`AT+CGSMS=2`) and explicitly
+enabled IMS (`AT+QCFG="ims",1`), followed by a modem restart.
+These settings are configured explicitly through the AT page. Changing them
+is separate from sending a message. The second value in the IMS configuration
+reply describes capability and does not establish IMS registration.

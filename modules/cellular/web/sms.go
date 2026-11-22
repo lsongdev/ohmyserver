@@ -61,6 +61,10 @@ func (m *Cellular) sendSMS(w http.ResponseWriter, r *http.Request) {
 }
 
 func modemHTTPStatus(err error) int {
+	var failure *modem.SMSFailure
+	if errors.As(err, &failure) {
+		return http.StatusConflict
+	}
 	if errors.Is(err, modem.ErrOffline) || errors.Is(err, modem.ErrBusy) {
 		return http.StatusServiceUnavailable
 	}

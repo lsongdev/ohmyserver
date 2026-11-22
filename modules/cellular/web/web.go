@@ -40,6 +40,14 @@ func (m *Cellular) Handler() http.Handler {
 	mux.HandleFunc("GET /sms", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]bool{"available": m.authenticated})
 	})
+	mux.HandleFunc("GET /sms/check", m.requireSMS(func(w http.ResponseWriter, r *http.Request) {
+		check, err := m.monitor.CheckSMS(r.Context())
+		if err != nil {
+			commandError(w, modemHTTPStatus(err), err.Error(), nil)
+			return
+		}
+		writeJSON(w, http.StatusOK, check)
+	}))
 	mux.HandleFunc("POST /sms/list", m.requireSMS(m.listSMS))
 	mux.HandleFunc("POST /sms/send", m.requireSMS(m.sendSMS))
 	mux.HandleFunc("GET /at", func(w http.ResponseWriter, r *http.Request) {

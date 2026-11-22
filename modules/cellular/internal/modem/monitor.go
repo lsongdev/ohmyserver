@@ -134,9 +134,10 @@ func (m *Monitor) run(ctx context.Context, override string) {
 					err = ErrOffline
 				} else {
 					err = req.run(ctx, device)
+					var failure *SMSFailure
 					var input SMSInputError
 					var command InvalidCommand
-					if err != nil && !replyError(err) && !errors.As(err, &input) && !errors.As(err, &command) {
+					if err != nil && !replyError(err) && !errors.As(err, &failure) && !errors.As(err, &input) && !errors.As(err, &command) {
 						closeSession()
 						m.publish(Status{Port: port, State: "disconnected", Error: "Serial transaction interrupted"})
 					}
