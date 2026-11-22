@@ -25,20 +25,47 @@ function Status({ state, reload }) {
     });
   };
   const actions = html`
-      <button class="button button-primary" disabled=${busy || (state.running && !state.pending)}
+      <button type="button" class="button button-primary" disabled=${busy || (state.running && !state.pending)}
         onClick=${() => change('apply')}>${state.running ? 'Apply changes' : 'Start Xray'}</button>
-      <button class="button" disabled=${busy || !state.enabled} onClick=${() => change('stop')}>Stop Xray</button>`;
-  return html`<${PageHeader} title="Xray" subtitle="Manage the embedded proxy and its routing configuration."
-    actions=${actions} />
-  <section class="xray-status">
-    <h2>${state.running ? 'Running' : state.enabled ? 'Failed to start' : 'Stopped'}</h2>
-    <p>${state.running
-      ? (state.pending ? 'Saved changes are waiting to be applied.' : 'The saved configuration is active.')
-      : 'Apply the saved configuration to start Xray.'}</p>
-    <${Alert} error=${error || state.error} />
+      <button type="button" class="button" disabled=${busy || !state.enabled} onClick=${() => change('stop')}>Stop Xray</button>`;
+  const runtime = state.running ? 'Running' : state.enabled ? 'Failed to start' : 'Stopped';
+  const runtimeTone = state.running ? 'success' : state.enabled ? 'danger' : 'neutral';
+  const draft = state.running && !state.pending ? 'Applied'
+    : state.enabled && state.pending ? 'Pending changes'
+    : 'Ready to apply';
+  const draftHint = state.running && !state.pending ? 'The running service uses this configuration.'
+    : state.running ? 'Apply changes to update the running service.'
+    : 'Start Xray to use the saved configuration.';
+
+  return html`<${PageHeader} title="Xray" actions=${actions} />
+  <section class="card xray-overview-status" aria-label="Service and configuration status">
+    <dl class="xray-status-grid">
+      <div>
+        <dt>Service</dt>
+        <dd><span class="xray-status-dot" data-tone=${runtimeTone} aria-hidden="true"></span>${runtime}</dd>
+      </div>
+      <div>
+        <dt>Configuration</dt>
+        <dd>${draft}<small>${draftHint}</small></dd>
+      </div>
+    </dl>
+    ${(error || state.error) && html`<div class="xray-status-error"><${Alert} error=${error || state.error} /></div>`}
   </section>
-  <ul class="xray-links">${Object.entries(sections).map(([key, section]) => html`
-    <li key=${key}><a href=${href('/' + key)}>${section.title}</a> · ${entries(state.config, key).length}</li>`)}
-    <li><a href=${href('/config')}>Edit full configuration</a></li>
-  </ul>`;
+
+  <section class="section" aria-labelledby="xray-saved-config">
+    <div class="xray-summary-heading">
+      <h2 id="xray-saved-config">Saved configuration</h2>
+      <a href=${href('/config')}>Edit full JSON</a>
+    </div>
+    <div class="xray-summary-grid">
+      ${Object.entries(sections).map(([key, section]) => html`
+        <a key=${key} class="card xray-summary-card" href=${href('/' + key)}>
+          <div class="xray-summary-label">
+            <h3>${section.title}</h3>
+            <span aria-hidden="true">→</span>
+          </div>
+          <strong class="stat-value">${entries(state.config, key).length}</strong>
+        </a>`)}
+    </div>
+  </section>`;
 }
