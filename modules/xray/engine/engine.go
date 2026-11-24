@@ -22,18 +22,20 @@ var (
 )
 
 type state struct {
-	Draft    json.RawMessage `json:"draft"`
-	Applied  json.RawMessage `json:"applied,omitempty"`
-	Revision uint64          `json:"revision"`
+	Draft         json.RawMessage `json:"draft"`
+	Applied       json.RawMessage `json:"applied,omitempty"`
+	Revision      uint64          `json:"revision"`
+	Subscriptions []Subscription  `json:"subscriptions,omitempty"`
 }
 
 type Snapshot struct {
-	Config   json.RawMessage `json:"config"`
-	Revision uint64          `json:"revision"`
-	Enabled  bool            `json:"enabled"`
-	Running  bool            `json:"running"`
-	Pending  bool            `json:"pending"`
-	Error    string          `json:"error,omitempty"`
+	Config   json.RawMessage   `json:"config"`
+	Sources  map[string]Source `json:"sources"`
+	Revision uint64            `json:"revision"`
+	Enabled  bool              `json:"enabled"`
+	Running  bool              `json:"running"`
+	Pending  bool              `json:"pending"`
+	Error    string            `json:"error,omitempty"`
 }
 
 type Engine struct {
@@ -71,7 +73,7 @@ func Open(dir string) (*Engine, error) {
 }
 
 func (e *Engine) snapshot() Snapshot {
-	return Snapshot{Config: bytes.Clone(e.state.Draft), Revision: e.state.Revision,
+	return Snapshot{Config: bytes.Clone(e.state.Draft), Sources: e.sources(), Revision: e.state.Revision,
 		Enabled: len(e.state.Applied) != 0, Running: e.core != nil, Error: e.lastErr,
 		Pending: !bytes.Equal(e.state.Draft, e.state.Applied)}
 }

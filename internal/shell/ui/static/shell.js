@@ -127,7 +127,7 @@ function Navigation({ panel, path, onLogout }) {
     .filter(i => path === i.to || (!i.root && path.startsWith(i.to + '/')))
     .sort((a, b) => b.to.length - a.to.length)[0];
   // Cross-module grouping is a host policy; item.group belongs inside a module.
-  const sharedGroups = { home: 'Home', notify: 'Notification', disks: 'Storage', zfs: 'Storage' };
+  const sharedGroups = { home: 'Home', notify: 'Notification', disks: 'Storage', zfs: 'Storage', network: 'Network', firewall: 'Network', forward: 'Network', nat: 'Network' };
   // One menu tree: a group per module (or shared group), or the bare
   // links when only one module is mounted.
   const groups = new Map();
@@ -136,7 +136,7 @@ function Navigation({ panel, path, onLogout }) {
     const group = sharedGroups[m.id];
     const id = group ? `group:${group}` : `module:${m.id}`;
     if (!groups.has(id)) groups.set(id, { id, title: group || m.title, icon: groupIcon(group || m.id), items: [] });
-    groups.get(id).items.push({ href: '#' + item.to, title: item.title, icon: navigationIcon(m, item), active: item === active });
+    groups.get(id).items.push({ href: '#' + item.to, title: m.id === 'forward' && item.path === '/' ? 'Port forwarding' : item.title, icon: navigationIcon(m, item), active: item === active });
   }
   const tree = panel.modules.length > 1 ? [...groups.values()] : [...groups.values()].flatMap(g => g.items);
   const logout = panel.auth

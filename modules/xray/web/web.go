@@ -39,6 +39,7 @@ type request struct {
 
 func (m *Module) Handler() http.Handler {
 	mux := http.NewServeMux()
+	m.subscriptionRoutes(mux)
 	mux.HandleFunc("GET /config", func(w http.ResponseWriter, r *http.Request) {
 		reply(w, http.StatusOK, map[string]any{"data": m.engine.Snapshot()})
 	})

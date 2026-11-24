@@ -53,6 +53,7 @@ import (
 	fwmgr "github.com/lsongdev/ohmyserver/modules/fwmgr/web"
 	"github.com/lsongdev/ohmyserver/modules/monitor/collector"
 	monitorweb "github.com/lsongdev/ohmyserver/modules/monitor/web"
+	natweb "github.com/lsongdev/ohmyserver/modules/nat/web"
 	netmgr "github.com/lsongdev/ohmyserver/modules/netmgr/web"
 	notifyweb "github.com/lsongdev/ohmyserver/modules/notify/web"
 	pkgmgr "github.com/lsongdev/ohmyserver/modules/pkgmgr/web"
@@ -301,6 +302,7 @@ func run(cfg config.Config, logger *slog.Logger) error {
 	// diagnostics. A change on trial is remembered in its directory, so it
 	// still reverts after a crash.
 	network := netmgr.New(netmgr.Options{StateDir: filepath.Join(dataDir, "network"), Logger: logger})
+	natDetection := natweb.New(ctx, natweb.Options{})
 	// Firewall: nftables rules for the interfaces facing the internet, and
 	// NAT. The kernel forgets them at boot, so the saved ones are applied as
 	// the panel starts; a change on trial is remembered in its directory.
@@ -342,7 +344,7 @@ func run(cfg config.Config, logger *slog.Logger) error {
 			Forward: forwarder.Service, SSH: terminals.Service, Cron: scheduler.Service, Monitor: monitoring.Service,
 			CI: builds.Service, Notifications: notifications.Service,
 		}),
-		notifications, monitoring, docker, certs, yabberweb.New(management), dnsServer, domains, dhcpServer, forwarder, terminals, scheduler, builds, packages,
+		notifications, monitoring, docker, certs, yabberweb.New(management), dnsServer, domains, dhcpServer, forwarder, natDetection, terminals, scheduler, builds, packages,
 	}
 	// Services manages systemd: without it (macOS, for one) the module has
 	// nothing to show, so it is left out of the panel.

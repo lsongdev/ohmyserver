@@ -1,0 +1,9 @@
+{
+  "contract": 1,
+  "id": "nat",
+  "title": "NAT traversal",
+  "entry": "module.js",
+  "styles": ["nat.css"],
+  "home": "/",
+  "nav": [{"path": "/", "title": "NAT detection"}]
+}

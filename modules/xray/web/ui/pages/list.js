@@ -2,6 +2,7 @@ import { html } from '@lsongdev/panel/html.js';
 import { useAction } from '@lsongdev/panel/hooks.js';
 import { usePanel } from '@lsongdev/panel/panel.js';
 import { PageHeader, Alert, toast } from '@lsongdev/scripts/react/components/index.js';
+import Subscriptions from './subscriptions.js';
 import { WithConfig, sectionFor, entries, withEntries } from '../xray.js';
 
 export default function List({ params }) {
@@ -11,7 +12,8 @@ export default function List({ params }) {
   if (!section) return html`<${Alert} variant="warning">Page not found<//>`;
   return html`<${PageHeader} title=${section.title} subtitle=${section.description}
     actions=${html`<a class="button button-primary" href=${href('/' + key + '/new')}>Add ${section.item}</a>`} />
-    <${WithConfig} render=${(state, reload) => html`<${Rows} sectionKey=${key} section=${section} state=${state} reload=${reload} />`} />`;
+    <${WithConfig} render=${(state, reload) => html`<${Rows} sectionKey=${key} section=${section} state=${state} reload=${reload} />
+      ${key === 'outbounds' && html`<${Subscriptions} onChange=${reload} />`}`} />`;
 }
 
 function Rows({ sectionKey, section, state, reload }) {
@@ -38,10 +40,14 @@ function Rows({ sectionKey, section, state, reload }) {
         <li key=${index} class="xray-row">
           <div>
             <a href=${href('/' + sectionKey + '/' + index + '/edit')}>
-              ${item.tag || item.ruleTag || (sectionKey === 'rules' ? 'Rule ' + (index + 1) : item.protocol)}
+              ${(sectionKey === 'outbounds' && state.sources?.[item.tag]?.nodeName) || item.tag || item.ruleTag || (sectionKey === 'rules' ? 'Rule ' + (index + 1) : item.protocol)}
             </a>
             <small>${sectionKey === 'rules' ? 'Target: ' + (item.outboundTag || item.balancerTag || '—')
               : [item.protocol, item.port == null ? null : (item.listen || 'all addresses') + ':' + item.port].filter(Boolean).join(' · ')}</small>
+            ${sectionKey === 'outbounds' && state.sources?.[item.tag] && html`<small>
+              <a href=${href('/outbounds/subscriptions/' + state.sources[item.tag].id)}>${state.sources[item.tag].name}</a>
+              ${state.sources[item.tag].missing ? ' · Missing from subscription' : ''}
+            </small>`}
           </div>
           <div class="xray-actions">
             ${sectionKey !== 'inbounds' && html`

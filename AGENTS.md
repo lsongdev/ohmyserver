@@ -4,6 +4,8 @@ When redesigning a shared library, prefer the clearest context-aware public API 
 
 # Interaction and forms
 
+- Use a single-column layout for forms at all screen widths. Stack fields vertically, including fields within grouped settings and dynamic lists.
+
 - Use Font Awesome icons for sidebar groups and links. Register icons in `internal/shell/ui/static/navigation-icons.js` using `groupIcons` for groups and the module ID and route in `icons` for links. Keep module manifests independent of Font Awesome.
 
 - Default to completing tasks in the page. Use modals only for decisions that need an immediate response or brief, contextual input.

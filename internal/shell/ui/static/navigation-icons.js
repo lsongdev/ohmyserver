@@ -23,6 +23,7 @@ const icons = {
   domains: { '/': 'globe', '/accounts': 'user-shield' },
   dhcp: { '/': 'network-wired', '/reservations': 'thumbtack', '/activity': 'wave-square', '/settings': 'gear' },
   forward: { '/': 'right-left' },
+  nat: { '/': 'tower-broadcast' },
   xray: { '/': 'gauge-high', '/inbounds': 'plug', '/outbounds': 'right-left', '/rules': 'route', '/config': 'gear' },
   ssh: { '/': 'terminal', '/key': 'key' },
   cron: { '/': 'clock' },
@@ -53,7 +54,7 @@ export function navigationIcon(module, item) {
 // A navigation group's icon, shown when the sidebar collapses to icons; by
 // shared group title or module id. Groups not listed take their first link's.
 const groupIcons = {
-  Home: 'house', Storage: 'hard-drive',
+  Home: 'house', Storage: 'hard-drive', Network: 'network-wired',
   monitor: 'chart-line', docker: 'cubes', acme: 'certificate', gateway: 'tower-broadcast',
   dns: 'globe', domains: 'at', dhcp: 'network-wired', forward: 'right-left', xray: 'right-left', ssh: 'terminal',
   cron: 'clock', ci: 'code-branch', packages: 'box', services: 'gears', network: 'ethernet',

@@ -6,7 +6,7 @@
   overflow-wrap: anywhere;
 }
 .xray-row small { display: block; }
-.xray-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .5rem 1rem; }
+.xray-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; }
 .xray-json { width: 100%; font-family: ui-monospace, monospace; resize: vertical; }
 .xray-object-list { display: grid; gap: .75rem; justify-items: stretch; }
 .xray-object-list > .button { justify-self: start; }
@@ -47,3 +47,5 @@
   .xray-summary-grid > .xray-summary-card { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
   .xray-summary-card .stat-value { margin: 0; }
 }
+
+.xray-subscriptions { margin-top: 24px; }
