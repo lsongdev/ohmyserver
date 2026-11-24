@@ -173,6 +173,7 @@ download. An attempt limit of 1 disables retries at that layer. Unfinished issua
 resume from their saved order and key after restart; the certificate panel
 shows attempt counts and the next retry time.
 
-Development uses `go.work` with sibling checkouts of the projects
+Development uses a local `go.work`, created from `go.work.example` by
+`make deps`, with sibling checkouts of the projects
 (`../docker-go`, `../acme-go`, `../yabber`, `../dns-go`, `../forward-go`)
 and of the smartctl-go library (`../smartctl-go`).

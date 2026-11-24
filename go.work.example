@@ -1,0 +1,13 @@
+go 1.26.1
+
+// Local development: build against sibling checkouts of every module.
+use (
+	.
+	../acme-go
+	../dhcp-go
+	../dns-go
+	../docker-go
+	../forward-go
+	../smartctl-go
+	../yabber
+)

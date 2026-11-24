@@ -3,7 +3,7 @@
 # node_modules, so `make deps` (npm ci in each UI) runs before a build.
 #
 # The modules that are projects of their own (acme-go, dns-go, …) are
-# built from sibling checkouts (see go.work), as CI does too.
+# built from sibling checkouts (see go.work.example), as CI does too.
 
 MODULE_UIS := $(addsuffix /web/ui,../acme-go ../dhcp-go ../dns-go ../docker-go ../forward-go ../yabber)
 UIS := internal/shell/ui/static $(patsubst %/package.json,%,$(wildcard modules/*/web/ui/package.json)) $(MODULE_UIS)
@@ -34,7 +34,10 @@ test: deps
 	go vet ./...
 	go test ./...
 
-deps: $(addsuffix /node_modules,$(UIS))
+deps: go.work $(addsuffix /node_modules,$(UIS))
+
+go.work: go.work.example
+	cp $< $@
 
 %/node_modules: %/package.json %/package-lock.json
 	npm ci --prefix $* --no-audit --no-fund
