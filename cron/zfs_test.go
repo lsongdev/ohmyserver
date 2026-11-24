@@ -2,7 +2,6 @@ package cron
 
 import (
 	"context"
-	"database/sql"
 	"io"
 	"log/slog"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lsongdev/ohmyserver/internal/stores"
 	cronapi "github.com/lsongdev/ohmyserver/modules/cron/api"
 	"github.com/lsongdev/ohmyserver/modules/cron/runner"
 	"github.com/lsongdev/ohmyserver/modules/cron/store"
@@ -39,7 +39,7 @@ func (f *zfsFake) Lines(context.Context, func(string) bool, string, ...string) e
 func zfsSetup(t *testing.T, f *zfsFake) (*ZFSJob, *cronapi.Service) {
 	t.Helper()
 	ctx := context.Background()
-	db, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "ohmyserver.db"))
+	db, err := stores.Open(filepath.Join(t.TempDir(), "ohmyserver.db"))
 	if err != nil {
 		t.Fatal(err)
 	}

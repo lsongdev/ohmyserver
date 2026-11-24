@@ -53,6 +53,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Verify published module dependencies
+        working-directory: ohmyserver
+        env:
+          GOWORK: "off"
+        run: |
+          go mod download
+          go mod verify
       - name: Test
         working-directory: ohmyserver
         run: make test
